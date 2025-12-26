@@ -8,8 +8,8 @@ interface LoginProps {
 // "Banco de dados" de usuários simulado
 const USERS_DB = [
   { user: 'admin', password: '123' },
-  { user: 'chico', password: 'rico' },
-  { user: 'consultor', password: 'tax' },
+  { user: 'pachu', password: '4444' },
+  { user: 'emerson', password: '5555' },
   { user: 'tagway', password: '2580' },
 ];
 
