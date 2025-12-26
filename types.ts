@@ -14,12 +14,12 @@ export interface SimulationInputs {
   custosFixos: number;
   resultadoDesejado: number;
   tipoProduto?: string;
-  // Novos campos fiscais
+  // Campos fiscais
   ufOrigem: string;
   ufDestino: string;
   ncmCodigo: string;
   mvaOriginal: number;
-  // Campos para novos regimes
+  // Regimes
   mode: 'substituido' | 'tributado' | 'reduzido';
   percReducaoBase: number;
 }
@@ -46,14 +46,13 @@ export interface NCMEntry {
   cest?: string;
 }
 
-export interface GroundingSource {
-  web?: {
-    uri?: string;
-    title?: string;
-  };
-}
-
+// Added SearchResult interface to fix compilation errors
 export interface SearchResult {
   text: string;
-  sources: GroundingSource[];
+  sources: {
+    web?: {
+      uri?: string;
+      title?: string;
+    };
+  }[];
 }

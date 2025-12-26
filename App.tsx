@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import ResultsTable from './components/ResultsTable';
-import GeminiAssistant from './components/GeminiAssistant';
 import FiscalHeader from './components/FiscalHeader';
 import Login from './components/Login';
 import { SimulationInputs } from './types';
@@ -44,6 +43,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 animate-in fade-in duration-700">
+      {/* Mobile Header */}
       <div className="md:hidden bg-[#1a2332] p-4 shadow-sm border-b border-slate-800 flex justify-between items-center">
         <h1 className="text-lg font-bold text-white">📊 Tagway Technology</h1>
         <button 
@@ -54,10 +54,12 @@ const App: React.FC = () => {
         </button>
       </div>
 
+      {/* Sidebar de Inputs */}
       <aside className="w-full md:w-80 lg:w-96 flex-shrink-0 md:h-screen sticky top-0 md:overflow-hidden p-4 md:p-6 bg-slate-50">
         <Sidebar inputs={inputs} setInputs={setInputs} />
       </aside>
 
+      {/* Conteúdo Principal */}
       <main className="flex-1 p-4 md:p-8 overflow-y-auto relative custom-scrollbar">
         <header className="mb-8 hidden md:block flex justify-between items-start">
           <div>
@@ -76,15 +78,6 @@ const App: React.FC = () => {
           <FiscalHeader inputs={inputs} setInputs={setInputs} />
           <ResultsTable results={results} priceMatrix={priceMatrix} inputs={inputs} />
         </div>
-
-        <GeminiAssistant 
-          setInputs={setInputs} 
-          currentResults={{
-            custoFinal: results.custoFinal,
-            stAPagar: results.stAPagar,
-            valorTotalNota: results.valorTotalNota
-          }} 
-        />
       </main>
     </div>
   );
