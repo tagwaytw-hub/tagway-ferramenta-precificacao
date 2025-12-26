@@ -46,13 +46,8 @@ export interface NCMEntry {
   cest?: string;
 }
 
-// Added SearchResult interface to fix compilation errors
+// Added SearchResult interface to support Google Search grounding results
 export interface SearchResult {
   text: string;
-  sources: {
-    web?: {
-      uri?: string;
-      title?: string;
-    };
-  }[];
+  sources: any[];
 }

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { SimulationInputs, SearchResult } from '../types';
-import { analyzeInvoiceDocument, searchTaxInfo, generateAudioSummary } from '../services/geminiService';
+import { analyzeInvoiceDocument, searchTaxInfo, generateAudioSummary, decodeAudioData } from '../services/geminiService';
 import { formatCurrency } from '../utils/calculations';
 
 interface GeminiAssistantProps {
@@ -85,9 +85,11 @@ const GeminiAssistant: React.FC<GeminiAssistantProps> = ({ setInputs, currentRes
     `;
 
     try {
-      const audioBuffer = await generateAudioSummary(summaryText);
-      if (audioBuffer) {
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const audioBytes = await generateAudioSummary(summaryText);
+      if (audioBytes) {
+        // Must use 24000Hz for Gemini TTS raw PCM data
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+        const audioBuffer = await decodeAudioData(audioBytes, ctx, 24000, 1);
         const source = ctx.createBufferSource();
         source.buffer = audioBuffer;
         source.connect(ctx.destination);
@@ -198,7 +200,7 @@ const GeminiAssistant: React.FC<GeminiAssistantProps> = ({ setInputs, currentRes
                       <div className="mt-3 pt-2 border-t border-slate-200">
                         <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Fontes:</p>
                         {searchResult.sources.map((src, i) => (
-                          <a key={i} href={src.web?.uri} target="_blank" className="block text-indigo-600 hover:underline truncate mb-1">
+                          <a key={i} href={src.web?.uri} target="_blank" rel="noopener noreferrer" className="block text-indigo-600 hover:underline truncate mb-1">
                             {src.web?.title || src.web?.uri}
                           </a>
                         ))}

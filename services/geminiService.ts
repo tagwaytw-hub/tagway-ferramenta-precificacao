@@ -81,7 +81,8 @@ export const searchTaxInfo = async (query: string): Promise<SearchResult> => {
 };
 
 // --- 3. Text-to-Speech (Audio Summary) ---
-export const generateAudioSummary = async (text: string): Promise<AudioBuffer | null> => {
+// Returns raw Uint8Array bytes to be decoded with the correct AudioContext sampleRate in the component.
+export const generateAudioSummary = async (text: string): Promise<Uint8Array | null> => {
   const ai = getAI();
 
   try {
@@ -104,17 +105,7 @@ export const generateAudioSummary = async (text: string): Promise<AudioBuffer | 
       throw new Error("No audio data returned");
     }
 
-    const outputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-    
-    const binaryString = atob(base64Audio);
-    const len = binaryString.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-    
-    const audioBuffer = await decodeAudioData(bytes, outputAudioContext, 24000, 1);
-    return audioBuffer;
+    return decodeBase64(base64Audio);
 
   } catch (error) {
     console.error("Error generating speech:", error);
@@ -122,7 +113,19 @@ export const generateAudioSummary = async (text: string): Promise<AudioBuffer | 
   }
 };
 
-async function decodeAudioData(
+// Manual base64 decoding as per guidelines
+function decodeBase64(base64: string) {
+  const binaryString = atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
+// Audio decoding helper for raw PCM data as per guidelines
+export async function decodeAudioData(
   data: Uint8Array,
   ctx: AudioContext,
   sampleRate: number,
