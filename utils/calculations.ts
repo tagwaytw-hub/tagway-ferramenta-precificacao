@@ -1,5 +1,4 @@
-
-import { SimulationInputs, SimulationResults } from '../types';
+import { SimulationInputs, SimulationResults } from '../types.ts';
 
 export const getInterstateRate = (origem: string, destino: string): number => {
   if (origem === destino) return 0;
@@ -40,7 +39,6 @@ export const calculateCosts = (inputs: SimulationInputs): SimulationResults => {
   const valorTotalNota = valorCompra + ipiFrete;
   const creditoIcmsEntrada = valorCompra * (icmsInterestadual / 100);
   
-  // Cálculo do ST (apenas para modo substituído)
   let stAPagar = 0;
   let baseCalculoSt = 0;
   let icmsStBruto = 0;
@@ -51,24 +49,19 @@ export const calculateCosts = (inputs: SimulationInputs): SimulationResults => {
     stAPagar = Math.max(0, icmsStBruto - creditoIcmsEntrada);
   }
 
-  // Crédito de PIS/COFINS
   let basePisCofins = valorCompra;
   if (excluirIcmsPis) basePisCofins = valorCompra - creditoIcmsEntrada;
   const creditoPisCofinsValor = basePisCofins * (pisCofinsRate / 100);
 
-  // Custo Final Variável conforme o Regime
   let custoFinal = 0;
   if (mode === 'substituido') {
     custoFinal = valorTotalNota + stAPagar - creditoPisCofinsValor;
   } else {
-    // Tributado ou Reduzido: Recupera o ICMS da própria operação (crédito em conta gráfica)
     custoFinal = valorTotalNota - creditoIcmsEntrada - creditoPisCofinsValor;
   }
 
-  // ICMS de Venda Efetivo
   let icmsVendaEfetivo = icmsVenda;
   if (mode === 'reduzido') {
-    // Aplica redução na alíquota nominal de venda
     icmsVendaEfetivo = icmsVenda * (1 - (percReducaoBase / 100));
   }
 

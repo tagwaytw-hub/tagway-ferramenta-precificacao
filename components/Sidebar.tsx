@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { SimulationInputs } from '../types';
+import { SimulationInputs } from '../types.ts';
 
 interface SidebarProps {
   inputs: SimulationInputs;
@@ -42,7 +41,6 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
         <span className="text-blue-600">📦</span> Tipo de Produto
       </h2>
 
-      {/* Seletor de Regime */}
       <div className="grid grid-cols-1 gap-2 mb-8">
         {[
           { id: 'substituido', label: 'Produto Substituído (ST)' },
@@ -63,7 +61,6 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
         ))}
       </div>
 
-      {/* 1. DADOS COMPRA */}
       <div className="mb-8">
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b pb-2">1. Dados da Compra</h3>
         <div className="space-y-4">
@@ -88,7 +85,6 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
         </div>
       </div>
 
-      {/* 2. PARÂMETROS FISCAIS DINÂMICOS */}
       <div className="mb-8">
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b pb-2">2. Parâmetros Entrada</h3>
         <div className="space-y-4">
@@ -130,7 +126,6 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
         </div>
       </div>
 
-      {/* 3. DADOS VENDA */}
       <div className="mb-8">
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b pb-2">3. Configuração de Venda</h3>
         <div className="space-y-4">
@@ -206,7 +201,6 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
         </div>
       </div>
 
-      {/* 4. CATEGORIA DE PRODUTO (Válido para todos) */}
       <div className="mb-4">
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b pb-2">4. Matriz de Categorias</h3>
         <div className="grid grid-cols-1 gap-2">

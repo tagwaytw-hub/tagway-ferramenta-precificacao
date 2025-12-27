@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import Sidebar from './components/Sidebar';
-import ResultsTable from './components/ResultsTable';
-import FiscalHeader from './components/FiscalHeader';
-import Login from './components/Login';
-import { SimulationInputs } from './types';
-import { calculateCosts, generatePriceMatrix } from './utils/calculations';
+import Sidebar from './components/Sidebar.tsx';
+import ResultsTable from './components/ResultsTable.tsx';
+import FiscalHeader from './components/FiscalHeader.tsx';
+import Login from './components/Login.tsx';
+import { SimulationInputs } from './types.ts';
+import { calculateCosts, generatePriceMatrix } from './utils/calculations.ts';
 
 const defaultInputs: SimulationInputs = {
   valorCompra: 100.00,
@@ -53,12 +53,10 @@ const App: React.FC = () => {
         </button>
       </div>
 
-      {/* Sidebar de Inputs - Caminho Relativo */}
       <aside className="w-full md:w-80 lg:w-96 flex-shrink-0 md:h-screen sticky top-0 md:overflow-hidden p-4 md:p-6 bg-slate-50">
         <Sidebar inputs={inputs} setInputs={setInputs} />
       </aside>
 
-      {/* Conteúdo Principal */}
       <main className="flex-1 p-4 md:p-8 overflow-y-auto relative custom-scrollbar">
         <header className="mb-8 hidden md:block flex justify-between items-start">
           <div>

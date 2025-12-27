@@ -1,8 +1,7 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { SimulationInputs, NCMEntry } from '../types';
-import { UF_LIST, NCM_DATABASE } from '../utils/ncmData';
-import { getInterstateRate, calculateAdjustedMva } from '../utils/calculations';
+import { SimulationInputs, NCMEntry } from '../types.ts';
+import { UF_LIST, NCM_DATABASE } from '../utils/ncmData.ts';
+import { getInterstateRate, calculateAdjustedMva } from '../utils/calculations.ts';
 
 interface FiscalHeaderProps {
   inputs: SimulationInputs;
@@ -14,7 +13,6 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const suggestionRef = useRef<HTMLDivElement>(null);
 
-  // Inicializa o termo de busca com o item atual se houver
   useEffect(() => {
     const currentNcm = NCM_DATABASE.find(n => n.codigo === inputs.ncmCodigo);
     if (currentNcm) {
@@ -22,10 +20,6 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
     }
   }, []);
 
-  /**
-   * Vinculação Automática de Alíquotas:
-   * Sincroniza Alíquota Interestadual, Interna de Destino e MVA Ajustada.
-   */
   const handleUfChange = (field: 'ufOrigem' | 'ufDestino', val: string) => {
     const newOrigem = field === 'ufOrigem' ? val : inputs.ufOrigem;
     const newDestino = field === 'ufDestino' ? val : inputs.ufDestino;
@@ -37,13 +31,11 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
       const interRate = getInterstateRate(origUf.sigla, destUf.sigla);
       const adjMva = calculateAdjustedMva(inputs.mvaOriginal, interRate, destUf.icms);
       
-      // Vinculação Automática dos campos de entrada e saída
       setInputs(prev => ({
         ...prev,
         [field]: val,
         icmsInterestadual: interRate,
         icmsInternoDestino: destUf.icms,
-        // Se estiver no modo tributado/reduzido, a alíquota de venda costuma seguir o destino ou a interna de saída definida
         icmsVenda: prev.mode !== 'substituido' ? destUf.icms : prev.icmsVenda,
         mva: adjMva
       }));
