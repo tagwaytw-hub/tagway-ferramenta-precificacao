@@ -24,7 +24,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
     { label: 'Curva A', value: 10, key: 'curvaA' },
     { label: 'Curva B', value: 11, key: 'curvaB' },
     { label: 'Curva C', value: 12, key: 'curvaC' },
-    { label: 'Prod. Técnicos', value: 15, key: 'prodTec' },
+    { label: 'Produtos Técnicos', value: 15, key: 'prodTec' },
   ];
 
   const handleCategorySelect = (type: typeof productCategories[0]) => {
@@ -45,8 +45,8 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
         <div className="grid grid-cols-1 gap-2">
           {[
             { id: 'substituido', label: 'Substituição Tributária (ST)' },
-            { id: 'tributado', label: 'Tributável (Normal)' },
-            { id: 'reduzido', label: 'Redução de Base' },
+            { id: 'tributado', label: 'Tributável' },
+            { id: 'reduzido', label: 'Redução' },
           ].map(item => (
             <button
               key={item.id}

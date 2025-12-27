@@ -39,7 +39,8 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ results, priceMatrix, input
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+      {/* Cards de Métricas - Visíveis em Desktop, Ocultos em Mobile para focar em Composição e Matriz */}
+      <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard label="Total NF" value={formatCurrency(results.valorTotalNota)} subValue="Base NF-e" />
         {inputs.mode === 'substituido' ? (
           <MetricCard label="ICMS-ST" value={formatCurrency(results.stAPagar)} delta="Débito ST" color="red" />
@@ -51,7 +52,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ results, priceMatrix, input
       </div>
 
       <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
-        <div className="bg-slate-300 p-2.5 text-center font-black text-slate-800 uppercase tracking-[0.2em] text-[10px]">
+        <div className="bg-slate-100 p-2.5 text-center font-black text-slate-800 uppercase tracking-[0.2em] text-[10px]">
           Composição de Saída
         </div>
         <div className="p-4 md:p-6">
@@ -64,7 +65,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ results, priceMatrix, input
               { label: 'Resultado Líquido Alvo', val: margemValor, red: false, indigo: true },
               { label: 'Total Deduções', val: totalCustoVenda, red: true, bold: true },
             ].map((item, i) => (
-              <div key={i} className="flex justify-between items-center border-b border-slate-100 py-2.5">
+              <div key={i} className="flex justify-between items-center border-b border-slate-100 py-3">
                 <span className={`text-[10px] font-bold uppercase tracking-tight ${item.red && !item.indigo ? 'text-red-500' : item.indigo ? 'text-indigo-600' : 'text-slate-500'}`}>
                   {item.label}
                 </span>
@@ -77,7 +78,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ results, priceMatrix, input
 
           <div className="bg-indigo-600 p-4 text-white flex flex-col sm:flex-row justify-between items-center rounded-2xl shadow-xl shadow-indigo-500/20 gap-2">
             <span className="font-black text-[10px] md:text-sm uppercase tracking-widest text-indigo-200">Preço de Venda Sugerido</span>
-            <span className="text-2xl md:text-3xl font-black">{formatCurrency(results.precoVendaAlvo)}</span>
+            <span className="text-2xl md:text-3xl font-black tracking-tight">{formatCurrency(results.precoVendaAlvo)}</span>
           </div>
         </div>
       </div>
