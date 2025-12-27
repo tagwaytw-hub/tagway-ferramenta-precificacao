@@ -53,7 +53,7 @@ const App: React.FC = () => {
         </button>
       </div>
 
-      {/* Sidebar de Inputs */}
+      {/* Sidebar de Inputs - Caminho Relativo */}
       <aside className="w-full md:w-80 lg:w-96 flex-shrink-0 md:h-screen sticky top-0 md:overflow-hidden p-4 md:p-6 bg-slate-50">
         <Sidebar inputs={inputs} setInputs={setInputs} />
       </aside>
