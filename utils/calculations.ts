@@ -96,7 +96,7 @@ export const generatePriceMatrix = (custoFinal: number, inputs: SimulationInputs
     { label: 'Curva A', margin: 10 },
     { label: 'Curva B', margin: 11 },
     { label: 'Curva C', margin: 12 },
-    { label: 'Prod.Tec', margin: 15 }
+    { label: 'Produtos Técnicos', margin: 15 }
   ];
 
   const getPrice = (margin: number) => {

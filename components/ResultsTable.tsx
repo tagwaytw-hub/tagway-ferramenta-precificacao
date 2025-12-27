@@ -38,8 +38,8 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ results, priceMatrix, input
   const totalCustoVenda = pisCofinsValor + comissaoValor + icmsVendaValor + outrosVariaveisValor + custosFixosValor + margemValor;
 
   return (
-    <div className="space-y-6 md:space-y-8">
-      {/* Cards de Métricas - Visíveis em Desktop, Ocultos em Mobile para focar em Composição e Matriz */}
+    <div className="space-y-6 md:space-y-8 pb-20">
+      {/* Cards de Métricas - VISÍVEIS APENAS EM DESKTOP */}
       <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard label="Total NF" value={formatCurrency(results.valorTotalNota)} subValue="Base NF-e" />
         {inputs.mode === 'substituido' ? (
@@ -51,7 +51,8 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ results, priceMatrix, input
         <MetricCard label="CUSTO LÍQ." value={formatCurrency(results.custoFinal)} delta="Base Venda" color="blue" />
       </div>
 
-      <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+      {/* Composição de Saída */}
+      <div className="bg-white rounded-3xl shadow-lg border border-slate-200 overflow-hidden">
         <div className="bg-slate-100 p-2.5 text-center font-black text-slate-800 uppercase tracking-[0.2em] text-[10px]">
           Composição de Saída
         </div>
@@ -83,14 +84,15 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ results, priceMatrix, input
         </div>
       </div>
 
+      {/* Matriz de Condições de Pagamento */}
       <div className="space-y-4">
-        <div className="flex items-center gap-3">
-          <h3 className="text-xs md:text-sm font-black text-slate-800 uppercase tracking-widest">Matriz de Condições 2025</h3>
+        <div className="flex items-center gap-3 px-1">
+          <h3 className="text-[10px] md:text-sm font-black text-slate-800 uppercase tracking-widest">Matriz de Condições de Pagamento</h3>
           <div className="h-px flex-1 bg-slate-200"></div>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
-          {priceMatrix.map((cat, idx) => (
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 overflow-x-hidden">
+          {priceMatrix.map((cat: any, idx: number) => (
             <div key={idx} className="flex flex-col border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
               <div className="bg-slate-100 text-slate-600 text-center py-2 font-black text-[9px] uppercase tracking-tighter border-b border-slate-200">
                 {cat.label}

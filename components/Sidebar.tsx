@@ -19,6 +19,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
     }));
   };
 
+  // Matriz de Categorias: Produtos Técnicos corrigido e posicionado sob Curva C
   const productCategories = [
     { label: 'Commodity', value: 8, key: 'comod' },
     { label: 'Curva A', value: 10, key: 'curvaA' },
@@ -36,7 +37,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
   };
 
   return (
-    <div className="space-y-6 md:space-y-8 pb-10 md:pb-0">
+    <div className="space-y-6 md:space-y-8 pb-32"> {/* pb-32 garante visibilidade no mobile acima da Tab Bar */}
       {/* Seletor de Regime */}
       <div>
         <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -51,7 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
             <button
               key={item.id}
               onClick={() => handleModeChange(item.id as any)}
-              className={`px-4 py-3.5 rounded-xl border text-[11px] font-black transition-all text-left active:scale-[0.98] ${
+              className={`px-4 py-4 rounded-xl border text-[11px] font-black transition-all text-left active:scale-[0.98] ${
                 inputs.mode === item.id
                   ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20'
                   : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'
@@ -194,7 +195,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
               </div>
           </div>
 
-          <div className="bg-indigo-600 p-3.5 rounded-2xl shadow-xl shadow-indigo-500/20 border border-indigo-500">
+          <div className="bg-indigo-600 p-4 rounded-2xl shadow-xl shadow-indigo-500/20 border border-indigo-500">
             <label className="block text-[9px] font-black text-indigo-100 mb-1 uppercase tracking-[0.1em] flex justify-between">
               <span>Net Margin Alvo (%)</span>
               <span className="opacity-50 tracking-tighter italic font-normal">Resultado</span>
@@ -215,18 +216,18 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
           <span className="h-px w-3 bg-slate-300"></span> 4. Matriz de Categorias
         </h3>
-        <div className="grid grid-cols-1 gap-1.5">
+        <div className="grid grid-cols-1 gap-2">
           {productCategories.map((type) => (
             <button
               key={type.key}
               onClick={() => handleCategorySelect(type)}
-              className={`text-left px-4 py-3 rounded-xl border transition-all flex justify-between items-center group active:scale-[0.98] ${
+              className={`text-left px-5 py-4 rounded-xl border transition-all flex justify-between items-center group active:scale-[0.98] ${
                 inputs.tipoProduto === type.key
                   ? 'bg-slate-800 border-slate-800 text-white shadow-lg'
                   : 'bg-white border-slate-200 text-slate-700 hover:border-slate-400'
               }`}
             >
-              <span className="font-black text-[10px] uppercase tracking-tight">{type.label}</span>
+              <span className="font-black text-[11px] uppercase tracking-tight">{type.label}</span>
               <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
                 inputs.tipoProduto === type.key ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-500'
               }`}>
