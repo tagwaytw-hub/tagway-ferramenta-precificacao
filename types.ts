@@ -1,4 +1,3 @@
-
 export interface SimulationInputs {
   valorCompra: number;
   ipiFrete: number;
@@ -45,15 +44,4 @@ export interface NCMEntry {
   descricao: string;
   mvaOriginal: number;
   cest?: string;
-}
-
-// Fixed missing SearchResult export used for Google Search grounding responses
-export interface SearchResult {
-  text: string;
-  sources: {
-    web?: {
-      uri: string;
-      title?: string;
-    };
-  }[];
 }
