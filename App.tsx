@@ -1,8 +1,10 @@
+
 import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import ResultsTable from './components/ResultsTable';
 import FiscalHeader from './components/FiscalHeader';
 import Login from './components/Login';
+import GeminiAssistant from './components/GeminiAssistant';
 import { SimulationInputs } from './types';
 import { calculateCosts, generatePriceMatrix } from './utils/calculations';
 
@@ -77,6 +79,16 @@ const App: React.FC = () => {
           <FiscalHeader inputs={inputs} setInputs={setInputs} />
           <ResultsTable results={results} priceMatrix={priceMatrix} inputs={inputs} />
         </div>
+
+        {/* Added GeminiAssistant to render the AI features floating button and panel */}
+        <GeminiAssistant 
+          setInputs={setInputs} 
+          currentResults={{ 
+            custoFinal: results.custoFinal, 
+            stAPagar: results.stAPagar, 
+            valorTotalNota: results.valorTotalNota 
+          }} 
+        />
       </main>
     </div>
   );

@@ -31,7 +31,7 @@ export interface SimulationResults {
   creditoIcmsEntrada: number;
   stAPagar: number;
   basePisCofins: number;
-  creditoPisCofinsVenda?: number; // Optional if needed, but results uses creditoPisCofinsValor
+  creditoPisCofinsVenda?: number; 
   creditoPisCofinsValor: number;
   custoFinal: number;
   precoEquilibrio: number;
@@ -47,8 +47,13 @@ export interface NCMEntry {
   cest?: string;
 }
 
-// Interface for Google Search grounding results
+// Fixed missing SearchResult export used for Google Search grounding responses
 export interface SearchResult {
   text: string;
-  sources: any[];
+  sources: {
+    web?: {
+      uri: string;
+      title?: string;
+    };
+  }[];
 }
