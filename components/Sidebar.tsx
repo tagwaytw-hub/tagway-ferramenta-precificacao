@@ -36,187 +36,189 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-full overflow-y-auto custom-scrollbar">
-      <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-        <span className="text-blue-600">📦</span> Tipo de Produto
-      </h2>
-
-      <div className="grid grid-cols-1 gap-2 mb-8">
-        {[
-          { id: 'substituido', label: 'Produto Substituído (ST)' },
-          { id: 'tributado', label: 'Produtos Tributados' },
-          { id: 'reduzido', label: 'Produtos com Redução' },
-        ].map(item => (
-          <button
-            key={item.id}
-            onClick={() => handleModeChange(item.id as any)}
-            className={`px-4 py-3 rounded-lg border text-sm font-bold transition-all text-left ${
-              inputs.mode === item.id
-                ? 'bg-blue-600 border-blue-600 text-white shadow-md'
-                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
+    <div className="space-y-8">
+      {/* Seletor de Regime */}
+      <div>
+        <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <span className="h-px w-4 bg-slate-300"></span> 0. Regime Tributável
+        </h2>
+        <div className="grid grid-cols-1 gap-2">
+          {[
+            { id: 'substituido', label: 'Substituição Tributária (ST)' },
+            { id: 'tributado', label: 'Tributável' },
+            { id: 'reduzido', label: 'Redução' },
+          ].map(item => (
+            <button
+              key={item.id}
+              onClick={() => handleModeChange(item.id as any)}
+              className={`px-4 py-3 rounded-xl border text-xs font-bold transition-all text-left ${
+                inputs.mode === item.id
+                  ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20'
+                  : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:bg-blue-50/30'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="mb-8">
-        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b pb-2">1. Dados da Compra</h3>
+      <div>
+        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <span className="h-px w-4 bg-slate-300"></span> 1. Dados da Compra
+        </h3>
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Valor Mercadoria (R$)</label>
+          <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+            <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-tight">Valor Mercadoria (R$)</label>
             <input
               type="number"
               value={inputs.valorCompra}
               onChange={(e) => handleChange('valorCompra', e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full text-lg font-black text-slate-800 bg-transparent outline-none focus:text-blue-600 transition-colors"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">IPI + Frete (R$)</label>
+          <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+            <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-tight">IPI + Frete (R$)</label>
             <input
               type="number"
               value={inputs.ipiFrete}
               onChange={(e) => handleChange('ipiFrete', e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full text-lg font-black text-slate-800 bg-transparent outline-none focus:text-blue-600 transition-colors"
             />
           </div>
         </div>
       </div>
 
-      <div className="mb-8">
-        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b pb-2">2. Parâmetros Entrada</h3>
+      <div>
+        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <span className="h-px w-4 bg-slate-300"></span> 2. Parâmetros Entrada
+        </h3>
         <div className="space-y-4">
           {inputs.mode === 'substituido' && (
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">MVA (%)</label>
+            <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 shadow-sm">
+              <label className="block text-[10px] font-bold text-blue-600 mb-1 uppercase tracking-tight">MVA Final (%)</label>
               <input
                 type="number"
                 step="0.01"
                 value={inputs.mva}
                 onChange={(e) => handleChange('mva', e.target.value)}
-                className="w-full px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full text-lg font-black text-blue-800 bg-transparent outline-none"
               />
             </div>
           )}
           
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">ICMS Orig. (%)</label>
+            <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+              <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-tight">ICMS Int. (%)</label>
               <input
                 type="number"
                 step="0.01"
                 value={inputs.icmsInterestadual}
                 onChange={(e) => handleChange('icmsInterestadual', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg outline-none"
+                className="w-full font-bold text-slate-800 bg-transparent outline-none"
               />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">PIS/COF Créd. (%)</label>
+            <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+              <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-tight">PIS/COF (%)</label>
               <input
                 type="number"
                 step="0.01"
                 value={inputs.pisCofinsRate}
                 onChange={(e) => handleChange('pisCofinsRate', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg outline-none"
+                className="w-full font-bold text-slate-800 bg-transparent outline-none"
               />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="mb-8">
-        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b pb-2">3. Configuração de Venda</h3>
+      <div>
+        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <span className="h-px w-4 bg-slate-300"></span> 3. Parâmetros Venda
+        </h3>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1 uppercase">ICMS Venda (%)</label>
+            <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+              <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-tight">ICMS Venda (%)</label>
               <input
                 type="number"
                 step="0.01"
                 value={inputs.icmsVenda}
                 onChange={(e) => handleChange('icmsVenda', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg outline-none"
+                className="w-full font-bold text-slate-800 bg-transparent outline-none"
               />
             </div>
             {inputs.mode === 'reduzido' && (
-              <div>
-                <label className="block text-xs font-medium text-orange-600 mb-1 uppercase font-bold">Redução Base (%)</label>
+              <div className="bg-orange-50 p-3 rounded-xl border border-orange-100 shadow-sm">
+                <label className="block text-[10px] font-black text-orange-600 mb-1 uppercase tracking-tight">Redução (%)</label>
                 <input
                   type="number"
                   step="0.01"
                   value={inputs.percReducaoBase}
                   onChange={(e) => handleChange('percReducaoBase', e.target.value)}
-                  className="w-full px-3 py-2 bg-orange-50 border border-orange-200 rounded-lg outline-none font-bold"
+                  className="w-full font-black text-orange-800 bg-transparent outline-none"
                 />
               </div>
             )}
           </div>
           
           <div className="grid grid-cols-2 gap-4">
-             <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1 uppercase">Comissão (%)</label>
+             <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-tight">Comissão (%)</label>
                 <input
                   type="number"
                   step="0.01"
                   value={inputs.comissaoVenda}
                   onChange={(e) => handleChange('comissaoVenda', e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg outline-none"
+                  className="w-full font-bold text-slate-800 bg-transparent outline-none"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1 uppercase">PIS/COF Saída (%)</label>
+              <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-tight">Custos Fixos (%)</label>
                 <input
                   type="number"
                   step="0.01"
-                  value={inputs.pisCofinsVenda}
-                  onChange={(e) => handleChange('pisCofinsVenda', e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg outline-none"
+                  value={inputs.custosFixos}
+                  onChange={(e) => handleChange('custosFixos', e.target.value)}
+                  className="w-full font-bold text-slate-800 bg-transparent outline-none"
                 />
               </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1 uppercase">Custos Fixos (%)</label>
-            <input
-              type="number"
-              step="0.01"
-              value={inputs.custosFixos}
-              onChange={(e) => handleChange('custosFixos', e.target.value)}
-              className="w-full px-3 py-2 bg-gray-100 border border-slate-300 rounded-lg outline-none font-semibold"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-indigo-700 mb-1 uppercase font-bold">Resul. Antes I.R. e CSLL (%)</label>
+          <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-100 shadow-md">
+            <label className="block text-[10px] font-black text-indigo-700 mb-1 uppercase tracking-widest flex justify-between">
+              <span>Resultado Alvo (%)</span>
+              <span className="text-indigo-400">Net Margin</span>
+            </label>
             <input
               type="number"
               step="0.01"
               value={inputs.resultadoDesejado}
               onChange={(e) => handleChange('resultadoDesejado', e.target.value)}
-              className="w-full px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-indigo-900"
+              className="w-full text-xl font-black text-indigo-900 bg-transparent outline-none"
             />
           </div>
         </div>
       </div>
 
-      <div className="mb-4">
-        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b pb-2">4. Matriz de Categorias</h3>
-        <div className="grid grid-cols-1 gap-2">
+      <div className="pb-8">
+        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <span className="h-px w-4 bg-slate-300"></span> 4. Matriz de Categorias
+        </h3>
+        <div className="grid grid-cols-1 gap-1.5">
           {productCategories.map((type) => (
             <button
               key={type.key}
               onClick={() => handleCategorySelect(type)}
-              className={`text-left px-4 py-3 rounded-lg border transition-all flex justify-between items-center group ${
+              className={`text-left px-4 py-3 rounded-xl border transition-all flex justify-between items-center group ${
                 inputs.tipoProduto === type.key
-                  ? 'bg-indigo-600 border-indigo-600 text-white shadow-md'
-                  : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-indigo-400 hover:bg-indigo-50'
+                  ? 'bg-slate-800 border-slate-800 text-white shadow-lg'
+                  : 'bg-white border-slate-200 text-slate-700 hover:border-slate-400'
               }`}
             >
-              <span className="font-semibold text-sm">{type.label}</span>
-              <span className={`text-xs font-bold px-2 py-1 rounded-md ${
-                inputs.tipoProduto === type.key ? 'bg-indigo-500 text-white' : 'bg-slate-200 text-slate-500 group-hover:bg-indigo-100 group-hover:text-indigo-600'
+              <span className="font-bold text-[11px] uppercase tracking-tight">{type.label}</span>
+              <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
+                inputs.tipoProduto === type.key ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-500'
               }`}>
                 {type.value}%
               </span>
