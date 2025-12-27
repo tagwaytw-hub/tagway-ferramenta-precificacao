@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import Sidebar from './components/Sidebar.tsx';
-import ResultsTable from './components/ResultsTable.tsx';
-import FiscalHeader from './components/FiscalHeader.tsx';
-import Login from './components/Login.tsx';
-import { SimulationInputs } from './types.ts';
-import { calculateCosts, generatePriceMatrix } from './utils/calculations.ts';
+import Sidebar from './components/Sidebar';
+import ResultsTable from './components/ResultsTable';
+import FiscalHeader from './components/FiscalHeader';
+import Login from './components/Login';
+import { SimulationInputs } from './types';
+import { calculateCosts, generatePriceMatrix } from './utils/calculations';
 
 const defaultInputs: SimulationInputs = {
   valorCompra: 100.00,
@@ -41,8 +41,7 @@ const App: React.FC = () => {
   const priceMatrix = generatePriceMatrix(results.custoFinal, inputs);
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 animate-in fade-in duration-700">
-      {/* Mobile Header */}
+    <div className="min-h-screen flex flex-col md:row bg-slate-50 animate-in fade-in duration-700">
       <div className="md:hidden bg-[#1a2332] p-4 shadow-sm border-b border-slate-800 flex justify-between items-center">
         <h1 className="text-lg font-bold text-white">📊 Tagway Technology</h1>
         <button 
