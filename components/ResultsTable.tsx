@@ -1,6 +1,6 @@
 import React from 'react';
-import { SimulationResults, SimulationInputs } from '../types.ts';
-import { formatCurrency } from '../utils/calculations.ts';
+import { SimulationResults, SimulationInputs } from '../types';
+import { formatCurrency } from '../utils/calculations';
 
 interface ResultsTableProps {
   results: SimulationResults;
