@@ -1,5 +1,4 @@
-
-import { SimulationInputs, SimulationResults } from '../types.ts';
+import { SimulationInputs, SimulationResults } from '../types';
 
 export const getInterstateRate = (origem: string, destino: string): number => {
   if (origem === destino) return 0;

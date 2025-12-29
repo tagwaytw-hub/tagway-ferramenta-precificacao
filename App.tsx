@@ -1,12 +1,11 @@
-
 import React, { useState } from 'react';
-import Sidebar from './components/Sidebar.tsx';
-import ResultsTable from './components/ResultsTable.tsx';
-import FiscalHeader from './components/FiscalHeader.tsx';
-import ProductsView from './components/ProductsView.tsx';
-import Login from './components/Login.tsx';
-import { SimulationInputs } from './types.ts';
-import { calculateCosts, generatePriceMatrix } from './utils/calculations.ts';
+import Sidebar from './components/Sidebar';
+import ResultsTable from './components/ResultsTable';
+import FiscalHeader from './components/FiscalHeader';
+import ProductsView from './components/ProductsView';
+import Login from './components/Login';
+import { SimulationInputs } from './types';
+import { calculateCosts, generatePriceMatrix } from './utils/calculations';
 
 const defaultInputs: SimulationInputs = {
   nomeProduto: '',

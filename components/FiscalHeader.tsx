@@ -1,8 +1,7 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { SimulationInputs, NCMEntry } from '../types.ts';
-import { UF_LIST, NCM_DATABASE } from '../utils/ncmData.ts';
-import { getInterstateRate, calculateAdjustedMva } from '../utils/calculations.ts';
+import { SimulationInputs, NCMEntry } from '../types';
+import { UF_LIST, NCM_DATABASE } from '../utils/ncmData';
+import { getInterstateRate, calculateAdjustedMva } from '../utils/calculations';
 
 interface FiscalHeaderProps {
   inputs: SimulationInputs;

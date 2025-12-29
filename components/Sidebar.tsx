@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { SimulationInputs } from '../types.ts';
+import { SimulationInputs } from '../types';
 
 interface SidebarProps {
   inputs: SimulationInputs;
