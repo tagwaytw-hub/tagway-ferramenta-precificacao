@@ -1,7 +1,8 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { SimulationInputs, NCMEntry } from '../types';
-import { UF_LIST, NCM_DATABASE } from '../utils/ncmData';
-import { getInterstateRate, calculateAdjustedMva } from '../utils/calculations';
+import { SimulationInputs, NCMEntry } from '../types.ts';
+import { UF_LIST, NCM_DATABASE } from '../utils/ncmData.ts';
+import { getInterstateRate, calculateAdjustedMva } from '../utils/calculations.ts';
 
 interface FiscalHeaderProps {
   inputs: SimulationInputs;
@@ -50,7 +51,8 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
       ...prev,
       ncmCodigo: ncm.codigo,
       mvaOriginal: ncm.mvaOriginal,
-      mva: adjMva
+      mva: adjMva,
+      nomeProduto: ncm.descricao
     }));
     setSearchTerm(`${ncm.codigo} - ${ncm.descricao}`);
     setShowSuggestions(false);
@@ -71,11 +73,19 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const internalRateOrigem = UF_LIST.find(u => u.sigla === inputs.ufOrigem)?.icms || 0;
-  const internalRateDestino = UF_LIST.find(u => u.sigla === inputs.ufDestino)?.icms || 0;
-
   return (
     <div className="bg-[#1a2332] text-white p-4 md:p-6 rounded-2xl shadow-xl border border-slate-700">
+      <div className="mb-6">
+        <label className="block text-[9px] md:text-[10px] uppercase font-black text-blue-400 mb-1.5 tracking-wider">Identificação do Item (Nome Comercial)</label>
+        <input 
+          type="text"
+          value={inputs.nomeProduto}
+          onChange={(e) => setInputs(prev => ({ ...prev, nomeProduto: e.target.value }))}
+          placeholder="Ex: Piso Porcelanato Bege 60x60"
+          className="w-full bg-[#0f172a] border border-slate-600 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-500 transition-colors placeholder:text-slate-700 font-medium"
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
         <div className="group">
           <label className="block text-[9px] md:text-[10px] uppercase font-black text-slate-400 mb-1.5 tracking-wider group-focus-within:text-blue-400 transition-colors">UF de Origem</label>
@@ -91,7 +101,6 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
             </div>
           </div>
-          <p className="mt-1 text-[8px] md:text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Alíquota: {internalRateOrigem}%</p>
         </div>
         <div className="group">
           <label className="block text-[9px] md:text-[10px] uppercase font-black text-slate-400 mb-1.5 tracking-wider group-focus-within:text-blue-400 transition-colors">UF de Destino</label>
@@ -107,12 +116,11 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
             </div>
           </div>
-          <p className="mt-1 text-[8px] md:text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Alíquota: {internalRateDestino}%</p>
         </div>
       </div>
 
       <div className="mb-6 relative" ref={suggestionRef}>
-        <label className="block text-[9px] md:text-[10px] uppercase font-black text-slate-400 mb-1.5 tracking-wider">Produto ou NCM 2025</label>
+        <label className="block text-[9px] md:text-[10px] uppercase font-black text-slate-400 mb-1.5 tracking-wider">Classificação NCM 2025</label>
         <div className="relative">
           <input 
             type="text"
@@ -122,7 +130,7 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
               setShowSuggestions(true);
             }}
             onFocus={() => setShowSuggestions(true)}
-            placeholder="Pesquisar produto..."
+            placeholder="Pesquisar NCM..."
             className="w-full bg-[#0f172a] border border-slate-600 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:border-blue-500 transition-colors placeholder:text-slate-600"
           />
           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
@@ -163,7 +171,6 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
             <span className="text-sm font-black text-blue-300">{inputs.icmsInterestadual}%</span>
           </div>
         </div>
-
         <div className="space-y-2">
           <h4 className="text-[9px] md:text-[10px] font-black text-orange-400 uppercase tracking-widest">MVA Ajustada (2025)</h4>
           <div className="flex justify-between items-center bg-[#0f172a] p-2 rounded-lg border border-slate-700/50">

@@ -1,12 +1,15 @@
+
 import React, { useState } from 'react';
-import Sidebar from './components/Sidebar';
-import ResultsTable from './components/ResultsTable';
-import FiscalHeader from './components/FiscalHeader';
-import Login from './components/Login';
-import { SimulationInputs } from './types';
-import { calculateCosts, generatePriceMatrix, formatCurrency } from './utils/calculations';
+import Sidebar from './components/Sidebar.tsx';
+import ResultsTable from './components/ResultsTable.tsx';
+import FiscalHeader from './components/FiscalHeader.tsx';
+import ProductsView from './components/ProductsView.tsx';
+import Login from './components/Login.tsx';
+import { SimulationInputs } from './types.ts';
+import { calculateCosts, generatePriceMatrix } from './utils/calculations.ts';
 
 const defaultInputs: SimulationInputs = {
+  nomeProduto: '',
   valorCompra: 100.00,
   ipiFrete: 0.00,
   mva: 32.00,
@@ -26,14 +29,20 @@ const defaultInputs: SimulationInputs = {
   resultadoDesejado: 8.00,
   tipoProduto: 'comod',
   mode: 'substituido',
-  percReducaoBase: 0
+  percReducaoBase: 0,
+  simulationMode: 'buyToSell',
+  precoVendaDesejado: 250.00
 };
+
+type MainTab = 'calculadora' | 'configuracoes';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [inputs, setInputs] = useState<SimulationInputs>(defaultInputs);
-  const [activeTab, setActiveTab] = useState<'config' | 'results'>('config');
-  
+  const [mainTab, setMainTab] = useState('calculadora' as MainTab);
+  const [activeCalcTab, setActiveCalcTab] = useState('config' as 'config' | 'results');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
   if (!isAuthenticated) {
     return <Login onLoginSuccess={() => setIsAuthenticated(true)} />;
   }
@@ -41,104 +50,130 @@ const App: React.FC = () => {
   const results = calculateCosts(inputs);
   const priceMatrix = generatePriceMatrix(results.custoFinal, inputs);
 
-  return (
-    <div className="h-screen w-full flex flex-col md:flex-row bg-[#f8fafc] overflow-hidden font-sans">
-      {/* Mobile Header - Resumo do Preço */}
-      <div className="md:hidden bg-[#1a2332] p-4 z-30 flex justify-between items-center border-b border-slate-800 shadow-lg">
-        <div>
-          <h1 className="text-white text-[10px] font-black tracking-widest uppercase opacity-70">Tagway Technology</h1>
-          <p className="text-xs text-blue-400 font-black uppercase">Venda: {formatCurrency(results.precoVendaAlvo)}</p>
-        </div>
-        <button 
-          onClick={() => setIsAuthenticated(false)}
-          className="bg-slate-800 text-slate-400 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-700"
-        >
-          Sair
-        </button>
-      </div>
+  const renderContent = () => {
+    switch (mainTab) {
+      case 'calculadora':
+        return (
+          <div className="h-full flex flex-col md:flex-row relative">
+            <aside className={`${activeCalcTab === 'config' ? 'flex' : 'hidden md:flex'} w-full md:w-80 lg:w-[450px] bg-white border-r border-slate-200 flex-shrink-0 flex-col h-full z-10 shadow-sm`}>
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-6">
+                <div className="mb-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Configuração</h2>
+                    <div className="bg-slate-100 rounded-full p-1 flex">
+                      <button 
+                        onClick={() => setInputs(prev => ({...prev, simulationMode: 'buyToSell'}))}
+                        className={`px-3 py-1 rounded-full text-[8px] font-black uppercase transition-all ${inputs.simulationMode === 'buyToSell' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-400'}`}
+                      >
+                        Padrão
+                      </button>
+                      <button 
+                        disabled
+                        className="px-3 py-1 rounded-full text-[8px] font-black uppercase text-slate-300 cursor-not-allowed"
+                        title="Em breve"
+                      >
+                        Reverso
+                      </button>
+                    </div>
+                  </div>
+                  <FiscalHeader inputs={inputs} setInputs={setInputs} />
+                </div>
+                <div className="h-px bg-slate-100 w-full my-6"></div>
+                <Sidebar inputs={inputs} setInputs={setInputs} />
+              </div>
+            </aside>
 
-      {/* Sidebar / Aba de Configuração */}
-      <aside className={`
-        ${activeTab === 'config' ? 'flex' : 'hidden'} 
-        md:flex w-full md:w-80 lg:w-[450px] bg-white border-r border-slate-200 flex-shrink-0 flex-col h-full z-10
-      `}>
-        <div className="p-6 border-b border-slate-100 hidden md:block bg-slate-50/50">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="bg-blue-600 p-2 rounded-lg text-white">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-            </div>
-            <h1 className="text-xl font-black text-slate-800 tracking-tighter italic">TAGWAY</h1>
+            <main className={`${activeCalcTab === 'results' ? 'flex' : 'hidden md:flex'} flex-1 flex-col overflow-y-auto custom-scrollbar bg-[#f8fafc]`}>
+              <div className="max-w-6xl mx-auto w-full p-4 md:p-8">
+                <div className="md:hidden mb-6 flex justify-between items-center px-2">
+                   <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest italic">Resultados</h2>
+                   <div className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border border-blue-100">Simulação 2025</div>
+                </div>
+                <div className="md:hidden flex gap-2 mb-6">
+                   <button 
+                     onClick={() => setActiveCalcTab('config')}
+                     className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border ${activeCalcTab === 'config' ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-200 text-slate-400'}`}
+                   >
+                     Configurações
+                   </button>
+                   <button 
+                     onClick={() => setActiveCalcTab('results')}
+                     className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border ${activeCalcTab === 'results' ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-200 text-slate-400'}`}
+                   >
+                     Resultados
+                   </button>
+                </div>
+                <ResultsTable results={results} priceMatrix={priceMatrix} inputs={inputs} />
+              </div>
+            </main>
           </div>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Ajustes Fiscais e MVA</p>
-        </div>
-        
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-6">
-          {/* O FiscalHeader (Tabela de MVA) agora fica na primeira página */}
-          <section className="mb-6">
-            <FiscalHeader inputs={inputs} setInputs={setInputs} />
-          </section>
-          
-          <div className="h-px bg-slate-200 w-full my-6 md:hidden"></div>
-          
-          <Sidebar inputs={inputs} setInputs={setInputs} />
+        );
+      case 'configuracoes':
+        return (
+          <div className="h-full overflow-y-auto custom-scrollbar bg-[#f8fafc] p-4 md:p-10">
+            <div className="max-w-7xl mx-auto">
+              <ProductsView onSelectNcm={(ncm: any) => {
+                 setInputs(prev => ({
+                   ...prev,
+                   ncmCodigo: ncm.codigo,
+                   mvaOriginal: ncm.mvaOriginal,
+                   nomeProduto: ncm.descricao
+                 }));
+                 setMainTab('calculadora');
+                 setActiveCalcTab('config');
+              }} />
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="h-screen w-full flex bg-[#f8fafc] overflow-hidden font-sans text-slate-900">
+      <aside className={`bg-[#1a2332] flex flex-col border-r border-slate-800 z-50 transition-all duration-300 ease-in-out relative ${isSidebarCollapsed ? 'w-16' : 'w-64'}`}>
+        <button 
+          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          className="absolute -right-3 top-20 bg-blue-600 text-white p-1.5 rounded-full shadow-lg shadow-blue-500/40 hover:bg-blue-500 transition-all z-[60] group"
+          title={isSidebarCollapsed ? "Expandir menu" : "Recolher menu"}
+        >
+          <svg className={`w-3 h-3 transition-transform duration-500 ${isSidebarCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7"></path>
+          </svg>
+        </button>
+
+        <div className="p-4 md:p-6 flex items-center border-b border-slate-800 overflow-hidden whitespace-nowrap">
+          <div className="flex items-center gap-3 w-full">
+            <div className="bg-blue-600 p-2 rounded-xl flex-shrink-0 shadow-lg shadow-blue-500/20">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            </div>
+            {!isSidebarCollapsed && (
+              <h1 className="text-lg font-black text-white tracking-tighter italic uppercase animate-fadeIn">Tagway</h1>
+            )}
+          </div>
         </div>
 
-        <div className="p-4 border-t border-slate-100 bg-white hidden md:block">
-          <button 
-            onClick={() => setIsAuthenticated(false)}
-            className="w-full flex items-center justify-center gap-2 text-[10px] text-slate-400 hover:text-red-500 transition-colors font-black uppercase py-2 tracking-widest"
-          >
-            Encerrar Sessão
+        <nav className="flex-1 p-3 space-y-2 mt-4 overflow-x-hidden custom-scrollbar">
+          <button onClick={() => setMainTab('calculadora')} title="Calculadora" className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all group relative ${mainTab === 'calculadora' ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/10' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}>
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+            {!isSidebarCollapsed && <span className="text-[11px] font-black uppercase tracking-widest whitespace-nowrap animate-fadeIn">Calculadora</span>}
+          </button>
+          <button onClick={() => setMainTab('configuracoes')} title="Catálogo NCM" className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all group relative ${mainTab === 'configuracoes' ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/10' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}>
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+            {!isSidebarCollapsed && <span className="text-[11px] font-black uppercase tracking-widest whitespace-nowrap animate-fadeIn">Catálogo NCM</span>}
+          </button>
+        </nav>
+
+        <div className="p-3 border-t border-slate-800">
+          <button onClick={() => setIsAuthenticated(false)} title="Sair" className="w-full flex items-center gap-3 p-3 rounded-xl text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition-all group">
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+            {!isSidebarCollapsed && <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap animate-fadeIn">Sair</span>}
           </button>
         </div>
       </aside>
-
-      {/* Main Content Area / Aba de Resultados */}
-      <main className={`
-        ${activeTab === 'results' ? 'flex' : 'hidden'} 
-        md:flex flex-1 flex-col overflow-y-auto custom-scrollbar relative bg-[#f8fafc]
-      `}>
-        {/* Desktop Header */}
-        <div className="bg-white border-b border-slate-200 px-8 py-4 hidden md:flex justify-between items-center sticky top-0 z-10">
-          <div className="flex items-center gap-4">
-            <h2 className="text-xs font-black text-blue-600 uppercase tracking-widest border-r border-slate-200 pr-4">Painel de Resultados</h2>
-            <div className="flex items-center gap-2">
-               <span className="h-2 w-2 bg-green-500 rounded-full"></span>
-               <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Simulação Ativa</span>
-            </div>
-          </div>
-          <div className="text-right">
-             <p className="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">Regime Ativo</p>
-             <p className="text-xs font-black text-slate-800 uppercase tracking-tight">
-               {inputs.mode === 'substituido' ? 'Substituição Tributária' : inputs.mode === 'reduzido' ? 'Redução' : 'Tributável'}
-             </p>
-          </div>
-        </div>
-
-        <div className="max-w-6xl mx-auto w-full p-4 md:p-8 space-y-8">
-          {/* Aba de Resultados mostra apenas composição e matriz no mobile conforme solicitado */}
-          <section className="animate-in fade-in slide-in-from-bottom-2 duration-500 pb-24 md:pb-12">
-            <ResultsTable results={results} priceMatrix={priceMatrix} inputs={inputs} />
-          </section>
-        </div>
-      </main>
-
-      {/* Barra de Navegação Mobile (Tab Bar) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex items-center h-16 z-40 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
-        <button 
-          onClick={() => setActiveTab('config')}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 h-full transition-colors ${activeTab === 'config' ? 'text-blue-600' : 'text-slate-400'}`}
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-          <span className="text-[10px] font-bold uppercase tracking-tighter">1. Ajustes & MVA</span>
-        </button>
-        <button 
-          onClick={() => setActiveTab('results')}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 h-full transition-colors ${activeTab === 'results' ? 'text-blue-600' : 'text-slate-400'}`}
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-          <span className="text-[10px] font-bold uppercase tracking-tighter">2. Resultados</span>
-        </button>
+      <div className="flex-1 flex flex-col overflow-hidden relative">
+        {renderContent()}
       </div>
     </div>
   );

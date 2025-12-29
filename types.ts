@@ -1,4 +1,6 @@
+
 export interface SimulationInputs {
+  nomeProduto: string;
   valorCompra: number;
   ipiFrete: number;
   mva: number;
@@ -13,14 +15,14 @@ export interface SimulationInputs {
   custosFixos: number;
   resultadoDesejado: number;
   tipoProduto?: string;
-  // Campos fiscais
   ufOrigem: string;
   ufDestino: string;
   ncmCodigo: string;
   mvaOriginal: number;
-  // Regimes
   mode: 'substituido' | 'tributado' | 'reduzido';
   percReducaoBase: number;
+  simulationMode: 'buyToSell' | 'sellToBuy';
+  precoVendaDesejado: number;
 }
 
 export interface SimulationResults {
@@ -30,13 +32,15 @@ export interface SimulationResults {
   creditoIcmsEntrada: number;
   stAPagar: number;
   basePisCofins: number;
-  creditoPisCofinsVenda?: number; 
   creditoPisCofinsValor: number;
   custoFinal: number;
   precoEquilibrio: number;
   precoVendaAlvo: number;
+  valorCompraMaximo?: number; // Para modo reverso
   totalDeducoesVendaPerc: number;
   icmsVendaEfetivo: number;
+  margemAbsoluta: number;
+  impostosTotais: number;
 }
 
 export interface NCMEntry {

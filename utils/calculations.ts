@@ -1,4 +1,5 @@
-import { SimulationInputs, SimulationResults } from '../types';
+
+import { SimulationInputs, SimulationResults } from '../types.ts';
 
 export const getInterstateRate = (origem: string, destino: string): number => {
   if (origem === destino) return 0;
@@ -66,9 +67,13 @@ export const calculateCosts = (inputs: SimulationInputs): SimulationResults => {
   }
 
   const deducoesSemMargem = pisCofinsVenda + comissaoVenda + icmsVendaEfetivo + outrosCustosVariaveis + custosFixos;
-  const precoEquilibrio = deducoesSemMargem < 100 ? custoFinal / ((100 - deducoesSemMargem) / 100) : 0;
   const totalDeducoesVendaPerc = deducoesSemMargem + resultadoDesejado;
+  
   const precoVendaAlvo = totalDeducoesVendaPerc < 100 ? custoFinal / ((100 - totalDeducoesVendaPerc) / 100) : 0;
+  const precoEquilibrio = deducoesSemMargem < 100 ? custoFinal / ((100 - deducoesSemMargem) / 100) : 0;
+  
+  const margemAbsoluta = precoVendaAlvo * (resultadoDesejado / 100);
+  const impostosTotais = stAPagar + (precoVendaAlvo * (icmsVendaEfetivo / 100)) + (precoVendaAlvo * (pisCofinsVenda / 100));
 
   return {
     valorTotalNota,
@@ -82,7 +87,9 @@ export const calculateCosts = (inputs: SimulationInputs): SimulationResults => {
     precoEquilibrio,
     precoVendaAlvo,
     totalDeducoesVendaPerc,
-    icmsVendaEfetivo
+    icmsVendaEfetivo,
+    margemAbsoluta,
+    impostosTotais
   };
 };
 

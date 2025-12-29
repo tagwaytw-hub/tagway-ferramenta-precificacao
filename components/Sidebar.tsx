@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { SimulationInputs } from '../types';
+import { SimulationInputs } from '../types.ts';
 
 interface SidebarProps {
   inputs: SimulationInputs;
@@ -19,7 +20,6 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
     }));
   };
 
-  // Matriz de Categorias: Produtos Técnicos corrigido e posicionado sob Curva C
   const productCategories = [
     { label: 'Commodity', value: 8, key: 'comod' },
     { label: 'Curva A', value: 10, key: 'curvaA' },
@@ -37,7 +37,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
   };
 
   return (
-    <div className="space-y-6 md:space-y-8 pb-32"> {/* pb-32 garante visibilidade no mobile acima da Tab Bar */}
+    <div className="space-y-6 md:space-y-8 pb-32">
       {/* Seletor de Regime */}
       <div>
         <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -69,7 +69,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
           <span className="h-px w-3 bg-slate-300"></span> 1. Valores de Compra
         </h3>
         <div className="space-y-3">
-          <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm transition-focus-within focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500">
+          <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
             <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-tight">Valor Mercadoria (R$)</label>
             <input
               type="number"
@@ -79,7 +79,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
               className="w-full text-base md:text-lg font-black text-slate-800 bg-transparent outline-none"
             />
           </div>
-          <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm transition-focus-within focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500">
+          <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
             <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-tight">IPI + Frete (R$)</label>
             <input
               type="number"
@@ -143,58 +143,6 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
           <span className="h-px w-3 bg-slate-300"></span> 3. Parâmetros de Venda
         </h3>
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-              <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-tight">ICMS Saída (%)</label>
-              <input
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                value={inputs.icmsVenda}
-                onChange={(e) => handleChange('icmsVenda', e.target.value)}
-                className="w-full text-sm font-black text-slate-800 bg-transparent outline-none"
-              />
-            </div>
-            {inputs.mode === 'reduzido' && (
-              <div className="bg-orange-50 p-3 rounded-xl border border-orange-200 shadow-sm">
-                <label className="block text-[9px] font-black text-orange-600 mb-1 uppercase tracking-tight">Redução (%)</label>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  step="0.01"
-                  value={inputs.percReducaoBase}
-                  onChange={(e) => handleChange('percReducaoBase', e.target.value)}
-                  className="w-full text-sm font-black text-orange-800 bg-transparent outline-none"
-                />
-              </div>
-            )}
-          </div>
-          
-          <div className="grid grid-cols-2 gap-3">
-             <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-                <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-tight">Comissão (%)</label>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  step="0.01"
-                  value={inputs.comissaoVenda}
-                  onChange={(e) => handleChange('comissaoVenda', e.target.value)}
-                  className="w-full text-sm font-black text-slate-800 bg-transparent outline-none"
-                />
-              </div>
-              <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-                <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-tight">Custos Fixos (%)</label>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  step="0.01"
-                  value={inputs.custosFixos}
-                  onChange={(e) => handleChange('custosFixos', e.target.value)}
-                  className="w-full text-sm font-black text-slate-800 bg-transparent outline-none"
-                />
-              </div>
-          </div>
-
           <div className="bg-indigo-600 p-4 rounded-2xl shadow-xl shadow-indigo-500/20 border border-indigo-500">
             <label className="block text-[9px] font-black text-indigo-100 mb-1 uppercase tracking-[0.1em] flex justify-between">
               <span>Net Margin Alvo (%)</span>
