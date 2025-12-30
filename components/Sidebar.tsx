@@ -36,25 +36,25 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
   };
 
   return (
-    <div className="space-y-6 md:space-y-8 pb-32">
+    <div className="space-y-6 md:space-y-8">
       {/* Seletor de Regime */}
       <div>
         <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-          <span className="h-px w-3 bg-slate-300"></span> 0. Regime Tributável
+          <span className="h-px w-4 bg-slate-300"></span> Regime Tributário
         </h2>
-        <div className="grid grid-cols-1 gap-2">
+        <div className="flex flex-col gap-2">
           {[
-            { id: 'substituido', label: 'Substituição Tributária (ST)' },
-            { id: 'tributado', label: 'Tributável' },
-            { id: 'reduzido', label: 'Redução' },
+            { id: 'substituido', label: 'ST (Substituição Tributária)' },
+            { id: 'tributado', label: 'Tributação Integral' },
+            { id: 'reduzido', label: 'Redução de Base' },
           ].map(item => (
             <button
               key={item.id}
               onClick={() => handleModeChange(item.id as any)}
-              className={`px-4 py-4 rounded-xl border text-[11px] font-black transition-all text-left active:scale-[0.98] ${
+              className={`px-4 py-4 rounded-xl border text-[11px] font-black transition-all text-left shadow-sm active:scale-[0.98] ${
                 inputs.mode === item.id
-                  ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20'
-                  : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'
+                  ? 'bg-blue-600 border-blue-600 text-white shadow-blue-500/20 shadow-lg'
+                  : 'bg-white border-slate-200 text-slate-600'
               }`}
             >
               {item.label}
@@ -65,27 +65,27 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
 
       <div>
         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-          <span className="h-px w-3 bg-slate-300"></span> 1. Valores de Compra
+          <span className="h-px w-4 bg-slate-300"></span> Valores de Entrada
         </h3>
-        <div className="space-y-3">
-          <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-            <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-tight">Valor Mercadoria (R$)</label>
+        <div className="grid grid-cols-1 gap-3">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+            <label className="block text-[9px] font-black text-slate-400 mb-1 uppercase tracking-tight">Valor da Mercadoria (R$)</label>
             <input
               type="number"
               inputMode="decimal"
               value={inputs.valorCompra}
               onChange={(e) => handleChange('valorCompra', e.target.value)}
-              className="w-full text-base md:text-lg font-black text-slate-800 bg-transparent outline-none"
+              className="w-full text-xl font-black text-slate-800 bg-transparent outline-none"
             />
           </div>
-          <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-            <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-tight">IPI + Frete (R$)</label>
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+            <label className="block text-[9px] font-black text-slate-400 mb-1 uppercase tracking-tight">IPI + Frete Estimado (R$)</label>
             <input
               type="number"
               inputMode="decimal"
               value={inputs.ipiFrete}
               onChange={(e) => handleChange('ipiFrete', e.target.value)}
-              className="w-full text-base md:text-lg font-black text-slate-800 bg-transparent outline-none"
+              className="w-full text-xl font-black text-slate-800 bg-transparent outline-none"
             />
           </div>
         </div>
@@ -93,59 +93,13 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
 
       <div>
         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-          <span className="h-px w-3 bg-slate-300"></span> 2. Créditos & MVA
+          <span className="h-px w-4 bg-slate-300"></span> Parâmetros de Venda
         </h3>
-        <div className="space-y-3">
-          {inputs.mode === 'substituido' && (
-            <div className="bg-blue-50 p-3 rounded-xl border border-blue-200 shadow-sm">
-              <label className="block text-[9px] font-black text-blue-600 mb-1 uppercase tracking-tight">MVA Final Ajustada (%)</label>
-              <input
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                value={inputs.mva}
-                onChange={(e) => handleChange('mva', e.target.value)}
-                className="w-full text-base md:text-lg font-black text-blue-800 bg-transparent outline-none"
-              />
-            </div>
-          )}
-          
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-              <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-tight">ICMS Int. (%)</label>
-              <input
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                value={inputs.icmsInterestadual}
-                onChange={(e) => handleChange('icmsInterestadual', e.target.value)}
-                className="w-full text-sm font-black text-slate-800 bg-transparent outline-none"
-              />
-            </div>
-            <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-              <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-tight">PIS/COF (%)</label>
-              <input
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                value={inputs.pisCofinsRate}
-                onChange={(e) => handleChange('pisCofinsRate', e.target.value)}
-                className="w-full text-sm font-black text-slate-800 bg-transparent outline-none"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-          <span className="h-px w-3 bg-slate-300"></span> 3. Parâmetros de Venda
-        </h3>
-        <div className="space-y-3">
-          <div className="bg-indigo-600 p-4 rounded-2xl shadow-xl shadow-indigo-500/20 border border-indigo-500">
-            <label className="block text-[9px] font-black text-indigo-100 mb-1 uppercase tracking-[0.1em] flex justify-between">
-              <span>Net Margin Alvo (%)</span>
-              <span className="opacity-50 tracking-tighter italic font-normal">Resultado</span>
+        <div className="space-y-4">
+          <div className="bg-indigo-600 p-5 rounded-3xl shadow-xl shadow-indigo-500/30 border border-indigo-400/30">
+            <label className="block text-[9px] font-black text-indigo-100 mb-1 uppercase tracking-widest flex justify-between items-center">
+              <span>Resultado Alvo (%)</span>
+              <span className="text-[8px] bg-indigo-500/50 px-2 py-0.5 rounded uppercase">Net Margin</span>
             </label>
             <input
               type="number"
@@ -153,29 +107,29 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
               step="0.01"
               value={inputs.resultadoDesejado}
               onChange={(e) => handleChange('resultadoDesejado', e.target.value)}
-              className="w-full text-xl font-black text-white bg-transparent outline-none"
+              className="w-full text-2xl font-black text-white bg-transparent outline-none"
             />
           </div>
         </div>
       </div>
 
-      <div className="pb-4">
+      <div>
         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-          <span className="h-px w-3 bg-slate-300"></span> 4. Matriz de Categorias
+          <span className="h-px w-4 bg-slate-300"></span> Matriz de Margens
         </h3>
         <div className="grid grid-cols-1 gap-2">
           {productCategories.map((type) => (
             <button
               key={type.key}
               onClick={() => handleCategorySelect(type)}
-              className={`text-left px-5 py-4 rounded-xl border transition-all flex justify-between items-center group active:scale-[0.98] ${
+              className={`text-left px-5 py-4 rounded-2xl border transition-all flex justify-between items-center active:scale-[0.98] ${
                 inputs.tipoProduto === type.key
                   ? 'bg-slate-800 border-slate-800 text-white shadow-lg'
-                  : 'bg-white border-slate-200 text-slate-700 hover:border-slate-400'
+                  : 'bg-white border-slate-200 text-slate-700'
               }`}
             >
               <span className="font-black text-[11px] uppercase tracking-tight">{type.label}</span>
-              <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
+              <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg ${
                 inputs.tipoProduto === type.key ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-500'
               }`}>
                 {type.value}%

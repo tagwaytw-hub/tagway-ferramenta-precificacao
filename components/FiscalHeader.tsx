@@ -73,53 +73,53 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
   }, []);
 
   return (
-    <div className="bg-[#1a2332] text-white p-4 md:p-6 rounded-2xl shadow-xl border border-slate-700">
-      <div className="mb-6">
-        <label className="block text-[9px] md:text-[10px] uppercase font-black text-blue-400 mb-1.5 tracking-wider">Identificação do Item (Nome Comercial)</label>
+    <div className="bg-[#1a2332] text-white p-5 rounded-2xl shadow-xl border border-slate-700">
+      <div className="mb-5">
+        <label className="block text-[9px] uppercase font-black text-blue-400 mb-1.5 tracking-wider">Nome Comercial / Produto</label>
         <input 
           type="text"
           value={inputs.nomeProduto}
           onChange={(e) => setInputs(prev => ({ ...prev, nomeProduto: e.target.value }))}
-          placeholder="Ex: Piso Porcelanato Bege 60x60"
-          className="w-full bg-[#0f172a] border border-slate-600 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-500 transition-colors placeholder:text-slate-700 font-medium"
+          placeholder="Ex: Piso Porcelanato 60x60"
+          className="w-full bg-[#0f172a] border border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 transition-colors placeholder:text-slate-700 font-medium"
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
+      <div className="grid grid-cols-2 gap-4 mb-5">
         <div className="group">
-          <label className="block text-[9px] md:text-[10px] uppercase font-black text-slate-400 mb-1.5 tracking-wider group-focus-within:text-blue-400 transition-colors">UF de Origem</label>
+          <label className="block text-[9px] uppercase font-black text-slate-400 mb-1.5 tracking-wider">Origem</label>
           <div className="relative">
             <select 
               value={inputs.ufOrigem}
               onChange={(e) => handleUfChange('ufOrigem', e.target.value)}
-              className="w-full bg-[#0f172a] border border-slate-600 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-blue-500 transition-colors cursor-pointer appearance-none"
+              className="w-full bg-[#0f172a] border border-slate-600 rounded-xl px-3 py-3 text-sm outline-none focus:border-blue-500 appearance-none"
             >
-              {UF_LIST.map(uf => <option key={uf.sigla} value={uf.sigla}>{uf.nome} ({uf.sigla})</option>)}
+              {UF_LIST.map(uf => <option key={uf.sigla} value={uf.sigla}>{uf.sigla} - {uf.nome}</option>)}
             </select>
             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
             </div>
           </div>
         </div>
         <div className="group">
-          <label className="block text-[9px] md:text-[10px] uppercase font-black text-slate-400 mb-1.5 tracking-wider group-focus-within:text-blue-400 transition-colors">UF de Destino</label>
+          <label className="block text-[9px] uppercase font-black text-slate-400 mb-1.5 tracking-wider">Destino</label>
           <div className="relative">
             <select 
               value={inputs.ufDestino}
               onChange={(e) => handleUfChange('ufDestino', e.target.value)}
-              className="w-full bg-[#0f172a] border border-slate-600 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-blue-500 transition-colors cursor-pointer appearance-none"
+              className="w-full bg-[#0f172a] border border-slate-600 rounded-xl px-3 py-3 text-sm outline-none focus:border-blue-500 appearance-none"
             >
-              {UF_LIST.map(uf => <option key={uf.sigla} value={uf.sigla}>{uf.nome} ({uf.sigla})</option>)}
+              {UF_LIST.map(uf => <option key={uf.sigla} value={uf.sigla}>{uf.sigla} - {uf.nome}</option>)}
             </select>
             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="mb-6 relative" ref={suggestionRef}>
-        <label className="block text-[9px] md:text-[10px] uppercase font-black text-slate-400 mb-1.5 tracking-wider">Classificação NCM 2025</label>
+      <div className="mb-5 relative" ref={suggestionRef}>
+        <label className="block text-[9px] uppercase font-black text-slate-400 mb-1.5 tracking-wider">Classificação NCM</label>
         <div className="relative">
           <input 
             type="text"
@@ -130,52 +130,52 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
             }}
             onFocus={() => setShowSuggestions(true)}
             placeholder="Pesquisar NCM..."
-            className="w-full bg-[#0f172a] border border-slate-600 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:border-blue-500 transition-colors placeholder:text-slate-600"
+            className="w-full bg-[#0f172a] border border-slate-600 rounded-xl pl-10 pr-4 py-3 text-sm outline-none focus:border-blue-500 transition-colors"
           />
           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
           </div>
         </div>
 
         {showSuggestions && (
-          <div className="absolute z-50 w-full mt-1 bg-[#1e293b] border border-slate-600 rounded-xl shadow-2xl max-h-60 overflow-y-auto custom-scrollbar">
+          <div className="absolute z-50 w-full mt-2 bg-[#1e293b] border border-slate-600 rounded-2xl shadow-2xl max-h-60 overflow-y-auto custom-scrollbar">
             {filteredNcms.length > 0 ? (
               filteredNcms.map((ncm) => (
                 <div 
                   key={ncm.codigo}
                   onClick={() => selectNcm(ncm)}
-                  className="px-4 py-3 hover:bg-blue-600 cursor-pointer border-b border-slate-700/50 last:border-0 transition-colors group active:bg-blue-700"
+                  className="px-4 py-4 hover:bg-blue-600 cursor-pointer border-b border-slate-700/50 last:border-0 active:bg-blue-700"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-black text-blue-300 group-hover:text-white">{ncm.codigo}</span>
-                    <span className="text-[9px] bg-slate-700 px-2 py-0.5 rounded font-black text-slate-300 group-hover:bg-blue-500">MVA: {ncm.mvaOriginal}%</span>
+                    <span className="text-xs font-black text-blue-300 group-hover:text-white tracking-wider">{ncm.codigo}</span>
+                    <span className="text-[8px] bg-slate-700 px-2 py-0.5 rounded font-black text-slate-300">MVA: {ncm.mvaOriginal}%</span>
                   </div>
-                  <div className="text-[11px] text-slate-400 group-hover:text-blue-100 mt-1 line-clamp-1">{ncm.descricao}</div>
+                  <div className="text-[10px] text-slate-400 mt-1 line-clamp-1">{ncm.descricao}</div>
                 </div>
               ))
             ) : (
-              <div className="px-4 py-8 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest italic">
-                Nenhum resultado
+              <div className="px-4 py-8 text-center text-slate-500 text-[10px] font-bold uppercase italic">
+                Nenhum NCM encontrado
               </div>
             )}
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-700/50">
-        <div className="space-y-2">
-          <h4 className="text-[9px] md:text-[10px] font-black text-blue-400 uppercase tracking-widest">ICMS Interestadual</h4>
-          <div className="flex justify-between items-center bg-[#0f172a] p-2 rounded-lg border border-slate-700/50">
-            <span className="text-[10px] text-slate-400 font-bold uppercase">{inputs.ufOrigem} → {inputs.ufDestino}</span>
-            <span className="text-sm font-black text-blue-300">{inputs.icmsInterestadual}%</span>
+      <div className="grid grid-cols-1 gap-3 pt-4 border-t border-slate-700/50">
+        <div className="flex justify-between items-center bg-[#0f172a] p-3 rounded-xl border border-slate-700/50">
+          <div className="flex flex-col">
+            <span className="text-[8px] font-black text-slate-500 uppercase">Interestadual</span>
+            <span className="text-[10px] text-slate-300 font-bold uppercase">{inputs.ufOrigem} ➔ {inputs.ufDestino}</span>
           </div>
+          <span className="text-sm font-black text-blue-400">{inputs.icmsInterestadual}%</span>
         </div>
-        <div className="space-y-2">
-          <h4 className="text-[9px] md:text-[10px] font-black text-orange-400 uppercase tracking-widest">MVA Ajustada (2025)</h4>
-          <div className="flex justify-between items-center bg-[#0f172a] p-2 rounded-lg border border-slate-700/50">
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Cálculo Dinâmico</span>
-            <span className="text-sm font-black text-orange-500">{inputs.mva.toFixed(2).replace('.', ',')}%</span>
+        <div className="flex justify-between items-center bg-[#0f172a] p-3 rounded-xl border border-slate-700/50">
+          <div className="flex flex-col">
+            <span className="text-[8px] font-black text-slate-500 uppercase">MVA Ajustada 2025</span>
+            <span className="text-[10px] text-slate-300 font-bold uppercase italic">Recálculo Dinâmico</span>
           </div>
+          <span className="text-sm font-black text-orange-400">{inputs.mva.toFixed(2).replace('.', ',')}%</span>
         </div>
       </div>
     </div>
