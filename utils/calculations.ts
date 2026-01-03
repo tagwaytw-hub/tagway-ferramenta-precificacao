@@ -1,3 +1,4 @@
+
 import { SimulationInputs, SimulationResults } from '../types';
 
 export const getInterstateRate = (origem: string, destino: string): number => {
@@ -9,7 +10,7 @@ export const getInterstateRate = (origem: string, destino: string): number => {
 };
 
 export const calculateAdjustedMva = (mvaOriginal: number, alqInter: number, alqIntra: number): number => {
-  if (alqInter === 0) return mvaOriginal;
+  if (alqInter === 0 || alqInter >= alqIntra) return mvaOriginal;
   const mvaOriginalDecimal = mvaOriginal / 100;
   const alqInterDecimal = alqInter / 100;
   const alqIntraDecimal = alqIntra / 100;
@@ -36,56 +37,70 @@ export const calculateCosts = (inputs: SimulationInputs): SimulationResults => {
     percReducaoBase
   } = inputs;
 
+  // 1. Valor da Nota e ICMS Próprio (Operação Própria do Fornecedor)
   const valorTotalNota = valorCompra + ipiFrete;
-  const creditoIcmsEntrada = valorCompra * (icmsInterestadual / 100);
+  // O ICMS próprio incide sobre o valor da mercadoria (valorCompra)
+  const valorIcmsProprio = valorCompra * (icmsInterestadual / 100);
   
   let stAPagar = 0;
   let baseCalculoSt = 0;
   let icmsStBruto = 0;
   
   if (mode === 'substituido') {
+    // Base ST inclui Mercadoria + IPI + Frete e aplica a MVA
     baseCalculoSt = valorTotalNota * (1 + mva / 100);
     icmsStBruto = baseCalculoSt * (icmsInternoDestino / 100);
-    stAPagar = Math.max(0, icmsStBruto - creditoIcmsEntrada);
+    
+    // CORREÇÃO: ICMS ST = (Base ST * Alíq. Interna Destino) - ICMS Operação Própria
+    stAPagar = Math.max(0, icmsStBruto - valorIcmsProprio);
   }
 
+  // 2. Créditos Tributários Entrada (PIS/COFINS)
   let basePisCofins = valorCompra;
-  if (excluirIcmsPis) basePisCofins = valorCompra - creditoIcmsEntrada;
+  if (excluirIcmsPis) basePisCofins = valorCompra - valorIcmsProprio;
   const creditoPisCofinsValor = basePisCofins * (pisCofinsRate / 100);
 
+  // 3. Determinação do Custo Final Líquido (Break-even para o revendedor)
   let custoFinal = 0;
   if (mode === 'substituido') {
+    // Para o varejista substituído, o ST pago na entrada é custo, pois a saída é desonerada.
     custoFinal = valorTotalNota + stAPagar - creditoPisCofinsValor;
   } else {
-    custoFinal = valorTotalNota - creditoIcmsEntrada - creditoPisCofinsValor;
+    // Regime Débito/Crédito normal: Abate o ICMS da própria entrada pois gerará débito na saída
+    custoFinal = valorTotalNota - valorIcmsProprio - creditoPisCofinsValor;
   }
 
+  // 4. Alíquota de Saída Efetiva
   let icmsVendaEfetivo = icmsVenda;
-  if (mode === 'reduzido') {
+  if (mode === 'substituido') {
+    icmsVendaEfetivo = 0; // Saída isenta/não tributada por já ter pago ST
+  } else if (mode === 'reduzido') {
     icmsVendaEfetivo = icmsVenda * (1 - (percReducaoBase / 100));
   }
 
-  const deducoesSemMargem = pisCofinsVenda + comissaoVenda + icmsVendaEfetivo + outrosCustosVariaveis + custosFixos;
-  const totalDeducoesVendaPerc = deducoesSemMargem + resultadoDesejado;
+  // 5. Cálculo do Preço de Venda (Markup Inside Price)
+  const deducoesVendaPerc = pisCofinsVenda + comissaoVenda + icmsVendaEfetivo + outrosCustosVariaveis + custosFixos;
+  const divisor = (100 - (deducoesVendaPerc + resultadoDesejado)) / 100;
   
-  const precoVendaAlvo = totalDeducoesVendaPerc < 100 ? custoFinal / ((100 - totalDeducoesVendaPerc) / 100) : 0;
-  const precoEquilibrio = deducoesSemMargem < 100 ? custoFinal / ((100 - deducoesSemMargem) / 100) : 0;
-  
+  const precoVendaAlvo = divisor > 0 ? custoFinal / divisor : 0;
   const margemAbsoluta = precoVendaAlvo * (resultadoDesejado / 100);
+  const precoEquilibrio = (100 - deducoesVendaPerc) > 0 ? custoFinal / ((100 - deducoesVendaPerc) / 100) : 0;
+  
+  // Total de impostos pagos na cadeia (Nesta etapa)
   const impostosTotais = stAPagar + (precoVendaAlvo * (icmsVendaEfetivo / 100)) + (precoVendaAlvo * (pisCofinsVenda / 100));
 
   return {
     valorTotalNota,
     baseCalculoSt,
     icmsStBruto,
-    creditoIcmsEntrada,
+    creditoIcmsEntrada: valorIcmsProprio,
     stAPagar,
     basePisCofins,
     creditoPisCofinsValor,
     custoFinal,
     precoEquilibrio,
     precoVendaAlvo,
-    totalDeducoesVendaPerc,
+    totalDeducoesVendaPerc: deducoesVendaPerc + resultadoDesejado,
     icmsVendaEfetivo,
     margemAbsoluta,
     impostosTotais
@@ -94,41 +109,33 @@ export const calculateCosts = (inputs: SimulationInputs): SimulationResults => {
 
 export const generatePriceMatrix = (custoFinal: number, inputs: SimulationInputs): any => {
   const { mode, percReducaoBase, icmsVenda } = inputs;
-  const icmsVendaEfetivo = mode === 'reduzido' ? icmsVenda * (1 - (percReducaoBase / 100)) : icmsVenda;
+  let icmsVendaEfetivo = mode === 'substituido' ? 0 : (mode === 'reduzido' ? icmsVenda * (1 - inputs.percReducaoBase / 100) : icmsVenda);
+  
   const baseDeducoes = inputs.pisCofinsVenda + inputs.comissaoVenda + icmsVendaEfetivo + inputs.outrosCustosVariaveis + inputs.custosFixos;
   
   const categorias = [
-    { label: 'Comod.', margin: 8 },
+    { label: 'Estratégico', margin: 8 },
     { label: 'Curva A', margin: 10 },
-    { label: 'Curva B', margin: 11 },
-    { label: 'Curva C', margin: 12 },
-    { label: 'Produtos Técnicos', margin: 15 }
+    { label: 'Curva B', margin: 12 },
+    { label: 'Curva C', margin: 15 },
+    { label: 'Serviço/Espec.', margin: 20 }
   ];
 
-  const getPrice = (margin: number) => {
-    const total = baseDeducoes + margin;
-    return total < 100 ? custoFinal / ((100 - total) / 100) : 0;
-  };
-
   return categorias.map(cat => {
-    const basePrice = getPrice(cat.margin);
+    const total = baseDeducoes + cat.margin;
+    const basePrice = total < 100 ? custoFinal / ((100 - total) / 100) : 0;
     return {
       label: cat.label,
       margin: cat.margin,
       levels: {
         A: basePrice * 0.95,
         B: basePrice,
-        C: basePrice * 1.111,
-        D: basePrice * 1.1765
+        C: basePrice * 1.05,
+        D: basePrice * 1.15
       }
     };
   });
 };
 
-export const formatCurrency = (val: number) => {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-};
-
-export const formatPercent = (val: number) => {
-  return new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 2 }).format(val / 100);
-};
+export const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+export const formatPercent = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 2 }).format(val / 100);

@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { SimulationResults, SimulationInputs } from '../types';
-import { formatCurrency, formatPercent } from '../utils/calculations';
+import { formatCurrency } from '../utils/calculations';
 
 interface ResultsTableProps {
   results: SimulationResults;
@@ -8,177 +9,123 @@ interface ResultsTableProps {
   inputs: SimulationInputs;
 }
 
-const MetricCard: React.FC<{ label: string; value: string; subValue?: string; delta?: string; color?: string }> = ({ label, value, subValue, delta, color = "blue" }) => (
-  <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between transition-transform active:scale-[0.98]">
-    <p className="text-[9px] md:text-sm text-slate-500 font-black uppercase tracking-widest mb-1">{label}</p>
-    <div>
-      <h3 className={`text-lg md:text-2xl font-black text-slate-800 tracking-tight`}>{value}</h3>
-      {subValue && <p className="text-[8px] md:text-xs text-slate-400 font-bold uppercase mt-0.5 tracking-tighter">{subValue}</p>}
-    </div>
-    {delta && (
-      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-lg mt-2 w-fit tracking-widest ${
-        color === 'red' ? 'bg-red-50 text-red-600' : 
-        color === 'green' ? 'bg-green-50 text-green-600' : 
-        'bg-blue-50 text-blue-600'
-      }`}>
-        {delta}
-      </span>
-    )}
-  </div>
-);
-
-const PriceBreakdown: React.FC<{ results: SimulationResults; inputs: SimulationInputs }> = ({ results, inputs }) => {
-  const total = results.precoVendaAlvo;
-  if (!total) return null;
-
-  const custoPerc = (results.custoFinal / total) * 100;
-  const impostoPerc = (results.impostosTotais / total) * 100;
-  const margemPerc = (results.margemAbsoluta / total) * 100;
-
-  return (
-    <div className="bg-white p-5 md:p-6 rounded-3xl border border-slate-200 shadow-sm mt-6 md:mt-8">
-      <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4">Composição Analítica</h3>
-      <div className="flex h-10 md:h-12 w-full rounded-2xl overflow-hidden shadow-inner bg-slate-100">
-        <div style={{ width: `${custoPerc}%` }} className="bg-slate-800 h-full transition-all duration-500"></div>
-        <div style={{ width: `${impostoPerc}%` }} className="bg-red-500 h-full transition-all duration-500"></div>
-        <div style={{ width: `${margemPerc}%` }} className="bg-green-500 h-full transition-all duration-500"></div>
-      </div>
-      <div className="grid grid-cols-3 gap-2 mt-4 md:mt-6">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-slate-800"></div>
-            <span className="text-[8px] font-black text-slate-500 uppercase">Custo</span>
-          </div>
-          <span className="text-xs md:text-sm font-black text-slate-800">{custoPerc.toFixed(1)}%</span>
-        </div>
-        <div className="flex flex-col">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
-            <span className="text-[8px] font-black text-slate-500 uppercase">Fisco</span>
-          </div>
-          <span className="text-xs md:text-sm font-black text-red-600">{impostoPerc.toFixed(1)}%</span>
-        </div>
-        <div className="flex flex-col">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-            <span className="text-[8px] font-black text-slate-500 uppercase">Lucro</span>
-          </div>
-          <span className="text-xs md:text-sm font-black text-green-600">{margemPerc.toFixed(1)}%</span>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const ResultsTable: React.FC<ResultsTableProps> = ({ results, priceMatrix, inputs }) => {
-  const pisCofinsValor = results.precoVendaAlvo * (inputs.pisCofinsVenda / 100);
-  const comissaoValor = results.precoVendaAlvo * (inputs.comissaoVenda / 100);
-  const icmsVendaValor = results.precoVendaAlvo * (results.icmsVendaEfetivo / 100);
-  const outrosVariaveisValor = results.precoVendaAlvo * (inputs.outrosCustosVariaveis / 100);
-  const custosFixosValor = results.precoVendaAlvo * (inputs.custosFixos / 100);
-  const margemValor = results.precoVendaAlvo * (inputs.resultadoDesejado / 100);
-
-  const totalCustoVenda = pisCofinsValor + comissaoValor + icmsVendaValor + outrosVariaveisValor + custosFixosValor + margemValor;
-
-  const exportToWhatsApp = () => {
-    const nomeExibicao = inputs.nomeProduto.trim() || `Item NCM ${inputs.ncmCodigo}`;
-    const text = `*SIMULAÇÃO FISCAL - TAGWAY*%0A%0A` +
-      `*Item:* ${nomeExibicao}%0A` +
-      `*NCM:* ${inputs.ncmCodigo}%0A` +
-      `*Rota:* ${inputs.ufOrigem} ➔ ${inputs.ufDestino}%0A%0A` +
-      `*Custo Líquido:* ${formatCurrency(results.custoFinal)}%0A` +
-      `*Margem Alvo:* ${inputs.resultadoDesejado}%%0A` +
-      `----------------------------%0A` +
-      `*PREÇO DE VENDA:* ${formatCurrency(results.precoVendaAlvo)}%0A` +
-      `----------------------------%0A%0A` +
-      `_Gerado por Tagway Technology 2025_`;
-    window.open(`https://wa.me/?text=${text}`, '_blank');
-  };
+  const totalWeight = results.custoFinal + results.impostosTotais + results.margemAbsoluta;
+  const pCusto = (results.custoFinal / totalWeight) * 100;
+  const pFisco = (results.impostosTotais / totalWeight) * 100;
+  const pLucro = (results.margemAbsoluta / totalWeight) * 100;
 
   return (
-    <div className="space-y-6 pb-20">
-      {/* Grid de Métricas (Agora visível no Mobile 2x2) */}
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <MetricCard label="Total NF" value={formatCurrency(results.valorTotalNota)} subValue="Base NF-e" />
-        {inputs.mode === 'substituido' ? (
-          <MetricCard label="ICMS-ST" value={formatCurrency(results.stAPagar)} delta="Débito ST" color="red" />
-        ) : (
-          <MetricCard label="Crédito ICMS" value={formatCurrency(results.creditoIcmsEntrada)} delta="Ativo" color="green" />
-        )}
-        <MetricCard label="Créd. PIS/COF" value={formatCurrency(results.creditoPisCofinsValor)} delta="Ativo" color="green" />
-        <MetricCard label="CUSTO LÍQ." value={formatCurrency(results.custoFinal)} delta="Referência" color="blue" />
+    <div className="space-y-10">
+      {/* Hero KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <KPIBox label="Total NF-e" value={results.valorTotalNota} sub="Base Bruta" />
+        <KPIBox label="Créditos Fiscais" value={results.creditoIcmsEntrada + results.creditoPisCofinsValor} sub="Ativo Recuperável" color="text-blue-600" />
+        <KPIBox label="Impostos Saída" value={results.impostosTotais} sub="Carga Tributária" color="text-rose-500" />
+        <KPIBox label="Custo Líquido" value={results.custoFinal} sub="Break Even" color="text-slate-900" />
       </div>
 
-      <div className="bg-white rounded-3xl shadow-lg border border-slate-200 overflow-hidden">
-        <div className="bg-slate-100 p-4 flex justify-between items-center px-5">
-          <span className="font-black text-slate-800 uppercase tracking-widest text-[9px] md:text-[10px]">Detalhamento de Saída</span>
-          <button 
-            onClick={exportToWhatsApp}
-            className="bg-green-500 text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest hover:bg-green-600 transition-colors flex items-center gap-2 shadow-lg shadow-green-500/20"
-          >
-            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.417-.003 6.557-5.338 11.892-11.893 11.892-1.997-.001-3.951-.5-5.688-1.448l-6.305 1.652zm6.599-3.835c1.544.917 3.51 1.403 5.316 1.404h.002c5.451 0 9.886-4.435 9.889-9.886.002-2.642-1.029-5.126-2.902-7c-1.874-1.874-4.359-2.905-7.002-2.907h-.002c-5.451 0-9.886 4.436-9.889 9.888 0 1.875.522 3.706 1.512 5.31l-.994 3.635 3.725-.977z"/></svg>
-            <span className="hidden sm:inline">Compartilhar</span>
-          </button>
-        </div>
-        <div className="p-4 md:p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-10">
-            {[
-              { label: 'PIS / COF (Saída)', val: pisCofinsValor, red: false },
-              { label: `ICMS Venda ${inputs.mode === 'reduzido' ? '(Efetivo)' : ''}`, val: icmsVendaValor, red: inputs.mode === 'reduzido' },
-              { label: 'Comissão de Venda', val: comissaoValor, red: false },
-              { label: 'Custos Fixos Op.', val: custosFixosValor, red: false },
-              { label: 'Resultado Líquido Alvo', val: margemValor, red: false, indigo: true },
-              { label: 'Total Deduções', val: totalCustoVenda, red: true, bold: true },
-            ].map((item, i) => (
-              <div key={i} className="flex justify-between items-center border-b border-slate-100 py-3.5 last:md:border-b last:border-0">
-                <span className={`text-[10px] font-bold uppercase tracking-tight ${item.red && !item.indigo ? 'text-red-500' : item.indigo ? 'text-indigo-600' : 'text-slate-500'}`}>
-                  {item.label}
-                </span>
-                <span className={`font-mono text-xs font-black ${item.red && !item.indigo ? 'text-red-600' : item.indigo ? 'text-indigo-700' : 'text-slate-900'}`}>
-                  {formatCurrency(item.val)}
-                </span>
+      {/* Sugestão de Preço Principal */}
+      <section className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-2xl shadow-blue-500/5 group">
+        <div className="flex flex-col lg:flex-row">
+          <div className="flex-1 p-8 md:p-12 space-y-8">
+            <header className="flex justify-between items-center">
+              <div>
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Proposta Comercial</h3>
+                <h4 className="text-2xl font-black text-slate-800 tracking-tighter mt-1">Sugerido para {inputs.resultadoDesejado}% Net</h4>
               </div>
-            ))}
-          </div>
-
-          <div className="bg-indigo-600 p-5 text-white flex flex-col justify-center items-center rounded-2xl shadow-xl shadow-indigo-500/20 gap-1 mt-4">
-            <span className="font-black text-[9px] uppercase tracking-[0.2em] text-indigo-200">Preço de Venda Sugerido</span>
-            <span className="text-2xl md:text-3xl font-black tracking-tight">{formatCurrency(results.precoVendaAlvo)}</span>
-          </div>
-        </div>
-      </div>
-
-      <PriceBreakdown results={results} inputs={inputs} />
-
-      <div className="space-y-4">
-        <div className="flex items-center gap-3 px-1">
-          <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Matriz Dinâmica</h3>
-          <div className="h-px flex-1 bg-slate-200"></div>
-        </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 overflow-x-hidden pb-10">
-          {priceMatrix.map((cat: any, idx: number) => (
-            <div key={idx} className="flex flex-col border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
-              <div className="bg-slate-100 text-slate-600 text-center py-2 font-black text-[9px] uppercase tracking-tighter border-b border-slate-200">
-                {cat.label}
+              <div className="bg-blue-50 text-blue-600 p-4 rounded-3xl group-hover:scale-110 transition-transform">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               </div>
-              {[
-                { l: 'A', bg: 'bg-[#C0504D]', cell: 'bg-[#F2DCDB]' },
-                { l: 'B', bg: 'bg-[#EBC11F]', cell: 'bg-[#FFF9E5]' },
-                { l: 'C', bg: 'bg-[#00B0F0]', cell: 'bg-[#EBF7FF]' },
-                { l: 'D', bg: 'bg-[#92D050]', cell: 'bg-[#F4F9EB]' },
-              ].map(row => (
-                <div key={row.l} className="flex border-b border-slate-100 last:border-0">
-                  <div className={`w-8 ${row.bg} flex items-center justify-center font-black text-white text-[10px]`}>{row.l}</div>
-                  <div className={`flex-1 ${row.cell} py-2.5 px-2 text-right font-black text-slate-800 text-[10px]`}>{formatCurrency(cat.levels[row.l]).replace('R$', '')}</div>
-                </div>
-              ))}
+            </header>
+
+            <div className="bg-blue-600 rounded-[2rem] p-10 md:p-14 text-white text-center shadow-xl shadow-blue-600/20 group">
+              <span className="text-[10px] font-black uppercase tracking-[0.5em] opacity-60">Valor Unitário Alvo</span>
+              <div className="text-6xl md:text-7xl font-black font-mono tracking-tighter mt-4 leading-none">{formatCurrency(results.precoVendaAlvo)}</div>
+            </div>
+
+            {/* Composição Analítica */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-end">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estrutura de Preço</span>
+                <span className="text-[10px] font-black text-slate-800 uppercase bg-slate-100 px-3 py-1 rounded-full">100% Volume</span>
+              </div>
+              <div className="w-full h-4 bg-slate-100 rounded-full flex overflow-hidden">
+                <div style={{ width: `${pCusto}%` }} className="h-full bg-slate-900 transition-all duration-700"></div>
+                <div style={{ width: `${pFisco}%` }} className="h-full bg-rose-500 transition-all duration-700"></div>
+                <div style={{ width: `${pLucro}%` }} className="h-full bg-emerald-500 transition-all duration-700"></div>
+              </div>
+              <div className="flex flex-wrap gap-6 pt-2">
+                <CompositionLabel dot="bg-slate-900" label="Custo" perc={pCusto} />
+                <CompositionLabel dot="bg-rose-500" label="Impostos" perc={pFisco} />
+                <CompositionLabel dot="bg-emerald-500" label="Lucro Net" perc={pLucro} />
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-slate-50 border-l border-slate-200 p-8 md:p-12 lg:w-[400px] flex flex-col justify-center gap-6">
+            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200 pb-4">Detalhamento</h5>
+            <DetailRow label="ICMS de Saída" value={results.precoVendaAlvo * (results.icmsVendaEfetivo / 100)} />
+            <DetailRow label="PIS/COFINS Venda" value={results.precoVendaAlvo * (inputs.pisCofinsVenda / 100)} />
+            <DetailRow label="Comissão Operacional" value={results.precoVendaAlvo * (inputs.comissaoVenda / 100)} />
+            <DetailRow label="Custo Operacional Fixo" value={results.precoVendaAlvo * (inputs.custosFixos / 100)} />
+            <div className="h-px bg-slate-200 my-2"></div>
+            <DetailRow label="Lucro Líquido (R$)" value={results.margemAbsoluta} color="text-emerald-600 font-black" />
+          </div>
+        </div>
+      </section>
+
+      {/* Matriz Dinâmica Responsiva */}
+      <section className="space-y-6">
+        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Escalonamento Dinâmico</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          {priceMatrix.map((cat, idx) => (
+            <div key={idx} className="bg-white rounded-3xl border border-slate-200 p-6 space-y-4 hover:shadow-xl transition-all hover:border-blue-300">
+               <header className="flex justify-between items-center mb-4">
+                 <span className="text-[10px] font-black text-blue-600 uppercase tracking-tighter bg-blue-50 px-2.5 py-1 rounded-lg">{cat.label}</span>
+                 <span className="text-xs font-bold text-slate-400">{cat.margin}%</span>
+               </header>
+               <div className="space-y-3">
+                 {['A', 'B', 'C', 'D'].map(level => (
+                   <div key={level} className="flex justify-between items-center group/item">
+                     <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black text-white ${
+                        level === 'A' ? 'bg-rose-500' : level === 'B' ? 'bg-amber-500' : level === 'C' ? 'bg-blue-500' : 'bg-emerald-500'
+                     }`}>{level}</span>
+                     <span className="text-xs font-black font-mono text-slate-700 group-hover/item:text-slate-900 transition-colors">{formatCurrency(cat.levels[level])}</span>
+                   </div>
+                 ))}
+               </div>
             </div>
           ))}
         </div>
-      </div>
+      </section>
     </div>
   );
 };
+
+const KPIBox = ({ label, value, sub, color }: any) => (
+  <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-lg transition-shadow">
+    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</span>
+    <span className={`text-2xl font-black font-mono ${color || 'text-slate-800'} tracking-tighter`}>{formatCurrency(value)}</span>
+    <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter mt-3 opacity-60">{sub}</span>
+  </div>
+);
+
+const CompositionLabel = ({ dot, label, perc }: any) => (
+  <div className="flex items-center gap-2.5">
+    <div className={`w-2.5 h-2.5 rounded-full ${dot}`}></div>
+    <div className="flex flex-col">
+      <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">{label}</span>
+      <span className="text-[11px] font-black text-slate-800">{perc.toFixed(1)}%</span>
+    </div>
+  </div>
+);
+
+const DetailRow = ({ label, value, color }: any) => (
+  <div className="flex justify-between items-center">
+    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">{label}</span>
+    <span className={`text-xs font-bold font-mono ${color || 'text-slate-800'}`}>{formatCurrency(value)}</span>
+  </div>
+);
 
 export default ResultsTable;

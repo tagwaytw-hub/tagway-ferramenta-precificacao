@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { SimulationInputs, NCMEntry } from '../types';
-import { UF_LIST, NCM_DATABASE } from '../utils/ncmData';
-import { getInterstateRate, calculateAdjustedMva } from '../utils/calculations';
+
+import React, { useState, useEffect, useRef } from 'react';
+import { SimulationInputs } from '../types';
+import { NCM_DATABASE, UF_LIST } from '../utils/ncmData';
+import { calculateAdjustedMva, getInterstateRate } from '../utils/calculations';
 
 interface FiscalHeaderProps {
   inputs: SimulationInputs;
@@ -9,43 +10,41 @@ interface FiscalHeaderProps {
 }
 
 const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
+  const [showNcmSearch, setShowNcmSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const suggestionRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const currentNcm = NCM_DATABASE.find(n => n.codigo === inputs.ncmCodigo);
-    if (currentNcm) {
-      setSearchTerm(`${currentNcm.codigo} - ${currentNcm.descricao}`);
-    }
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowNcmSearch(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleUfChange = (field: 'ufOrigem' | 'ufDestino', val: string) => {
     const newOrigem = field === 'ufOrigem' ? val : inputs.ufOrigem;
     const newDestino = field === 'ufDestino' ? val : inputs.ufDestino;
-    
-    const origUf = UF_LIST.find(u => u.sigla === newOrigem);
     const destUf = UF_LIST.find(u => u.sigla === newDestino);
-    
-    if (origUf && destUf) {
-      const interRate = getInterstateRate(origUf.sigla, destUf.sigla);
-      const adjMva = calculateAdjustedMva(inputs.mvaOriginal, interRate, destUf.icms);
-      
-      setInputs(prev => ({
-        ...prev,
-        [field]: val,
-        icmsInterestadual: interRate,
-        icmsInternoDestino: destUf.icms,
-        icmsVenda: prev.mode !== 'substituido' ? destUf.icms : prev.icmsVenda,
-        mva: adjMva
-      }));
-    }
+    const interRate = getInterstateRate(newOrigem, newDestino);
+    const adjMva = calculateAdjustedMva(inputs.mvaOriginal, interRate, destUf?.icms || 18);
+
+    setInputs(prev => ({
+      ...prev,
+      [field]: val,
+      icmsInterestadual: interRate,
+      icmsInternoDestino: destUf?.icms || 18,
+      mva: adjMva
+    }));
   };
 
-  const selectNcm = (ncm: NCMEntry) => {
-    const interRate = inputs.icmsInterestadual;
-    const adjMva = calculateAdjustedMva(ncm.mvaOriginal, interRate, inputs.icmsInternoDestino);
-
+  const selectNcm = (ncm: any) => {
+    const destUf = UF_LIST.find(u => u.sigla === inputs.ufDestino);
+    const interRate = getInterstateRate(inputs.ufOrigem, inputs.ufDestino);
+    const adjMva = calculateAdjustedMva(ncm.mvaOriginal, interRate, destUf?.icms || 18);
+    
     setInputs(prev => ({
       ...prev,
       ncmCodigo: ncm.codigo,
@@ -53,130 +52,117 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
       mva: adjMva,
       nomeProduto: ncm.descricao
     }));
-    setSearchTerm(`${ncm.codigo} - ${ncm.descricao}`);
-    setShowSuggestions(false);
+    setShowNcmSearch(false);
+    setSearchTerm('');
   };
 
-  const filteredNcms = NCM_DATABASE.filter(n => 
-    n.codigo.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    n.descricao.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (suggestionRef.current && !suggestionRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const filteredNcm = NCM_DATABASE.filter(n => 
+    n.codigo.includes(searchTerm) || n.descricao.toLowerCase().includes(searchTerm.toLowerCase())
+  ).slice(0, 8);
 
   return (
-    <div className="bg-[#1a2332] text-white p-5 rounded-2xl shadow-xl border border-slate-700">
-      <div className="mb-5">
-        <label className="block text-[9px] uppercase font-black text-blue-400 mb-1.5 tracking-wider">Nome Comercial / Produto</label>
+    <div className="bg-[#1a2332] rounded-[2rem] p-7 text-white space-y-7 shadow-2xl relative overflow-visible ring-1 ring-slate-800">
+      
+      {/* Nome Comercial / Produto */}
+      <div className="space-y-2.5">
+        <label className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] ml-1">Nome Comercial / Produto</label>
         <input 
-          type="text"
+          type="text" 
           value={inputs.nomeProduto}
-          onChange={(e) => setInputs(prev => ({ ...prev, nomeProduto: e.target.value }))}
+          onChange={(e) => setInputs(prev => ({...prev, nomeProduto: e.target.value}))}
           placeholder="Ex: Piso Porcelanato 60x60"
-          className="w-full bg-[#0f172a] border border-slate-600 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 transition-colors placeholder:text-slate-700 font-medium"
+          className="w-full bg-[#0f172a] border border-slate-700/50 rounded-2xl px-5 py-4 text-xs font-bold focus:border-blue-500 outline-none transition-all placeholder:text-slate-600 shadow-inner"
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-5">
-        <div className="group">
-          <label className="block text-[9px] uppercase font-black text-slate-400 mb-1.5 tracking-wider">Origem</label>
+      {/* Origem / Destino */}
+      <div className="grid grid-cols-2 gap-5">
+        <div className="space-y-2.5">
+          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Origem</label>
           <div className="relative">
             <select 
-              value={inputs.ufOrigem}
+              value={inputs.ufOrigem} 
               onChange={(e) => handleUfChange('ufOrigem', e.target.value)}
-              className="w-full bg-[#0f172a] border border-slate-600 rounded-xl px-3 py-3 text-sm outline-none focus:border-blue-500 appearance-none"
+              className="w-full bg-[#0f172a] border border-slate-700/50 rounded-2xl px-5 py-4 text-xs font-black outline-none appearance-none cursor-pointer focus:border-blue-500/50 transition-all shadow-inner"
             >
               {UF_LIST.map(uf => <option key={uf.sigla} value={uf.sigla}>{uf.sigla} - {uf.nome}</option>)}
             </select>
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
-            </div>
+            <svg className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" fill="currentColor" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
           </div>
         </div>
-        <div className="group">
-          <label className="block text-[9px] uppercase font-black text-slate-400 mb-1.5 tracking-wider">Destino</label>
+        <div className="space-y-2.5">
+          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Destino</label>
           <div className="relative">
             <select 
-              value={inputs.ufDestino}
+              value={inputs.ufDestino} 
               onChange={(e) => handleUfChange('ufDestino', e.target.value)}
-              className="w-full bg-[#0f172a] border border-slate-600 rounded-xl px-3 py-3 text-sm outline-none focus:border-blue-500 appearance-none"
+              className="w-full bg-[#0f172a] border border-slate-700/50 rounded-2xl px-5 py-4 text-xs font-black outline-none appearance-none cursor-pointer focus:border-blue-500/50 transition-all shadow-inner"
             >
               {UF_LIST.map(uf => <option key={uf.sigla} value={uf.sigla}>{uf.sigla} - {uf.nome}</option>)}
             </select>
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
-            </div>
+            <svg className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" fill="currentColor" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
           </div>
         </div>
       </div>
 
-      <div className="mb-5 relative" ref={suggestionRef}>
-        <label className="block text-[9px] uppercase font-black text-slate-400 mb-1.5 tracking-wider">Classificação NCM</label>
-        <div className="relative">
+      {/* Classificação NCM (Busca Funcional) */}
+      <div className="space-y-2.5 relative" ref={searchRef}>
+        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Classificação NCM</label>
+        <div 
+          onClick={() => setShowNcmSearch(true)}
+          className={`flex items-center bg-[#0f172a] border ${showNcmSearch ? 'border-blue-500 ring-1 ring-blue-500/20' : 'border-slate-700/50'} rounded-2xl px-5 py-4 cursor-text transition-all shadow-inner`}
+        >
+          <svg className="w-4 h-4 text-blue-500 mr-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
           <input 
-            type="text"
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setShowSuggestions(true);
-            }}
-            onFocus={() => setShowSuggestions(true)}
-            placeholder="Pesquisar NCM..."
-            className="w-full bg-[#0f172a] border border-slate-600 rounded-xl pl-10 pr-4 py-3 text-sm outline-none focus:border-blue-500 transition-colors"
+            type="text" 
+            placeholder="Digite para buscar NCM ou descrição..."
+            value={showNcmSearch ? searchTerm : `${inputs.ncmCodigo} - ${inputs.nomeProduto}`}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-transparent text-xs font-black text-blue-100 outline-none placeholder:text-slate-600"
           />
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-          </div>
         </div>
 
-        {showSuggestions && (
-          <div className="absolute z-50 w-full mt-2 bg-[#1e293b] border border-slate-600 rounded-2xl shadow-2xl max-h-60 overflow-y-auto custom-scrollbar">
-            {filteredNcms.length > 0 ? (
-              filteredNcms.map((ncm) => (
-                <div 
+        {/* Dropdown de Resultados da Busca */}
+        {showNcmSearch && (
+          <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-[#1e293b] border border-slate-700 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[999] overflow-hidden animate-slide-up">
+            <div className="max-h-72 overflow-y-auto custom-scrollbar p-2">
+              {filteredNcm.map(ncm => (
+                <button 
                   key={ncm.codigo}
                   onClick={() => selectNcm(ncm)}
-                  className="px-4 py-4 hover:bg-blue-600 cursor-pointer border-b border-slate-700/50 last:border-0 active:bg-blue-700"
+                  className="w-full text-left p-4 hover:bg-blue-600 rounded-xl transition-all group flex flex-col gap-0.5 mb-1 last:mb-0"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-blue-300 group-hover:text-white tracking-wider">{ncm.codigo}</span>
-                    <span className="text-[8px] bg-slate-700 px-2 py-0.5 rounded font-black text-slate-300">MVA: {ncm.mvaOriginal}%</span>
-                  </div>
-                  <div className="text-[10px] text-slate-400 mt-1 line-clamp-1">{ncm.descricao}</div>
+                  <span className="text-[10px] font-black text-blue-400 group-hover:text-blue-100 font-mono tracking-widest">{ncm.codigo}</span>
+                  <span className="text-xs font-bold text-slate-200 group-hover:text-white line-clamp-1">{ncm.descricao}</span>
+                </button>
+              ))}
+              {filteredNcm.length === 0 && (
+                <div className="p-10 text-center text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] italic">
+                  Nenhum registro encontrado
                 </div>
-              ))
-            ) : (
-              <div className="px-4 py-8 text-center text-slate-500 text-[10px] font-bold uppercase italic">
-                Nenhum NCM encontrado
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-3 pt-4 border-t border-slate-700/50">
-        <div className="flex justify-between items-center bg-[#0f172a] p-3 rounded-xl border border-slate-700/50">
-          <div className="flex flex-col">
-            <span className="text-[8px] font-black text-slate-500 uppercase">Interestadual</span>
-            <span className="text-[10px] text-slate-300 font-bold uppercase">{inputs.ufOrigem} ➔ {inputs.ufDestino}</span>
-          </div>
-          <span className="text-sm font-black text-blue-400">{inputs.icmsInterestadual}%</span>
-        </div>
-        <div className="flex justify-between items-center bg-[#0f172a] p-3 rounded-xl border border-slate-700/50">
-          <div className="flex flex-col">
-            <span className="text-[8px] font-black text-slate-500 uppercase">MVA Ajustada 2025</span>
-            <span className="text-[10px] text-slate-300 font-bold uppercase italic">Recálculo Dinâmico</span>
-          </div>
-          <span className="text-sm font-black text-orange-400">{inputs.mva.toFixed(2).replace('.', ',')}%</span>
-        </div>
+      {/* Stats Summary - Conforme Imagem */}
+      <div className="space-y-4 pt-2">
+         <div className="bg-[#0f172a]/80 p-5 rounded-2xl flex justify-between items-center border border-slate-800/50">
+            <div>
+              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Interestadual</p>
+              <p className="text-[11px] font-black text-blue-400 font-mono">{inputs.ufOrigem} ➔ {inputs.ufDestino}</p>
+            </div>
+            <p className="text-xl font-black text-blue-400 font-mono tracking-tighter">{inputs.icmsInterestadual}%</p>
+         </div>
+
+         <div className="bg-[#0f172a]/80 p-5 rounded-2xl flex justify-between items-center border border-slate-800/50">
+            <div>
+              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">MVA Ajustada 2025</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase italic">Recálculo Dinâmico</p>
+            </div>
+            <p className="text-xl font-black text-amber-500 font-mono tracking-tighter">{inputs.mva.toFixed(2)}%</p>
+         </div>
       </div>
     </div>
   );

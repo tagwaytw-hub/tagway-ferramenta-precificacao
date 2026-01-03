@@ -1,121 +1,102 @@
 
 import React, { useState } from 'react';
+import { supabase } from '../lib/supabase';
 
 interface LoginProps {
-  onLoginSuccess: () => void;
+  onLoginSuccess: (session: any) => void;
 }
 
-// "Banco de dados" de usuários simulado
-const USERS_DB = [
-  { user: 'admin', password: '123' },
-  { user: 'pachu', password: '4444' },
-  { user: 'emerson', password: '5555' },
-  { user: 'tagway', password: '2580' },
-];
-
 const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setIsLoading(true);
-
-    // Simulação de latência de rede/busca em banco
-    setTimeout(() => {
-      const foundUser = USERS_DB.find(u => u.user === username && u.password === password);
-
-      if (foundUser) {
-        onLoginSuccess();
-      } else {
-        setError('Credenciais inválidas. Verifique seu login e senha.');
-        setIsLoading(false);
-      }
-    }, 800);
+    const loginEmail = email.includes('@') ? email : `${email}@tagway.com.br`;
+    const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
+    if (!error && data.session) onLoginSuccess(data.session);
+    else alert('Falha na autenticação.');
+    setIsLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
-        {/* Header/Logo */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-indigo-600 rounded-2xl shadow-2xl shadow-indigo-500/20 mb-6">
-             <span className="text-4xl">📊</span>
+    <div className="min-h-screen bg-[#f1f5f9] flex flex-col md:flex-row items-stretch overflow-hidden">
+      {/* Visual Side */}
+      <div className="hidden md:flex flex-1 bg-[#0f172a] p-20 flex-col justify-between relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[120px] -mr-96 -mt-96"></div>
+        <div className="relative z-10">
+          <div className="w-14 h-14 bg-blue-600 rounded-[20px] flex items-center justify-center shadow-2xl shadow-blue-500/40">
+            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
           </div>
-          <h1 className="text-3xl font-black text-white tracking-tight mb-2 uppercase">Tagway Technology</h1>
-          <p className="text-slate-400 text-sm font-medium">Plataforma Avançada de Inteligência Fiscal 2025</p>
+          <h1 className="text-6xl font-black text-white mt-12 tracking-tighter leading-none italic">TAGWAY<br/>PRO</h1>
+          <div className="h-1.5 w-24 bg-blue-600 mt-6 rounded-full"></div>
         </div>
+        <div className="relative z-10 text-slate-400 space-y-4">
+          <p className="text-2xl font-medium tracking-tight leading-snug max-w-sm">A nova inteligência para simulações fiscais e tributárias determinísticas.</p>
+          <div className="flex gap-10 pt-10">
+             <Metric label="Precisão" val="100%" />
+             <Metric label="Dados NCM" val="2025" />
+          </div>
+        </div>
+      </div>
 
-        {/* Card de Login */}
-        <div className="bg-[#1a2332] border border-slate-700/50 rounded-3xl p-8 shadow-2xl">
+      {/* Form Side */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-white md:rounded-l-[4rem] shadow-[-20px_0_40px_rgba(0,0,0,0.02)] z-20">
+        <div className="w-full max-w-sm space-y-12">
+          <div className="md:hidden text-center mb-8">
+            <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic">Tagway Pro</h1>
+          </div>
+          
+          <div className="space-y-4">
+            <h2 className="text-3xl font-black text-slate-900 tracking-tighter">Bem-vindo.</h2>
+            <p className="text-slate-500 font-medium">Acesse sua conta para começar as simulações.</p>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Login do Usuário</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                </span>
-                <input
-                  type="text"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-[#0f172a] border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-slate-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-                  placeholder="Seu identificador"
-                />
-              </div>
+            <div className="space-y-4">
+              <LoginInput label="E-mail ou Usuário" type="text" value={email} onChange={setEmail} placeholder="admin@tagway.com.br" />
+              <LoginInput label="Senha" type="password" value={password} onChange={setPassword} placeholder="••••••••" />
             </div>
-
-            <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Chave de Acesso</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                </span>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-[#0f172a] border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-slate-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs py-3 px-4 rounded-xl flex items-center gap-2 animate-bounce">
-                <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"></path></svg>
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
+            
+            <button 
+              type="submit" 
               disabled={isLoading}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-800 disabled:cursor-not-allowed text-white font-black py-4 rounded-xl shadow-xl shadow-indigo-500/20 transition-all uppercase tracking-widest text-sm flex items-center justify-center gap-2 group"
+              className="w-full bg-slate-900 hover:bg-black text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-2xl transition-all active:scale-95 disabled:opacity-50"
             >
-              {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              ) : (
-                <>
-                  Acessar Sistema
-                  <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
-                </>
-              )}
+              {isLoading ? 'Autenticando...' : 'Entrar no Sistema'}
             </button>
           </form>
-        </div>
 
-        <p className="mt-8 text-center text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-          Acesso Restrito &copy; 2025 - TAGWAY TECHNOLOGY
-        </p>
+          <footer className="pt-10 text-center border-t border-slate-100">
+             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">© 2025 Tagway Technology — Enterprise Version</p>
+          </footer>
+        </div>
       </div>
     </div>
   );
 };
+
+const LoginInput = ({ label, type, value, onChange, placeholder }: any) => (
+  <div className="space-y-2">
+    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
+    <input 
+      type={type}
+      required
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4.5 text-sm font-bold outline-none focus:border-blue-600 focus:bg-white transition-all placeholder:text-slate-300"
+    />
+  </div>
+);
+
+const Metric = ({ label, val }: any) => (
+  <div className="flex flex-col">
+    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</span>
+    <span className="text-xl font-black text-white">{val}</span>
+  </div>
+);
 
 export default Login;
