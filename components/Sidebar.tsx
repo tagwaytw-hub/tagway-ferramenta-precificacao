@@ -49,8 +49,8 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
       <section className="space-y-4">
         <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.25em]">Parâmetros de Custo</label>
         <div className="space-y-4">
-          <InputGroup label="Compra Líquida (R$)" value={inputs.valorCompra} onChange={(v) => handleChange('valorCompra', v)} />
-          <InputGroup label="IPI + Frete (R$)" value={inputs.ipiFrete} onChange={(v) => handleChange('ipiFrete', v)} />
+          <InputGroup label="Compra Líquida (R$)" value={inputs.valorCompra} onChange={(v: string) => handleChange('valorCompra', v)} />
+          <InputGroup label="IPI + Frete (R$)" value={inputs.ipiFrete} onChange={(v: string) => handleChange('ipiFrete', v)} />
         </div>
       </section>
 
@@ -58,8 +58,8 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
       <section className="space-y-4">
         <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.25em]">Custos Operacionais & Vendas</label>
         <div className="space-y-4">
-          <InputGroup label="Comissão de Venda (%)" value={inputs.comissaoVenda} onChange={(v) => handleChange('comissaoVenda', v)} />
-          <InputGroup label="Custos Fixos / Overhead (%)" value={inputs.custosFixos} onChange={(v) => handleChange('custosFixos', v)} />
+          <InputGroup label="Comissão de Venda (%)" value={inputs.comissaoVenda} onChange={(v: string) => handleChange('comissaoVenda', v)} />
+          <InputGroup label="Custos Fixos / Overhead (%)" value={inputs.custosFixos} onChange={(v: string) => handleChange('custosFixos', v)} />
         </div>
       </section>
 
@@ -86,7 +86,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
   );
 };
 
-const InputGroup = ({ label, value, onChange }: any) => (
+const InputGroup = ({ label, value, onChange }: { label: string, value: number, onChange: (v: string) => void }) => (
   <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 transition-all group">
     <label className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1 group-focus-within:text-blue-500 transition-colors">{label}</label>
     <input 

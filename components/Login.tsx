@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 
@@ -15,10 +14,22 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     e.preventDefault();
     setIsLoading(true);
     const loginEmail = email.includes('@') ? email : `${email}@tagway.com.br`;
-    const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
-    if (!error && data.session) onLoginSuccess(data.session);
-    else alert('Falha na autenticação.');
-    setIsLoading(false);
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
+      if (error) {
+        // Extrai mensagem real para evitar [object Object]
+        alert(`Erro de login: ${error.message || 'Credenciais inválidas'}`);
+      } else if (data.session) {
+        onLoginSuccess(data.session);
+      }
+    } catch (err: any) {
+      const errorMessage = err?.message || (typeof err === 'object' ? JSON.stringify(err) : String(err));
+      alert(`Erro inesperado: ${errorMessage}`);
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
