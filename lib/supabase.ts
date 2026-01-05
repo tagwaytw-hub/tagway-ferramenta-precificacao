@@ -4,9 +4,39 @@ const supabaseUrl = 'https://pvisyuhhyruuxrylzpqr.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2aXN5dWhoeXJ1dXhyeWx6cHFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczOTQ2NDEsImV4cCI6MjA4Mjk3MDY0MX0.NGc5ws9ERsgDzelKYMiDZFA34MSyPiwn10agfQU1OnQ';
 
 /**
+ * Polyfill para BroadcastChannel.
+ * O erro 'The operation is insecure' ocorre quando o navegador bloqueia a criação 
+ * de canais de comunicação (comum em Safari Private ou iframes).
+ */
+if (typeof window !== 'undefined') {
+  try {
+    // Tenta instanciar um canal de teste
+    const testChannel = new BroadcastChannel('supabase-test-auth');
+    testChannel.close();
+  } catch (e) {
+    // Se falhar (SecurityError), mockamos a classe para o SDK não quebrar
+    (window as any).BroadcastChannel = class BroadcastChannel {
+      name: string;
+      onmessage: any = null;
+      onmessageerror: any = null;
+      constructor(name: string) {
+        this.name = name;
+      }
+      postMessage() {}
+      close() {}
+      addEventListener() {}
+      removeEventListener() {}
+      dispatchEvent() {
+        return false;
+      }
+    };
+    console.debug('BroadcastChannel mockado devido a restrições de segurança do navegador.');
+  }
+}
+
+/**
  * Polyfill Universal de Locks.
- * Resolve o erro 'this.lock is not a function' em ambientes restritos (iframes/Vercel/Sandbox).
- * Implementa a interface que o SDK GoTrue espera.
+ * Resolve o erro 'this.lock is not a function' em ambientes restritos.
  */
 const createResilientLock = () => {
   const lockHandler = async (name: string, optionsOrCallback: any, callback?: any) => {
@@ -83,8 +113,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storage: safeStorage as any,
     // Define o lock customizado para evitar 'this.lock is not a function'
     lock: customLock as any,
-    // Nota: 'broadcast: false' foi removido pois não é uma propriedade válida no tipo Auth do SDK v2
-    // O erro de BroadcastChannel é mitigado pelo uso do safeStorage e customLock.
+    // Nota: 'broadcast: false' não é necessário agora que o BroadcastChannel foi mockado globalmente
   },
   global: {
     headers: { 'x-application-name': 'tagway-pro' }

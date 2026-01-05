@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { SimulationInputs } from '../types';
 
@@ -19,55 +18,55 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
   };
 
   return (
-    <div className="space-y-10">
-      {/* Regime Switcher */}
+    <div className="space-y-8">
+      {/* Regime Selector */}
       <section className="space-y-3">
-        <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.25em]">Regime de Operação</label>
+        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Regime de Operação</label>
         <div className="grid grid-cols-1 gap-2">
           {[
-            { id: 'substituido', label: 'ST (Retenção)', sub: 'Saída Isenta' },
-            { id: 'tributado', label: 'Tributação Integral', sub: 'Débito/Crédito' },
-            { id: 'reduzido', label: 'Base Reduzida', sub: 'Incentivo Fiscal' },
+            { id: 'substituido', label: 'Substituição (ST)', sub: 'Saída Desonerada' },
+            { id: 'tributado', label: 'Débito/Crédito', sub: 'Tributação Integral' },
+            { id: 'reduzido', label: 'Base Reduzida', sub: 'Benefício Fiscal' },
           ].map(mode => (
             <button
               key={mode.id}
               onClick={() => handleChange('mode', mode.id)}
-              className={`text-left p-4 rounded-2xl border transition-all flex flex-col gap-0.5 ${
+              className={`text-left p-4 rounded-xl border transition-all flex flex-col gap-0.5 ${
                 inputs.mode === mode.id 
-                ? 'bg-blue-600 border-blue-600 text-white shadow-xl shadow-blue-600/20' 
+                ? 'bg-black border-black text-white shadow-xl shadow-black/10' 
                 : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-300'
               }`}
             >
               <span className="text-[11px] font-black uppercase tracking-tight">{mode.label}</span>
-              <span className={`text-[9px] font-bold uppercase opacity-50 ${inputs.mode === mode.id ? 'text-white' : 'text-slate-400'}`}>{mode.sub}</span>
+              <span className={`text-[8px] font-bold uppercase opacity-50 ${inputs.mode === mode.id ? 'text-white' : 'text-slate-400'}`}>{mode.sub}</span>
             </button>
           ))}
         </div>
       </section>
 
-      {/* Parâmetros de Custo de Entrada */}
-      <section className="space-y-4">
-        <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.25em]">Parâmetros de Custo</label>
-        <div className="space-y-4">
-          <InputGroup label="Compra Líquida (R$)" value={inputs.valorCompra} onChange={(v: string) => handleChange('valorCompra', v)} />
-          <InputGroup label="IPI + Frete (R$)" value={inputs.ipiFrete} onChange={(v: string) => handleChange('ipiFrete', v)} />
+      {/* Costs Inputs */}
+      <section className="space-y-3">
+        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Valores de Aquisição</label>
+        <div className="grid grid-cols-1 gap-3">
+          <InputGroup label="Compra (Líquida R$)" value={inputs.valorCompra} onChange={(v: string) => handleChange('valorCompra', v)} />
+          <InputGroup label="Frete + IPI (R$)" value={inputs.ipiFrete} onChange={(v: string) => handleChange('ipiFrete', v)} />
         </div>
       </section>
 
-      {/* Custo Operacional & Vendas - CAMPOS SOLICITADOS VISÍVEIS */}
-      <section className="space-y-4">
-        <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.25em]">Custos Operacionais & Vendas</label>
-        <div className="space-y-4">
-          <InputGroup label="Comissão de Venda (%)" value={inputs.comissaoVenda} onChange={(v: string) => handleChange('comissaoVenda', v)} />
-          <InputGroup label="Custos Fixos / Overhead (%)" value={inputs.custosFixos} onChange={(v: string) => handleChange('custosFixos', v)} />
+      {/* Operating Expenses */}
+      <section className="space-y-3">
+        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Despesas de Venda</label>
+        <div className="grid grid-cols-1 gap-3">
+          <InputGroup label="Comissão (%)" value={inputs.comissaoVenda} onChange={(v: string) => handleChange('comissaoVenda', v)} />
+          <InputGroup label="Fixos / Overhead (%)" value={inputs.custosFixos} onChange={(v: string) => handleChange('custosFixos', v)} />
         </div>
       </section>
 
-      {/* Margem Desejada */}
-      <section className="bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl space-y-4 ring-1 ring-slate-800">
+      {/* Target Margin Slider/Input */}
+      <section className="bg-black rounded-2xl p-6 text-white shadow-2xl shadow-black/20 ring-1 ring-white/10 space-y-4">
         <div className="flex justify-between items-center">
-          <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Net Margin Alvo</label>
-          <div className="bg-blue-500 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase">Meta</div>
+          <label className="text-[9px] font-black uppercase tracking-widest text-white/40">Target Net Margin</label>
+          <span className="text-[8px] font-black text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded uppercase">Ideal</span>
         </div>
         <div className="flex items-center gap-4">
           <input 
@@ -76,9 +75,9 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
             onChange={(e) => handleChange('resultadoDesejado', e.target.value)}
             className="w-full bg-transparent text-5xl font-black font-mono outline-none border-none p-0 tracking-tighter" 
           />
-          <div className="flex flex-col gap-1.5">
-             <button onClick={() => handleChange('resultadoDesejado', inputs.resultadoDesejado + 0.5)} className="p-2 bg-slate-800 rounded-lg hover:bg-blue-600 transition-colors"><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14l5-5 5 5z"/></svg></button>
-             <button onClick={() => handleChange('resultadoDesejado', Math.max(0, inputs.resultadoDesejado - 0.5))} className="p-2 bg-slate-800 rounded-lg hover:bg-blue-600 transition-colors"><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></button>
+          <div className="flex flex-col gap-1 shrink-0">
+             <button onClick={() => handleChange('resultadoDesejado', inputs.resultadoDesejado + 0.5)} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-all"><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14l5-5 5 5z"/></svg></button>
+             <button onClick={() => handleChange('resultadoDesejado', Math.max(0, inputs.resultadoDesejado - 0.5))} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-all"><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></button>
           </div>
         </div>
       </section>
@@ -87,14 +86,14 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
 };
 
 const InputGroup = ({ label, value, onChange }: { label: string, value: number, onChange: (v: string) => void }) => (
-  <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 transition-all group">
-    <label className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1 group-focus-within:text-blue-500 transition-colors">{label}</label>
+  <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm focus-within:ring-2 focus-within:ring-black/5 focus-within:border-black transition-all group">
+    <label className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1 group-focus-within:text-black transition-colors">{label}</label>
     <input 
       type="number" 
       step="0.01"
       value={value} 
       onChange={(e) => onChange(e.target.value)}
-      className="w-full text-xl font-black text-slate-800 font-mono outline-none" 
+      className="w-full text-lg font-black text-slate-800 font-mono outline-none" 
     />
   </div>
 );
