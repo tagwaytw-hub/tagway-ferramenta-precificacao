@@ -2,7 +2,8 @@
 export interface SimulationInputs {
   nomeProduto: string;
   valorCompra: number;
-  ipiFrete: number;
+  ipiPerc: number;
+  freteValor: number;
   mva: number;
   icmsInternoDestino: number;
   icmsInterestadual: number;
@@ -36,7 +37,7 @@ export interface SimulationResults {
   custoFinal: number;
   precoEquilibrio: number;
   precoVendaAlvo: number;
-  valorCompraMaximo?: number; // Para modo reverso
+  valorCompraMaximo?: number;
   totalDeducoesVendaPerc: number;
   icmsVendaEfetivo: number;
   margemAbsoluta: number;

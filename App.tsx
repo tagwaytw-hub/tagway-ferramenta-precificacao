@@ -12,7 +12,8 @@ import { supabase } from './lib/supabase';
 const defaultInputs: SimulationInputs = {
   nomeProduto: '',
   valorCompra: 100.00,
-  ipiFrete: 0.00,
+  ipiPerc: 0.00,
+  freteValor: 0.00,
   mva: 32.00,
   mvaOriginal: 32.00,
   icmsInternoDestino: 18.00,
@@ -50,7 +51,18 @@ const App: React.FC = () => {
     let mounted = true;
     const init = async () => {
       try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        
+        // Handle Invalid Refresh Token error by clearing session
+        if (error && (error.message.toLowerCase().includes('refresh_token') || error.message.toLowerCase().includes('not found'))) {
+          await supabase.auth.signOut();
+          if (mounted) {
+            setSession(null);
+            setIsInitialized(true);
+          }
+          return;
+        }
+
         if (mounted) {
           setSession(currentSession);
           if (currentSession) fetchMyProducts(currentSession);
@@ -61,12 +73,18 @@ const App: React.FC = () => {
       }
     };
     init();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (mounted) {
         setSession(newSession);
         if (newSession) fetchMyProducts(newSession);
+        
+        if (event === 'SIGNED_OUT') {
+           setSavedSimulations([]);
+        }
       }
     });
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
@@ -75,8 +93,12 @@ const App: React.FC = () => {
 
   const fetchMyProducts = async (currentSession = session) => {
     if (!currentSession) return;
-    const { data } = await supabase.from('simulacoes').select('*').order('created_at', { ascending: false });
-    if (data) setSavedSimulations(data);
+    try {
+      const { data } = await supabase.from('simulacoes').select('*').order('created_at', { ascending: false });
+      if (data) setSavedSimulations(data);
+    } catch (e) {
+      console.warn('Erro ao carregar produtos salvos');
+    }
   };
 
   const handleSave = async () => {
@@ -132,7 +154,6 @@ const App: React.FC = () => {
         ${sidebarCollapsed ? 'lg:w-[80px]' : 'lg:w-[280px]'} 
         fixed bottom-0 left-0 w-full lg:relative lg:h-screen h-[70px] lg:h-auto`}>
         
-        {/* Logo - Hidden on Mobile */}
         <div className="hidden lg:flex p-8 mb-6 items-center justify-between">
           <div className="flex items-center gap-4 overflow-hidden">
             <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0 border border-white/10 shadow-lg">
@@ -147,7 +168,6 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Menu Items - Added Horizontal Scroll for Mobile */}
         <nav className="flex-1 flex lg:flex-col items-center lg:items-stretch justify-start lg:justify-start lg:px-4 lg:space-y-2 p-1 lg:p-0 overflow-x-auto lg:overflow-x-visible no-scrollbar">
           <MenuButton 
             active={activeTab === 'calculadora'} onClick={() => setActiveTab('calculadora')} label="Calculadora" collapsed={sidebarCollapsed}
@@ -161,7 +181,6 @@ const App: React.FC = () => {
             active={activeTab === 'meus-produtos'} onClick={() => setActiveTab('meus-produtos')} label="Meus Produtos" collapsed={sidebarCollapsed}
             icon="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
           />
-          {/* New Abas */}
           <MenuButton 
             active={activeTab === 'overhead'} onClick={() => setActiveTab('overhead')} label="Overhead" collapsed={sidebarCollapsed}
             icon="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2"
@@ -176,7 +195,6 @@ const App: React.FC = () => {
           />
         </nav>
 
-        {/* Sidebar Footer Desktop */}
         <div className="hidden lg:flex p-4 mt-auto flex-col space-y-2 border-t border-white/5">
           <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="w-full flex items-center gap-4 p-4 text-white/40 hover:text-white rounded-2xl transition-all">
             <svg className={`w-5 h-5 transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/></svg>
@@ -189,7 +207,6 @@ const App: React.FC = () => {
         </div>
       </aside>
 
-      {/* Main Container */}
       <main className="flex-1 overflow-hidden flex flex-col relative pb-[70px] lg:pb-0">
         
         {activeTab === 'calculadora' && (
@@ -264,7 +281,6 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Development Modules */}
         {(activeTab === 'overhead' || activeTab === 'storage-period' || activeTab === 'configuracao') && (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-50 animate-slide-up">
             <div className="w-32 h-32 bg-white rounded-[3rem] border border-slate-200 flex items-center justify-center mb-8 shadow-2xl shadow-black/5">
@@ -278,7 +294,7 @@ const App: React.FC = () => {
             <div className="mt-4 flex flex-col items-center gap-3">
               <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-[10px]">Módulo em Fase de Desenvolvimento</p>
               <div className="px-6 py-2 bg-black text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-lg">
-                Disponível em breve • 2025
+                Disponível em breve • 2026
               </div>
             </div>
           </div>
@@ -313,7 +329,6 @@ const MenuButton: React.FC<MenuButtonProps> = ({ active, onClick, icon, label, c
     {!collapsed && (
       <span className="text-[9px] lg:text-[11px] font-black uppercase tracking-[0.1em] lg:tracking-[0.15em] whitespace-nowrap">{label}</span>
     )}
-    {/* Active indicator for mobile */}
     {active && <div className="lg:hidden absolute bottom-1 w-1 h-1 bg-black rounded-full"></div>}
   </button>
 );

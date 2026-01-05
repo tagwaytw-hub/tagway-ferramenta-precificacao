@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { SimulationInputs } from '../types';
 
@@ -49,7 +50,10 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
         <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Valores de Aquisição</label>
         <div className="grid grid-cols-1 gap-3">
           <InputGroup label="Compra (Líquida R$)" value={inputs.valorCompra} onChange={(v: string) => handleChange('valorCompra', v)} />
-          <InputGroup label="Frete + IPI (R$)" value={inputs.ipiFrete} onChange={(v: string) => handleChange('ipiFrete', v)} />
+          <div className="grid grid-cols-2 gap-3">
+            <InputGroup label="IPI (%)" value={inputs.ipiPerc} onChange={(v: string) => handleChange('ipiPerc', v)} />
+            <InputGroup label="Frete (R$)" value={inputs.freteValor} onChange={(v: string) => handleChange('freteValor', v)} />
+          </div>
         </div>
       </section>
 
