@@ -10,15 +10,133 @@ import { SimulationInputs, CostItem, VariableCostItem } from './types';
 import { calculateCosts, generatePriceMatrix } from './utils/calculations';
 import { supabase } from './lib/supabase';
 
+// --- ESTRUTURA COMPLETA RESTAURADA ---
+// Faturamento Base: R$ 100.000,00
+// Meta de Custo Fixo: 12% (R$ 12.000,00)
+// Meta de Custo Variável: 10%
+// Total Overhead: 22%
+
 const defaultFixedCosts: CostItem[] = [
-  { id: 'f1', categoria: 'PESSOAL / RH', descricao: 'Salários e Prolabore', valor: 15000 },
-  { id: 'f2', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'Aluguel e Condomínio', valor: 4500 },
-  { id: 'f3', categoria: 'TECNOLOGIA / TI', descricao: 'Software e Internet', valor: 1200 },
+  // 1. PESSOAL / RH (R$ 7.000,00)
+  { id: 'f1-1', categoria: 'PESSOAL / RH', descricao: 'Salários administrativos', valor: 5000 },
+  { id: 'f1-2', categoria: 'PESSOAL / RH', descricao: 'Pró-labore dos sócios', valor: 2000 },
+  { id: 'f1-3', categoria: 'PESSOAL / RH', descricao: 'Encargos trabalhistas (INSS, FGTS)', valor: 0 },
+  { id: 'f1-4', categoria: 'PESSOAL / RH', descricao: 'Férias (provisão mensal)', valor: 0 },
+  { id: 'f1-5', categoria: 'PESSOAL / RH', descricao: '13º salário (provisão mensal)', valor: 0 },
+  { id: 'f1-6', categoria: 'PESSOAL / RH', descricao: 'Vale-transporte', valor: 0 },
+  { id: 'f1-7', categoria: 'PESSOAL / RH', descricao: 'Vale-refeição / alimentação', valor: 0 },
+  { id: 'f1-8', categoria: 'PESSOAL / RH', descricao: 'Plano de acompanhamento', valor: 0 },
+  { id: 'f1-9', categoria: 'PESSOAL / RH', descricao: 'Seguro de vida', valor: 0 },
+  // 2. ESTRUTURA / OCUPAÇÃO (R$ 3.000,00)
+  { id: 'f2-1', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'Aluguel do objeto', valor: 2500 },
+  { id: 'f2-2', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'Condomínio', valor: 500 },
+  { id: 'f2-3', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'IPTU (taxa mensal)', valor: 0 },
+  { id: 'f2-4', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'Seguro predial', valor: 0 },
+  { id: 'f2-5', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'Limpeza talada', valor: 0 },
+  { id: 'f2-6', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'Manutenção predial', valor: 0 },
+  { id: 'f2-7', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'Portaria / vigilância', valor: 0 },
+  { id: 'f2-8', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'Impostos importantes', valor: 0 },
+  // 3. UTILIDADES (R$ 100,00)
+  { id: 'f3-1', categoria: 'UTILIDADES', descricao: 'Energia elétrica (custo mínimo)', valor: 0 },
+  { id: 'f3-2', categoria: 'UTILIDADES', descricao: 'Água e Esgoto', valor: 0 },
+  { id: 'f3-3', categoria: 'UTILIDADES', descricao: 'Internet', valor: 100 },
+  { id: 'f3-4', categoria: 'UTILIDADES', descricao: 'Telefonia fixa', valor: 0 },
+  { id: 'f3-5', categoria: 'UTILIDADES', descricao: 'Telefonia móvel', valor: 0 },
+  { id: 'f3-6', categoria: 'UTILIDADES', descricao: 'Link dedicado', valor: 0 },
+  // 4. TECNOLOGIA / TI (R$ 500,00)
+  { id: 'f4-1', categoria: 'TECNOLOGIA / TI', descricao: 'Sistema ERP', valor: 500 },
+  { id: 'f4-2', categoria: 'TECNOLOGIA / TI', descricao: 'Sistema contabil', valor: 0 },
+  { id: 'f4-3', categoria: 'TECNOLOGIA / TI', descricao: 'CRM', valor: 0 },
+  { id: 'f4-4', categoria: 'TECNOLOGIA / TI', descricao: 'Softwares de precificação', valor: 0 },
+  { id: 'f4-5', categoria: 'TECNOLOGIA / TI', descricao: 'Licenças de software (Microsoft, Adobe, etc.)', valor: 0 },
+  { id: 'f4-6', categoria: 'TECNOLOGIA / TI', descricao: 'Hospedagem de site', valor: 0 },
+  { id: 'f4-7', categoria: 'TECNOLOGIA / TI', descricao: 'Domínio', valor: 0 },
+  { id: 'f4-8', categoria: 'TECNOLOGIA / TI', descricao: 'Manutenção de TI', valor: 0 },
+  { id: 'f4-9', categoria: 'TECNOLOGIA / TI', descricao: 'ré técnico', valor: 0 },
+  // 5. SERVIÇOS TERCEIRIZADOS (R$ 800,00)
+  { id: 'f5-1', categoria: 'SERVIÇOS TERCEIRIZADOS', descricao: 'Contabilidade', valor: 800 },
+  { id: 'f5-2', categoria: 'SERVIÇOS TERCEIRIZADOS', descricao: 'Assessoria Jurídica (mensalidade)', valor: 0 },
+  { id: 'f5-3', categoria: 'SERVIÇOS TERCEIRIZADOS', descricao: 'Consultoria financeira', valor: 0 },
+  { id: 'f5-4', categoria: 'SERVIÇOS TERCEIRIZADOS', descricao: 'RH pertencente', valor: 0 },
+  { id: 'f5-5', categoria: 'SERVIÇOS TERCEIRIZADOS', descricao: 'Marketing (contrato mensal)', valor: 0 },
+  { id: 'f5-6', categoria: 'SERVIÇOS TERCEIRIZADOS', descricao: 'Agência decus', valor: 0 },
+  { id: 'f5-7', categoria: 'SERVIÇOS TERCEIRIZADOS', descricao: 'Auditório recorrente', valor: 0 },
+  // 6. DESPESAS ADMINISTRATIVAS (R$ 600,00)
+  { id: 'f6-1', categoria: 'DESPESAS ADMINISTRATIVAS', descricao: 'Material de escritório', valor: 300 },
+  { id: 'f6-2', categoria: 'DESPESAS ADMINISTRATIVAS', descricao: 'Papelaria', valor: 300 },
+  { id: 'f6-3', categoria: 'DESPESAS ADMINISTRATIVAS', descricao: 'Correios', valor: 0 },
+  { id: 'f6-4', categoria: 'DESPESAS ADMINISTRATIVAS', descricao: 'Mensageiro', valor: 0 },
+  { id: 'f6-5', categoria: 'DESPESAS ADMINISTRATIVAS', descricao: 'Assinatura digital', valor: 0 },
+  { id: 'f6-6', categoria: 'DESPESAS ADMINISTRATIVAS', descricao: 'Despesas guilhotinas fixas', valor: 0 },
+  { id: 'f6-7', categoria: 'DESPESAS ADMINISTRATIVAS', descricao: 'Assinaturas empresariais', valor: 0 },
+  // 7. IMPOSTOS E TAXAS FIXAS (R$ 0,00)
+  { id: 'f7-1', categoria: 'IMPOSTOS E TAXAS FIXAS', descricao: 'DAS mínimo (Simples Nacional)', valor: 0 },
+  { id: 'f7-2', categoria: 'IMPOSTOS E TAXAS FIXAS', descricao: 'Álvará de funcionamento', valor: 0 },
+  { id: 'f7-3', categoria: 'IMPOSTOS E TAXAS FIXAS', descricao: 'Licenças municipais e estaduais', valor: 0 },
+  { id: 'f7-4', categoria: 'IMPOSTOS E TAXAS FIXAS', descricao: 'Taxas ambientais', valor: 0 },
+  { id: 'f7-5', categoria: 'IMPOSTOS E TAXAS FIXAS', descricao: 'Conselhos de classe (CRC, CREA, etc.)', valor: 0 },
+  // 8. FINANCEIRO (R$ 0,00)
+  { id: 'f8-1', categoria: 'FINANCEIRO', descricao: 'Parcelas de Empréstimos', valor: 0 },
+  { id: 'f8-2', categoria: 'FINANCEIRO', descricao: 'Juross', valor: 0 },
+  { id: 'f8-3', categoria: 'FINANCEIRO', descricao: 'Locação de equipamentos', valor: 0 },
+  { id: 'f8-4', categoria: 'FINANCEIRO', descricao: 'Aluguel de máquinas', valor: 0 },
+  { id: 'f8-5', categoria: 'FINANCEIRO', descricao: 'Consórcios empresariais', valor: 0 },
+  // 9. DEPRECIAÇÃO/AMORTIZAÇÃO (R$ 0,00)
+  { id: 'f9-1', categoria: 'DEPRECIAÇÃO/AMORTIZAÇÃO', descricao: 'Depreciação de máquinas', valor: 0 },
+  { id: 'f9-2', categoria: 'DEPRECIAÇÃO/AMORTIZAÇÃO', descricao: 'Depreciação de veículos', valor: 0 },
+  { id: 'f9-3', categoria: 'DEPRECIAÇÃO/AMORTIZAÇÃO', descricao: 'Depreciação de computadores', valor: 0 },
+  { id: 'f9-4', categoria: 'DEPRECIAÇÃO/AMORTIZAÇÃO', descricao: 'Depreciação de móveis', valor: 0 },
+  { id: 'f9-5', categoria: 'DEPRECIAÇÃO/AMORTIZAÇÃO', descricao: 'Amortização de softwares', valor: 0 },
+  { id: 'f9-6', categoria: 'DEPRECIAÇÃO/AMORTIZAÇÃO', descricao: 'Amortização de marcas e patentes', valor: 0 },
+  // 10. SOLUÇÃO DE MARKETING (R$ 0,00)
+  { id: 'f10-1', categoria: 'SOLUÇÃO DE MARKETING', descricao: 'Mensalidade de seis', valor: 0 },
+  { id: 'f10-2', categoria: 'SOLUÇÃO DE MARKETING', descricao: 'Ferramentas de marketing', valor: 0 },
+  { id: 'f10-3', categoria: 'SOLUÇÃO DE MARKETING', descricao: 'Plataformas de guerrilha', valor: 0 },
+  { id: 'f10-4', categoria: 'SOLUÇÃO DE MARKETING', descricao: 'Produção recorrente de conteúdo', valor: 0 },
+  { id: 'f10-5', categoria: 'SOLUÇÃO DE MARKETING', descricao: 'Assinaturas de bancos de imagem', valor: 0 },
 ];
 
 const defaultVariableCosts: VariableCostItem[] = [
-  { id: 'v1', categoria: 'IMPOSTOS SOBRE VENDAS', descricao: 'Simples Nacional (Médio)', percentual: 12 },
-  { id: 'v2', categoria: 'MEIOS DE PAGAMENTO', descricao: 'Taxas de Cartão', percentual: 2.5 },
+  // 1. IMPOSTOS SOBRE VENDAS (6%)
+  { id: 'v1-1', categoria: 'IMPOSTOS SOBRE VENDAS', descricao: 'Simples Nacional (% sobre faturamento)', percentual: 6 },
+  { id: 'v1-2', categoria: 'IMPOSTOS SOBRE VENDAS', descricao: 'ICMS', percentual: 0 },
+  { id: 'v1-3', categoria: 'IMPOSTOS SOBRE VENDAS', descricao: 'ISS', percentual: 0 },
+  { id: 'v1-4', categoria: 'IMPOSTOS SOBRE VENDAS', descricao: 'PIS', percentual: 0 },
+  { id: 'v1-5', categoria: 'IMPOSTOS SOBRE VENDAS', descricao: 'COFINS', percentual: 0 },
+  // 2. CUSTO DO PRODUTO / SERVIÇO (0%)
+  { id: 'v2-1', categoria: 'CUSTO DO PRODUTO / SERVIÇO', descricao: 'Custo da Mercadoria Vendida (CMV)', percentual: 0 },
+  { id: 'v2-2', categoria: 'CUSTO DO PRODUTO / SERVIÇO', descricao: 'Matéria-prima', percentual: 0 },
+  { id: 'v2-3', categoria: 'CUSTO DO PRODUTO / SERVIÇO', descricao: 'Insumos de produção', percentual: 0 },
+  { id: 'v2-4', categoria: 'CUSTO DO PRODUTO / SERVIÇO', descricao: 'Terceirização por demanda', percentual: 0 },
+  // 3. LOGÍSTICA (1.5%)
+  { id: 'v3-1', categoria: 'LOGÍSTICA', descricao: 'Frete sobre vendas', percentual: 0 },
+  { id: 'v3-2', categoria: 'LOGÍSTICA', descricao: 'Correios', percentual: 0 },
+  { id: 'v3-3', categoria: 'LOGÍSTICA', descricao: 'Transportadora', percentual: 0 },
+  { id: 'v3-4', categoria: 'LOGÍSTICA', descricao: 'Embalagens', percentual: 1.5 },
+  { id: 'v3-5', categoria: 'LOGÍSTICA', descricao: 'Armazenagem por volume', percentual: 0 },
+  // 4. COMERCIAL / VENDAS (0%)
+  { id: 'v4-1', categoria: 'COMERCIAL / VENDAS', descricao: 'Comissão de tí', percentual: 0 },
+  { id: 'v4-2', categoria: 'COMERCIAL / VENDAS', descricao: 'Bonfe por meta', percentual: 0 },
+  { id: 'v4-3', categoria: 'COMERCIAL / VENDAS', descricao: 'Premiações por desempenho', percentual: 0 },
+  // 5. MEIOS DE PAGAMENTO (2.5%)
+  { id: 'v5-1', categoria: 'MEIOS DE PAGAMENTO', descricao: 'Taxa de recrutamento de crédito', percentual: 2.5 },
+  { id: 'v5-2', categoria: 'MEIOS DE PAGAMENTO', descricao: 'Taxa de concepção de débito', percentual: 0 },
+  { id: 'v5-3', categoria: 'MEIOS DE PAGAMENTO', descricao: 'Taxa de gateway de pagamento', percentual: 0 },
+  { id: 'v5-4', categoria: 'MEIOS DE PAGAMENTO', descricao: 'Taxa de mercado', percentual: 0 },
+  // 6. VARIÁVEL DE MARKETING (0%)
+  { id: 'v6-1', categoria: 'VARIÁVEL DE MARKETING', descricao: 'Tráfego pago (Google Ads, Meta Ads)', percentual: 0 },
+  { id: 'v6-2', categoria: 'VARIÁVEL DE MARKETING', descricao: 'Campanhas promocionais', percentual: 0 },
+  { id: 'v6-3', categoria: 'VARIÁVEL DE MARKETING', descricao: 'Influenciadores (por)', percentual: 0 },
+  // 7. FINANCEIRO VARIÁVEL (0%)
+  { id: 'v7-1', categoria: 'FINANCEIRO VARIÁVEL', descricao: 'Juros por atraso', percentual: 0 },
+  { id: 'v7-2', categoria: 'FINANCEIRO VARIÁVEL', descricao: 'Multas bibliotecas', percentual: 0 },
+  { id: 'v7-3', categoria: 'FINANCEIRO VARIÁVEL', descricao: 'Descontos concedidos', percentual: 0 },
+  { id: 'v7-4', categoria: 'FINANCEIRO VARIÁVEL', descricao: 'Estorno', percentual: 0 },
+  // 8. OUTROS CUSTOS VARIÁVEIS (0%)
+  { id: 'v8-1', categoria: 'OUTROS CUSTOS VARIÁVEIS', descricao: 'Royalties', percentual: 0 },
+  { id: 'v8-2', categoria: 'OUTROS CUSTOS VARIÁVEIS', descricao: 'Impostos por transação', percentual: 0 },
+  { id: 'v8-3', categoria: 'OUTROS CUSTOS VARIÁVEIS', descricao: 'Comissões de parceiros', percentual: 0 },
+  { id: 'v8-4', categoria: 'OUTROS CUSTOS VARIÁVEIS', descricao: 'Custos por projeto', percentual: 0 },
 ];
 
 const defaultInputs: SimulationInputs = {
@@ -120,8 +238,17 @@ const App: React.FC = () => {
 
     if (data && !error) {
       setFaturamento(data.faturamento);
-      setFixedCosts(data.fixed_costs || defaultFixedCosts);
-      setVariableCosts(data.variable_costs || defaultVariableCosts);
+      const mergedFixed = defaultFixedCosts.map(def => {
+        const saved = (data.fixed_costs as CostItem[]).find(s => s.descricao === def.descricao);
+        return saved ? { ...def, valor: saved.valor, id: saved.id || def.id } : def;
+      });
+      const mergedVar = defaultVariableCosts.map(def => {
+        const saved = (data.variable_costs as VariableCostItem[]).find(s => s.descricao === def.descricao);
+        return saved ? { ...def, percentual: saved.percentual, id: saved.id || def.id } : def;
+      });
+
+      setFixedCosts(mergedFixed);
+      setVariableCosts(mergedVar);
     }
   };
 
@@ -222,6 +349,22 @@ const App: React.FC = () => {
               <header className="border-b border-slate-200 pb-8"><h2 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tighter uppercase italic">Histórico</h2><p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mt-2">Simulações gravadas no seu portfólio</p></header>
               <div className="grid gap-4">{savedSimulations.map(sim => (<div key={sim.id} className="bg-white border border-slate-200 p-6 rounded-[2rem] flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-2xl transition-all group hover:border-black"><div className="flex items-center gap-6"><div className="w-14 h-14 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-black group-hover:text-white transition-all shadow-sm"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div><div className="overflow-hidden"><h4 className="font-black text-slate-800 tracking-tight text-lg truncate">{sim.nome_produto}</h4><div className="flex items-center flex-wrap gap-2 mt-1 text-[9px] font-bold text-slate-400 uppercase tracking-widest"><span className="bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-mono">{sim.dados.ncmCodigo}</span><span className="text-black">{sim.dados.ufOrigem}➔{sim.dados.ufDestino}</span><span>{new Date(sim.created_at).toLocaleDateString('pt-BR')}</span></div></div></div><div className="flex items-center gap-2"><button onClick={() => handleSelectProduct(sim)} className="flex-1 md:flex-none bg-black text-white px-8 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg active:scale-95">Abrir</button><button onClick={() => handleDelete(sim.id)} className="p-3.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></div></div>))}</div>
             </div>
+          </div>
+        )}
+        
+        {/* NOVAS TELAS: STORAGE E AJUSTES */}
+        {(activeTab === 'storage-period' || activeTab === 'configuracao') && (
+          <div className="flex-1 flex flex-col items-center justify-center p-8 bg-slate-50">
+             <div className="w-24 h-24 bg-white rounded-[2rem] shadow-xl flex items-center justify-center mb-8 border border-slate-200">
+                <svg className="w-10 h-10 text-black animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+             </div>
+             <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic text-center">
+                Módulo em Desenvolvimento
+             </h2>
+             <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] mt-4 text-center max-w-xs leading-loose">
+                Estamos refinando os algoritmos de {activeTab === 'storage-period' ? 'custo de estocagem e movimentação' : 'configurações avançadas do sistema'}.
+                Disponível na próxima atualização Enterprise.
+             </p>
           </div>
         )}
       </main>
