@@ -180,18 +180,22 @@ const App: React.FC = () => {
   const [faturamento, setFaturamento] = useState<number>(100000);
   const [fixedCosts, setFixedCosts] = useState<CostItem[]>(defaultFixedCosts);
   const [variableCosts, setVariableCosts] = useState<VariableCostItem[]>(defaultVariableCosts);
+  const [isAutoSync, setIsAutoSync] = useState(true);
 
   useEffect(() => {
-    const totalFixed = fixedCosts.reduce((acc, curr) => acc + curr.valor, 0);
-    const totalVarPerc = variableCosts.reduce((acc, curr) => acc + curr.percentual, 0);
-    const fixedPercOnFat = faturamento > 0 ? (totalFixed / faturamento) * 100 : 0;
-    const totalOverheadWeight = fixedPercOnFat + totalVarPerc;
-    
-    setInputs(prev => ({
-      ...prev,
-      custosFixos: parseFloat(totalOverheadWeight.toFixed(2))
-    }));
-  }, [faturamento, fixedCosts, variableCosts]);
+    // SÓ ATUALIZA AUTOMATICAMENTE SE ESTIVER NO MODO AUTO-SYNC
+    if (isAutoSync) {
+      const totalFixed = fixedCosts.reduce((acc, curr) => acc + curr.valor, 0);
+      const totalVarPerc = variableCosts.reduce((acc, curr) => acc + curr.percentual, 0);
+      const fixedPercOnFat = faturamento > 0 ? (totalFixed / faturamento) * 100 : 0;
+      const totalOverheadWeight = fixedPercOnFat + totalVarPerc;
+      
+      setInputs(prev => ({
+        ...prev,
+        custosFixos: parseFloat(totalOverheadWeight.toFixed(2))
+      }));
+    }
+  }, [faturamento, fixedCosts, variableCosts, isAutoSync]);
 
   useEffect(() => {
     let mounted = true;
@@ -327,7 +331,15 @@ const App: React.FC = () => {
                 <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Parâmetros</h2>
                 <button onClick={handleSave} disabled={isSaving} className="bg-black hover:bg-slate-800 text-white text-[9px] font-black uppercase px-6 py-2.5 rounded-xl transition-all shadow-xl shadow-black/10 active:scale-95 disabled:opacity-50">{isSaving ? 'Salvando...' : 'Salvar'}</button>
               </div>
-              <div className="space-y-8"><FiscalHeader inputs={inputs} setInputs={setInputs}/><Sidebar inputs={inputs} setInputs={setInputs}/></div>
+              <div className="space-y-8">
+                <FiscalHeader inputs={inputs} setInputs={setInputs}/>
+                <Sidebar 
+                  inputs={inputs} 
+                  setInputs={setInputs} 
+                  isAutoSync={isAutoSync} 
+                  setIsAutoSync={setIsAutoSync} 
+                />
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#f8fafc] p-4 md:p-8 lg:p-12"><div className="max-w-5xl mx-auto animate-slide-up"><ResultsTable results={results} priceMatrix={priceMatrix} inputs={inputs}/></div></div>
           </div>

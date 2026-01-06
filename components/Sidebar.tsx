@@ -5,9 +5,11 @@ import { SimulationInputs } from '../types';
 interface SidebarProps {
   inputs: SimulationInputs;
   setInputs: React.Dispatch<React.SetStateAction<SimulationInputs>>;
+  isAutoSync: boolean;
+  setIsAutoSync: (val: boolean) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
+const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs, isAutoSync, setIsAutoSync }) => {
   const handleChange = (field: keyof SimulationInputs, value: any) => {
     const textFields = ['mode', 'ufOrigem', 'ufDestino', 'nomeProduto', 'ncmCodigo', 'simulationMode'];
     setInputs(prev => ({
@@ -63,25 +65,44 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
         <div className="grid grid-cols-1 gap-3">
           <InputGroup label="Comissão (%)" value={inputs.comissaoVenda} onChange={(v: string) => handleChange('comissaoVenda', v)} />
           
-          {/* CAMPO SINCRONIZADO: FIXOS / OVERHEAD */}
-          <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-4 shadow-inner relative group overflow-hidden">
-            <div className="flex justify-between items-center mb-1">
-              <label className="block text-[8px] font-black text-slate-400 uppercase tracking-widest">Peso Overhead (%)</label>
-              <div className="flex items-center gap-1">
-                <span className="text-[7px] font-black text-blue-600 uppercase bg-blue-50 px-1.5 py-0.5 rounded">Auto-Sync</span>
-                <svg className="w-3 h-3 text-blue-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+          {/* CAMPO SINCRONIZADO: FIXOS / OVERHEAD COM CONTROLE MANUAL/AUTO */}
+          <div className={`rounded-xl p-4 shadow-inner relative group overflow-hidden border-2 transition-all ${isAutoSync ? 'bg-blue-50/50 border-dashed border-blue-100' : 'bg-white border-slate-200 border-solid shadow-sm'}`}>
+            <div className="flex justify-between items-center mb-2">
+              <label className={`block text-[8px] font-black uppercase tracking-widest ${isAutoSync ? 'text-blue-500' : 'text-slate-400'}`}>Peso Overhead (%)</label>
+              
+              {/* BOTOES DE CONTROLE */}
+              <div className="flex bg-slate-200/50 p-0.5 rounded-lg">
+                <button 
+                  onClick={() => setIsAutoSync(false)}
+                  className={`px-2 py-1 rounded-md text-[7px] font-black uppercase transition-all ${!isAutoSync ? 'bg-white text-black shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                  Manual
+                </button>
+                <button 
+                  onClick={() => setIsAutoSync(true)}
+                  className={`px-2 py-1 rounded-md text-[7px] font-black uppercase transition-all ${isAutoSync ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                  Auto-Sync
+                </button>
               </div>
             </div>
+
             <div className="flex items-center gap-2">
               <input 
                 type="number" 
-                readOnly
+                readOnly={isAutoSync}
                 value={inputs.custosFixos} 
-                className="w-full text-lg font-black text-blue-600 font-mono bg-transparent outline-none cursor-default" 
+                onChange={(e) => handleChange('custosFixos', e.target.value)}
+                className={`w-full text-lg font-black font-mono bg-transparent outline-none transition-all ${isAutoSync ? 'text-blue-600 cursor-default' : 'text-slate-900 cursor-text'}`} 
               />
-              <span className="text-[10px] font-black text-slate-300">%</span>
+              <span className={`text-[10px] font-black ${isAutoSync ? 'text-blue-300' : 'text-slate-300'}`}>%</span>
             </div>
-            <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+            
+            {isAutoSync && (
+              <div className="absolute top-1/2 right-4 -translate-y-1/2 opacity-20 pointer-events-none">
+                 <svg className="w-8 h-8 text-blue-500 animate-[spin_10s_linear_infinite]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+              </div>
+            )}
           </div>
         </div>
       </section>
