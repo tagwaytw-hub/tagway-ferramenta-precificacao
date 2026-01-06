@@ -28,7 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs, isAutoSync, setIsA
         <div className="grid grid-cols-1 gap-2">
           {[
             { id: 'substituido', label: 'Substituição (ST)', sub: 'Saída Desonerada' },
-            { id: 'tributado', label: 'Débito/Crédito', sub: 'Tributação Integral' },
+            { id: 'tributado', label: 'Tributado', sub: 'Débito e Crédito' },
             { id: 'reduzido', label: 'Base Reduzida', sub: 'Benefício Fiscal' },
           ].map(mode => (
             <button
@@ -51,10 +51,19 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs, isAutoSync, setIsA
       <section className="space-y-3">
         <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Valores de Aquisição</label>
         <div className="grid grid-cols-1 gap-3">
-          <InputGroup label="Compra (Líquida R$)" value={inputs.valorCompra} onChange={(v: string) => handleChange('valorCompra', v)} />
+          <InputGroup label="Valor Líquido (R$)" value={inputs.valorCompra} onChange={(v: string) => handleChange('valorCompra', v)} />
           <div className="grid grid-cols-2 gap-3">
             <InputGroup label="IPI (%)" value={inputs.ipiPerc} onChange={(v: string) => handleChange('ipiPerc', v)} />
             <InputGroup label="Frete (R$)" value={inputs.freteValor} onChange={(v: string) => handleChange('freteValor', v)} />
+          </div>
+          
+          <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-100 space-y-3">
+            <span className="text-[8px] font-black text-blue-400 uppercase tracking-widest block">Créditos Tributários (Entrada)</span>
+            <div className="grid grid-cols-2 gap-3">
+              <InputGroup label="ICMS Merc (%)" value={inputs.icmsCreditoMercadoria} onChange={(v: string) => handleChange('icmsCreditoMercadoria', v)} />
+              <InputGroup label="ICMS Frete (%)" value={inputs.icmsCreditoFrete} onChange={(v: string) => handleChange('icmsCreditoFrete', v)} />
+            </div>
+            <InputGroup label="PIS/COFINS Créd (%)" value={inputs.pisCofinsRate} onChange={(v: string) => handleChange('pisCofinsRate', v)} />
           </div>
         </div>
       </section>
@@ -65,12 +74,10 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs, isAutoSync, setIsA
         <div className="grid grid-cols-1 gap-3">
           <InputGroup label="Comissão (%)" value={inputs.comissaoVenda} onChange={(v: string) => handleChange('comissaoVenda', v)} />
           
-          {/* CAMPO SINCRONIZADO: FIXOS / OVERHEAD COM CONTROLE MANUAL/AUTO */}
           <div className={`rounded-xl p-4 shadow-inner relative group overflow-hidden border-2 transition-all ${isAutoSync ? 'bg-blue-50/50 border-dashed border-blue-100' : 'bg-white border-slate-200 border-solid shadow-sm'}`}>
             <div className="flex justify-between items-center mb-2">
-              <label className={`block text-[8px] font-black uppercase tracking-widest ${isAutoSync ? 'text-blue-500' : 'text-slate-400'}`}>Peso Overhead (%)</label>
+              <label className={`block text-[8px] font-black uppercase tracking-widest ${isAutoSync ? 'text-blue-500' : 'text-slate-400'}`}>Custo Fixo / Overhead (%)</label>
               
-              {/* BOTOES DE CONTROLE */}
               <div className="flex bg-slate-200/50 p-0.5 rounded-lg">
                 <button 
                   onClick={() => setIsAutoSync(false)}
@@ -82,7 +89,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs, isAutoSync, setIsA
                   onClick={() => setIsAutoSync(true)}
                   className={`px-2 py-1 rounded-md text-[7px] font-black uppercase transition-all ${isAutoSync ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                 >
-                  Auto-Sync
+                  Auto
                 </button>
               </div>
             </div>
@@ -97,21 +104,14 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs, isAutoSync, setIsA
               />
               <span className={`text-[10px] font-black ${isAutoSync ? 'text-blue-300' : 'text-slate-300'}`}>%</span>
             </div>
-            
-            {isAutoSync && (
-              <div className="absolute top-1/2 right-4 -translate-y-1/2 opacity-20 pointer-events-none">
-                 <svg className="w-8 h-8 text-blue-500 animate-[spin_10s_linear_infinite]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-              </div>
-            )}
           </div>
         </div>
       </section>
 
-      {/* Target Margin Slider/Input */}
       <section className="bg-black rounded-2xl p-6 text-white shadow-2xl shadow-black/20 ring-1 ring-white/10 space-y-4">
         <div className="flex justify-between items-center">
-          <label className="text-[9px] font-black uppercase tracking-widest text-white/40">Target Net Margin</label>
-          <span className="text-[8px] font-black text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded uppercase">Ideal</span>
+          <label className="text-[9px] font-black uppercase tracking-widest text-white/40">Margem Líquida Desejada</label>
+          <span className="text-[8px] font-black text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded uppercase">Lucro</span>
         </div>
         <div className="flex items-center gap-4">
           <input 

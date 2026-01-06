@@ -7,6 +7,8 @@ export interface SimulationInputs {
   mva: number;
   icmsInternoDestino: number;
   icmsInterestadual: number;
+  icmsCreditoMercadoria: number;
+  icmsCreditoFrete: number;
   pisCofinsRate: number;
   excluirIcmsPis: boolean;
   pisCofinsVenda: number;
@@ -42,8 +44,11 @@ export interface VariableCostItem {
 
 export interface SimulationResults {
   valorTotalNota: number;
+  valorIpi: number;
   baseCalculoSt: number;
   icmsStBruto: number;
+  creditoIcmsMercadoria: number;
+  creditoIcmsFrete: number;
   creditoIcmsEntrada: number;
   stAPagar: number;
   basePisCofins: number;

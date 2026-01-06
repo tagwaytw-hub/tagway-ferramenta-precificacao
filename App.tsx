@@ -10,14 +10,8 @@ import { SimulationInputs, CostItem, VariableCostItem } from './types';
 import { calculateCosts, generatePriceMatrix } from './utils/calculations';
 import { supabase } from './lib/supabase';
 
-// --- ESTRUTURA COMPLETA RESTAURADA ---
-// Faturamento Base: R$ 100.000,00
-// Meta de Custo Fixo: 12% (R$ 12.000,00)
-// Meta de Custo Variável: 10%
-// Total Overhead: 22%
-
 const defaultFixedCosts: CostItem[] = [
-  // 1. PESSOAL / RH (R$ 7.000,00)
+  // 1. PESSOAL / RH
   { id: 'f1-1', categoria: 'PESSOAL / RH', descricao: 'Salários administrativos', valor: 5000 },
   { id: 'f1-2', categoria: 'PESSOAL / RH', descricao: 'Pró-labore dos sócios', valor: 2000 },
   { id: 'f1-3', categoria: 'PESSOAL / RH', descricao: 'Encargos trabalhistas (INSS, FGTS)', valor: 0 },
@@ -27,140 +21,158 @@ const defaultFixedCosts: CostItem[] = [
   { id: 'f1-7', categoria: 'PESSOAL / RH', descricao: 'Vale-refeição / alimentação', valor: 0 },
   { id: 'f1-8', categoria: 'PESSOAL / RH', descricao: 'Plano de acompanhamento', valor: 0 },
   { id: 'f1-9', categoria: 'PESSOAL / RH', descricao: 'Seguro de vida', valor: 0 },
-  // 2. ESTRUTURA / OCUPAÇÃO (R$ 3.000,00)
-  { id: 'f2-1', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'Aluguel do objeto', valor: 2500 },
+
+  // 2. ESTRUTURA / OCUPAÇÃO
+  { id: 'f2-1', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'Aluguel do imóvel', valor: 2500 },
   { id: 'f2-2', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'Condomínio', valor: 500 },
   { id: 'f2-3', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'IPTU (taxa mensal)', valor: 0 },
   { id: 'f2-4', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'Seguro predial', valor: 0 },
-  { id: 'f2-5', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'Limpeza talada', valor: 0 },
+  { id: 'f2-5', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'Limpeza especializada', valor: 0 },
   { id: 'f2-6', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'Manutenção predial', valor: 0 },
   { id: 'f2-7', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'Portaria / vigilância', valor: 0 },
-  { id: 'f2-8', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'Impostos importantes', valor: 0 },
-  // 3. UTILIDADES (R$ 100,00)
+  { id: 'f2-8', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'Impostos incidentes', valor: 0 },
+
+  // 3. UTILIDADES
   { id: 'f3-1', categoria: 'UTILIDADES', descricao: 'Energia elétrica (custo mínimo)', valor: 0 },
   { id: 'f3-2', categoria: 'UTILIDADES', descricao: 'Água e Esgoto', valor: 0 },
-  { id: 'f3-3', categoria: 'UTILIDADES', descricao: 'Internet', valor: 100 },
+  { id: 'f3-3', categoria: 'UTILIDADES', descricao: 'Internet', valor: 150 },
   { id: 'f3-4', categoria: 'UTILIDADES', descricao: 'Telefonia fixa', valor: 0 },
   { id: 'f3-5', categoria: 'UTILIDADES', descricao: 'Telefonia móvel', valor: 0 },
   { id: 'f3-6', categoria: 'UTILIDADES', descricao: 'Link dedicado', valor: 0 },
-  // 4. TECNOLOGIA / TI (R$ 500,00)
+
+  // 4. TECNOLOGIA / TI
   { id: 'f4-1', categoria: 'TECNOLOGIA / TI', descricao: 'Sistema ERP', valor: 500 },
-  { id: 'f4-2', categoria: 'TECNOLOGIA / TI', descricao: 'Sistema contabil', valor: 0 },
+  { id: 'f4-2', categoria: 'TECNOLOGIA / TI', descricao: 'Sistema contábil', valor: 0 },
   { id: 'f4-3', categoria: 'TECNOLOGIA / TI', descricao: 'CRM', valor: 0 },
   { id: 'f4-4', categoria: 'TECNOLOGIA / TI', descricao: 'Softwares de precificação', valor: 0 },
   { id: 'f4-5', categoria: 'TECNOLOGIA / TI', descricao: 'Licenças de software (Microsoft, Adobe, etc.)', valor: 0 },
   { id: 'f4-6', categoria: 'TECNOLOGIA / TI', descricao: 'Hospedagem de site', valor: 0 },
   { id: 'f4-7', categoria: 'TECNOLOGIA / TI', descricao: 'Domínio', valor: 0 },
   { id: 'f4-8', categoria: 'TECNOLOGIA / TI', descricao: 'Manutenção de TI', valor: 0 },
-  { id: 'f4-9', categoria: 'TECNOLOGIA / TI', descricao: 'ré técnico', valor: 0 },
-  // 5. SERVIÇOS TERCEIRIZADOS (R$ 800,00)
+  { id: 'f4-9', categoria: 'TECNOLOGIA / TI', descricao: 'Suporte técnico', valor: 0 },
+
+  // 5. SERVIÇOS TERCEIRIZADOS
   { id: 'f5-1', categoria: 'SERVIÇOS TERCEIRIZADOS', descricao: 'Contabilidade', valor: 800 },
   { id: 'f5-2', categoria: 'SERVIÇOS TERCEIRIZADOS', descricao: 'Assessoria Jurídica (mensalidade)', valor: 0 },
   { id: 'f5-3', categoria: 'SERVIÇOS TERCEIRIZADOS', descricao: 'Consultoria financeira', valor: 0 },
-  { id: 'f5-4', categoria: 'SERVIÇOS TERCEIRIZADOS', descricao: 'RH pertencente', valor: 0 },
+  { id: 'f5-4', categoria: 'SERVIÇOS TERCEIRIZADOS', descricao: 'RH Terceirizado', valor: 0 },
   { id: 'f5-5', categoria: 'SERVIÇOS TERCEIRIZADOS', descricao: 'Marketing (contrato mensal)', valor: 0 },
-  { id: 'f5-6', categoria: 'SERVIÇOS TERCEIRIZADOS', descricao: 'Agência decus', valor: 0 },
-  { id: 'f5-7', categoria: 'SERVIÇOS TERCEIRIZADOS', descricao: 'Auditório recorrente', valor: 0 },
-  // 6. DESPESAS ADMINISTRATIVAS (R$ 600,00)
-  { id: 'f6-1', categoria: 'DESPESAS ADMINISTRATIVAS', descricao: 'Material de escritório', valor: 300 },
-  { id: 'f6-2', categoria: 'DESPESAS ADMINISTRATIVAS', descricao: 'Papelaria', valor: 300 },
+  { id: 'f5-6', categoria: 'SERVIÇOS TERCEIRIZADOS', descricao: 'Agência de publicidade', valor: 0 },
+  { id: 'f5-7', categoria: 'SERVIÇOS TERCEIRIZADOS', descricao: 'Auditoria recorrente', valor: 0 },
+
+  // 6. DESPESAS ADMINISTRATIVAS
+  { id: 'f6-1', categoria: 'DESPESAS ADMINISTRATIVAS', descricao: 'Material de escritório', valor: 200 },
+  { id: 'f6-2', categoria: 'DESPESAS ADMINISTRATIVAS', descricao: 'Papelaria', valor: 0 },
   { id: 'f6-3', categoria: 'DESPESAS ADMINISTRATIVAS', descricao: 'Correios', valor: 0 },
   { id: 'f6-4', categoria: 'DESPESAS ADMINISTRATIVAS', descricao: 'Mensageiro', valor: 0 },
   { id: 'f6-5', categoria: 'DESPESAS ADMINISTRATIVAS', descricao: 'Assinatura digital', valor: 0 },
-  { id: 'f6-6', categoria: 'DESPESAS ADMINISTRATIVAS', descricao: 'Despesas guilhotinas fixas', valor: 0 },
+  { id: 'f6-6', categoria: 'DESPESAS ADMINISTRATIVAS', descricao: 'Despesas gerais fixas', valor: 0 },
   { id: 'f6-7', categoria: 'DESPESAS ADMINISTRATIVAS', descricao: 'Assinaturas empresariais', valor: 0 },
-  // 7. IMPOSTOS E TAXAS FIXAS (R$ 0,00)
+
+  // 7. IMPOSTOS E TAXAS FIXAS
   { id: 'f7-1', categoria: 'IMPOSTOS E TAXAS FIXAS', descricao: 'DAS mínimo (Simples Nacional)', valor: 0 },
-  { id: 'f7-2', categoria: 'IMPOSTOS E TAXAS FIXAS', descricao: 'Álvará de funcionamento', valor: 0 },
+  { id: 'f7-2', categoria: 'IMPOSTOS E TAXAS FIXAS', descricao: 'Alvará de funcionamento', valor: 0 },
   { id: 'f7-3', categoria: 'IMPOSTOS E TAXAS FIXAS', descricao: 'Licenças municipais e estaduais', valor: 0 },
   { id: 'f7-4', categoria: 'IMPOSTOS E TAXAS FIXAS', descricao: 'Taxas ambientais', valor: 0 },
   { id: 'f7-5', categoria: 'IMPOSTOS E TAXAS FIXAS', descricao: 'Conselhos de classe (CRC, CREA, etc.)', valor: 0 },
-  // 8. FINANCEIRO (R$ 0,00)
+
+  // 8. FINANCEIRO
   { id: 'f8-1', categoria: 'FINANCEIRO', descricao: 'Parcelas de Empréstimos', valor: 0 },
-  { id: 'f8-2', categoria: 'FINANCEIRO', descricao: 'Juross', valor: 0 },
+  { id: 'f8-2', categoria: 'FINANCEIRO', descricao: 'Juros fixos', valor: 0 },
   { id: 'f8-3', categoria: 'FINANCEIRO', descricao: 'Locação de equipamentos', valor: 0 },
   { id: 'f8-4', categoria: 'FINANCEIRO', descricao: 'Aluguel de máquinas', valor: 0 },
   { id: 'f8-5', categoria: 'FINANCEIRO', descricao: 'Consórcios empresariais', valor: 0 },
-  // 9. DEPRECIAÇÃO/AMORTIZAÇÃO (R$ 0,00)
+
+  // 9. DEPRECIAÇÃO/AMORTIZAÇÃO
   { id: 'f9-1', categoria: 'DEPRECIAÇÃO/AMORTIZAÇÃO', descricao: 'Depreciação de máquinas', valor: 0 },
   { id: 'f9-2', categoria: 'DEPRECIAÇÃO/AMORTIZAÇÃO', descricao: 'Depreciação de veículos', valor: 0 },
   { id: 'f9-3', categoria: 'DEPRECIAÇÃO/AMORTIZAÇÃO', descricao: 'Depreciação de computadores', valor: 0 },
   { id: 'f9-4', categoria: 'DEPRECIAÇÃO/AMORTIZAÇÃO', descricao: 'Depreciação de móveis', valor: 0 },
   { id: 'f9-5', categoria: 'DEPRECIAÇÃO/AMORTIZAÇÃO', descricao: 'Amortização de softwares', valor: 0 },
   { id: 'f9-6', categoria: 'DEPRECIAÇÃO/AMORTIZAÇÃO', descricao: 'Amortização de marcas e patentes', valor: 0 },
-  // 10. SOLUÇÃO DE MARKETING (R$ 0,00)
-  { id: 'f10-1', categoria: 'SOLUÇÃO DE MARKETING', descricao: 'Mensalidade de seis', valor: 0 },
-  { id: 'f10-2', categoria: 'SOLUÇÃO DE MARKETING', descricao: 'Ferramentas de marketing', valor: 0 },
-  { id: 'f10-3', categoria: 'SOLUÇÃO DE MARKETING', descricao: 'Plataformas de guerrilha', valor: 0 },
+
+  // 10. SOLUÇÃO DE MARKETING
+  { id: 'f10-1', categoria: 'SOLUÇÃO DE MARKETING', descricao: 'Mensalidade ferramentas SEO/SEM', valor: 0 },
+  { id: 'f10-2', categoria: 'SOLUÇÃO DE MARKETING', descricao: 'Ferramentas de marketing digital', valor: 0 },
+  { id: 'f10-3', categoria: 'SOLUÇÃO DE MARKETING', descricao: 'Plataformas de automação', valor: 0 },
   { id: 'f10-4', categoria: 'SOLUÇÃO DE MARKETING', descricao: 'Produção recorrente de conteúdo', valor: 0 },
   { id: 'f10-5', categoria: 'SOLUÇÃO DE MARKETING', descricao: 'Assinaturas de bancos de imagem', valor: 0 },
 ];
 
 const defaultVariableCosts: VariableCostItem[] = [
-  // 1. IMPOSTOS SOBRE VENDAS (6%)
+  // 1. IMPOSTOS SOBRE VENDAS
   { id: 'v1-1', categoria: 'IMPOSTOS SOBRE VENDAS', descricao: 'Simples Nacional (% sobre faturamento)', percentual: 6 },
   { id: 'v1-2', categoria: 'IMPOSTOS SOBRE VENDAS', descricao: 'ICMS', percentual: 0 },
   { id: 'v1-3', categoria: 'IMPOSTOS SOBRE VENDAS', descricao: 'ISS', percentual: 0 },
   { id: 'v1-4', categoria: 'IMPOSTOS SOBRE VENDAS', descricao: 'PIS', percentual: 0 },
   { id: 'v1-5', categoria: 'IMPOSTOS SOBRE VENDAS', descricao: 'COFINS', percentual: 0 },
-  // 2. CUSTO DO PRODUTO / SERVIÇO (0%)
+
+  // 2. CUSTO DO PRODUTO / SERVIÇO
   { id: 'v2-1', categoria: 'CUSTO DO PRODUTO / SERVIÇO', descricao: 'Custo da Mercadoria Vendida (CMV)', percentual: 0 },
   { id: 'v2-2', categoria: 'CUSTO DO PRODUTO / SERVIÇO', descricao: 'Matéria-prima', percentual: 0 },
   { id: 'v2-3', categoria: 'CUSTO DO PRODUTO / SERVIÇO', descricao: 'Insumos de produção', percentual: 0 },
   { id: 'v2-4', categoria: 'CUSTO DO PRODUTO / SERVIÇO', descricao: 'Terceirização por demanda', percentual: 0 },
-  // 3. LOGÍSTICA (1.5%)
+
+  // 3. LOGÍSTICA
   { id: 'v3-1', categoria: 'LOGÍSTICA', descricao: 'Frete sobre vendas', percentual: 0 },
-  { id: 'v3-2', categoria: 'LOGÍSTICA', descricao: 'Correios', percentual: 0 },
+  { id: 'v3-2', categoria: 'LOGÍSTICA', descricao: 'Correios (Variável)', percentual: 0 },
   { id: 'v3-3', categoria: 'LOGÍSTICA', descricao: 'Transportadora', percentual: 0 },
   { id: 'v3-4', categoria: 'LOGÍSTICA', descricao: 'Embalagens', percentual: 1.5 },
   { id: 'v3-5', categoria: 'LOGÍSTICA', descricao: 'Armazenagem por volume', percentual: 0 },
-  // 4. COMERCIAL / VENDAS (0%)
-  { id: 'v4-1', categoria: 'COMERCIAL / VENDAS', descricao: 'Comissão de tí', percentual: 0 },
-  { id: 'v4-2', categoria: 'COMERCIAL / VENDAS', descricao: 'Bonfe por meta', percentual: 0 },
+
+  // 4. COMERCIAL / VENDAS
+  { id: 'v4-1', categoria: 'COMERCIAL / VENDAS', descricao: 'Comissão de vendas', percentual: 0 },
+  { id: 'v4-2', categoria: 'COMERCIAL / VENDAS', descricao: 'Bônus por meta', percentual: 0 },
   { id: 'v4-3', categoria: 'COMERCIAL / VENDAS', descricao: 'Premiações por desempenho', percentual: 0 },
-  // 5. MEIOS DE PAGAMENTO (2.5%)
-  { id: 'v5-1', categoria: 'MEIOS DE PAGAMENTO', descricao: 'Taxa de recrutamento de crédito', percentual: 2.5 },
-  { id: 'v5-2', categoria: 'MEIOS DE PAGAMENTO', descricao: 'Taxa de concepção de débito', percentual: 0 },
+
+  // 5. MEIOS DE PAGAMENTO
+  { id: 'v5-1', categoria: 'MEIOS DE PAGAMENTO', descricao: 'Taxa de cartão de crédito', percentual: 2.5 },
+  { id: 'v5-2', categoria: 'MEIOS DE PAGAMENTO', descricao: 'Taxa de cartão de débito', percentual: 0 },
   { id: 'v5-3', categoria: 'MEIOS DE PAGAMENTO', descricao: 'Taxa de gateway de pagamento', percentual: 0 },
-  { id: 'v5-4', categoria: 'MEIOS DE PAGAMENTO', descricao: 'Taxa de mercado', percentual: 0 },
-  // 6. VARIÁVEL DE MARKETING (0%)
+  { id: 'v5-4', categoria: 'MEIOS DE PAGAMENTO', descricao: 'Taxa de marketplace / antifraude', percentual: 0 },
+
+  // 6. VARIÁVEL DE MARKETING
   { id: 'v6-1', categoria: 'VARIÁVEL DE MARKETING', descricao: 'Tráfego pago (Google Ads, Meta Ads)', percentual: 0 },
-  { id: 'v6-2', categoria: 'VARIÁVEL DE MARKETING', descricao: 'Campanhas promocionais', percentual: 0 },
-  { id: 'v6-3', categoria: 'VARIÁVEL DE MARKETING', descricao: 'Influenciadores (por)', percentual: 0 },
-  // 7. FINANCEIRO VARIÁVEL (0%)
-  { id: 'v7-1', categoria: 'FINANCEIRO VARIÁVEL', descricao: 'Juros por atraso', percentual: 0 },
-  { id: 'v7-2', categoria: 'FINANCEIRO VARIÁVEL', descricao: 'Multas bibliotecas', percentual: 0 },
+  { id: 'v6-2', categoria: 'VARIÁVEL DE MARKETING', descricao: 'Campanhas promocionais pontuais', percentual: 0 },
+  { id: 'v6-3', categoria: 'VARIÁVEL DE MARKETING', descricao: 'Influenciadores (cachê por ação)', percentual: 0 },
+
+  // 7. FINANCEIRO VARIÁVEL
+  { id: 'v7-1', categoria: 'FINANCEIRO VARIÁVEL', descricao: 'Juros por atraso (pagamentos)', percentual: 0 },
+  { id: 'v7-2', categoria: 'FINANCEIRO VARIÁVEL', descricao: 'Multas bancárias', percentual: 0 },
   { id: 'v7-3', categoria: 'FINANCEIRO VARIÁVEL', descricao: 'Descontos concedidos', percentual: 0 },
-  { id: 'v7-4', categoria: 'FINANCEIRO VARIÁVEL', descricao: 'Estorno', percentual: 0 },
-  // 8. OUTROS CUSTOS VARIÁVEIS (0%)
+  { id: 'v7-4', categoria: 'FINANCEIRO VARIÁVEL', descricao: 'Estornos / Chargebacks', percentual: 0 },
+
+  // 8. OUTROS CUSTOS VARIÁVEIS
   { id: 'v8-1', categoria: 'OUTROS CUSTOS VARIÁVEIS', descricao: 'Royalties', percentual: 0 },
   { id: 'v8-2', categoria: 'OUTROS CUSTOS VARIÁVEIS', descricao: 'Impostos por transação', percentual: 0 },
   { id: 'v8-3', categoria: 'OUTROS CUSTOS VARIÁVEIS', descricao: 'Comissões de parceiros', percentual: 0 },
-  { id: 'v8-4', categoria: 'OUTROS CUSTOS VARIÁVEIS', descricao: 'Custos por projeto', percentual: 0 },
+  { id: 'v8-4', categoria: 'OUTROS CUSTOS VARIÁVEIS', descricao: 'Custos diretos por projeto', percentual: 0 },
 ];
 
 const defaultInputs: SimulationInputs = {
-  nomeProduto: '',
-  valorCompra: 100.00,
-  ipiPerc: 0.00,
+  nomeProduto: 'Exemplo Planilha',
+  valorCompra: 110.00,
+  ipiPerc: 15.00,
   freteValor: 0.00,
-  mva: 32.00,
-  mvaOriginal: 32.00,
-  icmsInternoDestino: 18.00,
+  mva: 0.00,
+  mvaOriginal: 0.00,
+  icmsInternoDestino: 20.50,
   icmsInterestadual: 12.00,
+  icmsCreditoMercadoria: 4.00,
+  icmsCreditoFrete: 7.00,
   ufOrigem: 'SP',
-  ufDestino: 'RJ',
-  ncmCodigo: '2523.29.10',
+  ufDestino: 'BA',
+  ncmCodigo: '6907',
   pisCofinsRate: 9.25,
   excluirIcmsPis: true,
   pisCofinsVenda: 9.25,
   comissaoVenda: 0.0,
-  icmsVenda: 18.00,
+  icmsVenda: 20.50,
   outrosCustosVariaveis: 0.00,
-  custosFixos: 0.00,
+  custosFixos: 20.00,
   resultadoDesejado: 8.00,
   tipoProduto: 'comod',
-  mode: 'substituido',
+  mode: 'tributado',
   percReducaoBase: 0,
   simulationMode: 'buyToSell',
   precoVendaDesejado: 0
@@ -180,19 +192,18 @@ const App: React.FC = () => {
   const [faturamento, setFaturamento] = useState<number>(100000);
   const [fixedCosts, setFixedCosts] = useState<CostItem[]>(defaultFixedCosts);
   const [variableCosts, setVariableCosts] = useState<VariableCostItem[]>(defaultVariableCosts);
-  const [isAutoSync, setIsAutoSync] = useState(true);
+  const [isAutoSync, setIsAutoSync] = useState(false);
 
   useEffect(() => {
-    // SÓ ATUALIZA AUTOMATICAMENTE SE ESTIVER NO MODO AUTO-SYNC
     if (isAutoSync) {
       const totalFixed = fixedCosts.reduce((acc, curr) => acc + curr.valor, 0);
       const totalVarPerc = variableCosts.reduce((acc, curr) => acc + curr.percentual, 0);
       const fixedPercOnFat = faturamento > 0 ? (totalFixed / faturamento) * 100 : 0;
       const totalOverheadWeight = fixedPercOnFat + totalVarPerc;
-      
+      const truncatedOverhead = Math.floor(totalOverheadWeight * 100) / 100;
       setInputs(prev => ({
         ...prev,
-        custosFixos: parseFloat(totalOverheadWeight.toFixed(2))
+        custosFixos: truncatedOverhead
       }));
     }
   }, [faturamento, fixedCosts, variableCosts, isAutoSync]);
@@ -243,14 +254,13 @@ const App: React.FC = () => {
     if (data && !error) {
       setFaturamento(data.faturamento);
       const mergedFixed = defaultFixedCosts.map(def => {
-        const saved = (data.fixed_costs as CostItem[]).find(s => s.descricao === def.descricao);
+        const saved = (data.fixed_costs as CostItem[]).find((s:any) => s.descricao === def.descricao);
         return saved ? { ...def, valor: saved.valor, id: saved.id || def.id } : def;
       });
       const mergedVar = defaultVariableCosts.map(def => {
-        const saved = (data.variable_costs as VariableCostItem[]).find(s => s.descricao === def.descricao);
+        const saved = (data.variable_costs as VariableCostItem[]).find((s:any) => s.descricao === def.descricao);
         return saved ? { ...def, percentual: saved.percentual, id: saved.id || def.id } : def;
       });
-
       setFixedCosts(mergedFixed);
       setVariableCosts(mergedVar);
     }
@@ -363,8 +373,6 @@ const App: React.FC = () => {
             </div>
           </div>
         )}
-        
-        {/* NOVAS TELAS: STORAGE E AJUSTES */}
         {(activeTab === 'storage-period' || activeTab === 'configuracao') && (
           <div className="flex-1 flex flex-col items-center justify-center p-8 bg-slate-50">
              <div className="w-24 h-24 bg-white rounded-[2rem] shadow-xl flex items-center justify-center mb-8 border border-slate-200">

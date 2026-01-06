@@ -30,6 +30,8 @@ export const calculateCosts = (inputs: SimulationInputs): SimulationResults => {
     mva,
     icmsInternoDestino,
     icmsInterestadual,
+    icmsCreditoMercadoria,
+    icmsCreditoFrete,
     pisCofinsRate,
     excluirIcmsPis,
     pisCofinsVenda,
@@ -42,41 +44,45 @@ export const calculateCosts = (inputs: SimulationInputs): SimulationResults => {
     percReducaoBase
   } = inputs;
 
-  // 1. Cálculo da Operação Própria (Crédito para o adquirente / Abatimento do ST)
-  // Valor Total da Nota = Valor Mercadoria + Valor IPI + Frete
+  // 1. Dados Compra
   const valorIpi = valorCompra * (ipiPerc / 100);
   const valorTotalNota = valorCompra + valorIpi + freteValor;
   
-  // O ICMS Próprio é calculado sobre o valor da mercadoria (em operações entre contribuintes)
-  const valorIcmsProprio = valorCompra * (icmsInterestadual / 100);
+  // 2. Créditos Fiscais (Destaque conforme planilha - Entradas)
+  const creditoIcmsMercadoria = valorCompra * (icmsCreditoMercadoria / 100);
+  const creditoIcmsFrete = freteValor * (icmsCreditoFrete / 100);
+  const totalCreditoIcms = creditoIcmsMercadoria + creditoIcmsFrete;
   
   let stAPagar = 0;
   let baseCalculoSt = 0;
   let icmsStBruto = 0;
   
+  // Lógica de ST (Somente se modo for Substituído)
   if (mode === 'substituido') {
-    // Base ST = (Mercadoria + IPI + Frete) * (1 + MVA)
     baseCalculoSt = valorTotalNota * (1 + mva / 100);
     icmsStBruto = baseCalculoSt * (icmsInternoDestino / 100);
-    
-    // REGRA FISCAL: ST a recolher = (Base ST * Alíquota Interna Destino) - ICMS Operação Própria
-    stAPagar = Math.max(0, icmsStBruto - valorIcmsProprio);
+    stAPagar = Math.max(0, icmsStBruto - (valorCompra * (icmsInterestadual / 100)));
   }
 
-  // 2. PIS e COFINS de Entrada
-  let basePisCofins = valorCompra;
-  if (excluirIcmsPis) basePisCofins = valorCompra - valorIcmsProprio;
-  const creditoPisCofinsValor = basePisCofins * (pisCofinsRate / 100);
+  // 3. PIS e COFINS de Entrada (Crédito sobre base líquida de ICMS conforme planilha)
+  let baseCreditoPisCofins = valorCompra + freteValor;
+  if (excluirIcmsPis) {
+    // Base de cálculo para o crédito de 9,25% na planilha é (110 - 4,40) = 105,60
+    baseCreditoPisCofins = (valorCompra + freteValor) - totalCreditoIcms;
+  }
+  const creditoPisCofinsValor = baseCreditoPisCofins * (pisCofinsRate / 100);
 
-  // 3. Custo Líquido (Break-even do Estoque)
+  // 4. Custo Mercadoria (Igual à planilha: 112,33)
+  // Valor Total Nota - Crédito ICMS Merc - Crédito ICMS Frete - Crédito PIS/COFINS
   let custoFinal = 0;
   if (mode === 'substituido') {
     custoFinal = valorTotalNota + stAPagar - creditoPisCofinsValor;
   } else {
-    custoFinal = valorTotalNota - valorIcmsProprio - creditoPisCofinsValor;
+    // Tributado: 126,50 - 4,40 - 0 - 9,77 = 112,33
+    custoFinal = valorTotalNota - (totalCreditoIcms + creditoPisCofinsValor);
   }
 
-  // 4. ICMS na Saída (Venda)
+  // 5. ICMS na Saída (Venda)
   let icmsVendaEfetivo = icmsVenda;
   if (mode === 'substituido') {
     icmsVendaEfetivo = 0;
@@ -84,28 +90,35 @@ export const calculateCosts = (inputs: SimulationInputs): SimulationResults => {
     icmsVendaEfetivo = icmsVenda * (1 - (percReducaoBase / 100));
   }
 
-  // 5. Formação de Preço
-  const deducoesVendaPerc = pisCofinsVenda + comissaoVenda + icmsVendaEfetivo + outrosCustosVariaveis + custosFixos;
-  const divisor = (100 - (deducoesVendaPerc + resultadoDesejado)) / 100;
+  // 6. Formação de Preço via Markup Divisor (Exatamente conforme planilha)
+  // Soma das % de saída: PIS/COF (9,25) + Comissão (0) + ICMS (20,5) + Fixos (20) + Margem (8) = 57,75%
+  const deducoesSaidaPerc = pisCofinsVenda + comissaoVenda + icmsVendaEfetivo + outrosCustosVariaveis + custosFixos + resultadoDesejado;
+  const divisor = (100 - deducoesSaidaPerc) / 100;
   
+  // Preço de Venda: 112,33 / 0,4225 = 265,87
   const precoVendaAlvo = divisor > 0 ? custoFinal / divisor : 0;
   const margemAbsoluta = precoVendaAlvo * (resultadoDesejado / 100);
-  const precoEquilibrio = (100 - deducoesVendaPerc) > 0 ? custoFinal / ((100 - deducoesVendaPerc) / 100) : 0;
+  
+  const deducoesVariaveisSemMargem = pisCofinsVenda + comissaoVenda + icmsVendaEfetivo + outrosCustosVariaveis + custosFixos;
+  const precoEquilibrio = (100 - deducoesVariaveisSemMargem) > 0 ? custoFinal / ((100 - deducoesVariaveisSemMargem) / 100) : 0;
   
   const impostosTotais = stAPagar + (precoVendaAlvo * (icmsVendaEfetivo / 100)) + (precoVendaAlvo * (pisCofinsVenda / 100));
 
   return {
     valorTotalNota,
+    valorIpi,
     baseCalculoSt,
     icmsStBruto,
-    creditoIcmsEntrada: valorIcmsProprio,
+    creditoIcmsMercadoria,
+    creditoIcmsFrete,
+    creditoIcmsEntrada: totalCreditoIcms,
     stAPagar,
-    basePisCofins,
+    basePisCofins: baseCreditoPisCofins,
     creditoPisCofinsValor,
     custoFinal,
     precoEquilibrio,
     precoVendaAlvo,
-    totalDeducoesVendaPerc: deducoesVendaPerc + resultadoDesejado,
+    totalDeducoesVendaPerc: deducoesSaidaPerc,
     icmsVendaEfetivo,
     margemAbsoluta,
     impostosTotais

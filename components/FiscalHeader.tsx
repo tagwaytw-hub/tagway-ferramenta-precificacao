@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { SimulationInputs } from '../types';
 import { NCM_DATABASE, UF_LIST } from '../utils/ncmData';
@@ -28,7 +29,10 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
     const newDestino = field === 'ufDestino' ? val : inputs.ufDestino;
     const destUf = UF_LIST.find(u => u.sigla === newDestino);
     const interRate = getInterstateRate(newOrigem, newDestino);
-    const adjMva = calculateAdjustedMva(inputs.mvaOriginal, interRate, destUf?.icms || 18);
+    const rawAdjMva = calculateAdjustedMva(inputs.mvaOriginal, interRate, destUf?.icms || 18);
+    
+    // NÃO ARREDONDAR: Truncar para 2 casas decimais
+    const adjMva = Math.floor(rawAdjMva * 100) / 100;
 
     setInputs(prev => ({
       ...prev,
@@ -42,7 +46,10 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
   const selectNcm = (ncm: any) => {
     const destUf = UF_LIST.find(u => u.sigla === inputs.ufDestino);
     const interRate = getInterstateRate(inputs.ufOrigem, inputs.ufDestino);
-    const adjMva = calculateAdjustedMva(ncm.mvaOriginal, interRate, destUf?.icms || 18);
+    const rawAdjMva = calculateAdjustedMva(ncm.mvaOriginal, interRate, destUf?.icms || 18);
+    
+    // NÃO ARREDONDAR: Truncar para 2 casas decimais
+    const adjMva = Math.floor(rawAdjMva * 100) / 100;
     
     setInputs(prev => ({
       ...prev,
@@ -136,9 +143,11 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
             <p className="text-[8px] font-black text-white/30 uppercase mb-1">Inter</p>
             <p className="text-sm font-black text-white font-mono">{inputs.icmsInterestadual}%</p>
          </div>
-         <div className="bg-white/5 p-3 rounded-xl border border-white/5 text-center">
+         <div className={`bg-white/5 p-3 rounded-xl border border-white/5 text-center transition-opacity ${inputs.mode === 'tributado' ? 'opacity-20' : 'opacity-100'}`}>
             <p className="text-[8px] font-black text-white/30 uppercase mb-1">MVA Adj</p>
-            <p className="text-sm font-black text-amber-400 font-mono">{inputs.mva.toFixed(1)}%</p>
+            <p className="text-sm font-black text-amber-400 font-mono">
+              {inputs.mode === 'tributado' ? '0.00' : inputs.mva.toFixed(2)}%
+            </p>
          </div>
       </div>
     </div>
