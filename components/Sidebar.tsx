@@ -62,7 +62,27 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs }) => {
         <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Despesas de Venda</label>
         <div className="grid grid-cols-1 gap-3">
           <InputGroup label="Comissão (%)" value={inputs.comissaoVenda} onChange={(v: string) => handleChange('comissaoVenda', v)} />
-          <InputGroup label="Fixos / Overhead (%)" value={inputs.custosFixos} onChange={(v: string) => handleChange('custosFixos', v)} />
+          
+          {/* CAMPO SINCRONIZADO: FIXOS / OVERHEAD */}
+          <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-4 shadow-inner relative group overflow-hidden">
+            <div className="flex justify-between items-center mb-1">
+              <label className="block text-[8px] font-black text-slate-400 uppercase tracking-widest">Peso Overhead (%)</label>
+              <div className="flex items-center gap-1">
+                <span className="text-[7px] font-black text-blue-600 uppercase bg-blue-50 px-1.5 py-0.5 rounded">Auto-Sync</span>
+                <svg className="w-3 h-3 text-blue-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input 
+                type="number" 
+                readOnly
+                value={inputs.custosFixos} 
+                className="w-full text-lg font-black text-blue-600 font-mono bg-transparent outline-none cursor-default" 
+              />
+              <span className="text-[10px] font-black text-slate-300">%</span>
+            </div>
+            <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+          </div>
         </div>
       </section>
 

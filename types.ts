@@ -26,6 +26,20 @@ export interface SimulationInputs {
   precoVendaDesejado: number;
 }
 
+export interface CostItem {
+  id: string;
+  descricao: string;
+  valor: number;
+  categoria: string;
+}
+
+export interface VariableCostItem {
+  id: string;
+  descricao: string;
+  percentual: number;
+  categoria: string;
+}
+
 export interface SimulationResults {
   valorTotalNota: number;
   baseCalculoSt: number;
