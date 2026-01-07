@@ -2,6 +2,9 @@
 import { SimulationInputs, SimulationResults } from '../types';
 import { UF_LIST } from './ncmData';
 
+// Helper para arredondamento fiscal padrão (2 casas)
+const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
+
 export const getInterstateRate = (origem: string, destino: string): number => {
   if (origem === destino) {
     const uf = UF_LIST.find(u => u.sigla === origem);
@@ -29,80 +32,84 @@ export const calculateCosts = (inputs: SimulationInputs): SimulationResults => {
     freteValor,
     mva,
     icmsInternoDestino,
-    icmsInterestadual,
     icmsCreditoMercadoria,
     icmsCreditoFrete,
     pisCofinsRate,
-    excluirIcmsPis,
     pisCofinsVenda,
     comissaoVenda,
     icmsVenda,
     outrosCustosVariaveis,
     custosFixos,
     resultadoDesejado,
-    mode,
-    percReducaoBase
+    mode
   } = inputs;
 
-  // 1. Dados Compra
-  const valorIpi = valorCompra * (ipiPerc / 100);
-  const valorTotalNota = valorCompra + valorIpi + freteValor;
+  // 1. DADOS MERCADORIA
+  const valorIpi = round2(valorCompra * (ipiPerc / 100));
+  const valorTotalNota = round2(valorCompra + valorIpi + freteValor);
   
-  // 2. Créditos Fiscais (Destaque conforme planilha - Entradas)
-  const creditoIcmsMercadoria = valorCompra * (icmsCreditoMercadoria / 100);
-  const creditoIcmsFrete = freteValor * (icmsCreditoFrete / 100);
-  const totalCreditoIcms = creditoIcmsMercadoria + creditoIcmsFrete;
+  // 2. DADOS COMPRA (Créditos ICMS)
+  // Base de ICMS na entrada costuma ser Mercadoria + Frete
+  const baseCalculoIcmsEntrada = round2(valorCompra + freteValor);
+  const creditoIcmsMercadoria = round2(valorCompra * (icmsCreditoMercadoria / 100));
+  const creditoIcmsFrete = round2(freteValor * (icmsCreditoFrete / 100));
+  const totalCreditoIcms = round2(creditoIcmsMercadoria + creditoIcmsFrete);
   
+  // 3. SUBSTITUIÇÃO TRIBUTÁRIA (Se aplicável)
   let stAPagar = 0;
   let baseCalculoSt = 0;
   let icmsStBruto = 0;
   
-  // Lógica de ST (Somente se modo for Substituído)
   if (mode === 'substituido') {
-    baseCalculoSt = valorTotalNota * (1 + mva / 100);
-    icmsStBruto = baseCalculoSt * (icmsInternoDestino / 100);
-    stAPagar = Math.max(0, icmsStBruto - (valorCompra * (icmsInterestadual / 100)));
+    baseCalculoSt = round2(valorTotalNota * (1 + mva / 100));
+    icmsStBruto = round2(baseCalculoSt * (icmsInternoDestino / 100));
+    // Deducão do ST usa o crédito próprio
+    stAPagar = round2(Math.max(0, icmsStBruto - totalCreditoIcms));
   }
 
-  // 3. PIS e COFINS de Entrada (Crédito sobre base líquida de ICMS conforme planilha)
-  let baseCreditoPisCofins = valorCompra + freteValor;
-  if (excluirIcmsPis) {
-    // Base de cálculo para o crédito de 9,25% na planilha é (110 - 4,40) = 105,60
-    baseCreditoPisCofins = (valorCompra + freteValor) - totalCreditoIcms;
-  }
-  const creditoPisCofinsValor = baseCreditoPisCofins * (pisCofinsRate / 100);
+  // 4. CRÉDITOS PIS E COFINS
+  // Base PIS/COFINS = (Total Nota - Crédito ICMS) para alinhar com os R$ 9,15 da planilha
+  const baseCreditoPisCofins = round2(valorTotalNota - totalCreditoIcms);
+  const creditoPisCofinsValor = round2(baseCreditoPisCofins * (pisCofinsRate / 100));
 
-  // 4. Custo Mercadoria (Igual à planilha: 112,33)
-  // Valor Total Nota - Crédito ICMS Merc - Crédito ICMS Frete - Crédito PIS/COFINS
+  // 5. CUSTO MERCADORIA (Líquido)
   let custoFinal = 0;
   if (mode === 'substituido') {
-    custoFinal = valorTotalNota + stAPagar - creditoPisCofinsValor;
+    custoFinal = round2(valorTotalNota + stAPagar - creditoPisCofinsValor);
   } else {
-    // Tributado: 126,50 - 4,40 - 0 - 9,77 = 112,33
-    custoFinal = valorTotalNota - (totalCreditoIcms + creditoPisCofinsValor);
+    // Tributação Normal: Subtrai todos os créditos do desembolso total
+    custoFinal = round2(valorTotalNota - totalCreditoIcms - creditoPisCofinsValor);
   }
 
-  // 5. ICMS na Saída (Venda)
+  // 6. DADOS VENDA (Preço de Venda via Markup Divisor)
   let icmsVendaEfetivo = icmsVenda;
   if (mode === 'substituido') {
     icmsVendaEfetivo = 0;
   } else if (mode === 'reduzido') {
-    icmsVendaEfetivo = icmsVenda * (1 - (percReducaoBase / 100));
+    icmsVendaEfetivo = round2(icmsVenda * (1 - (inputs.percReducaoBase / 100)));
   }
 
-  // 6. Formação de Preço via Markup Divisor (Exatamente conforme planilha)
-  // Soma das % de saída: PIS/COF (9,25) + Comissão (0) + ICMS (20,5) + Fixos (20) + Margem (8) = 57,75%
-  const deducoesSaidaPerc = pisCofinsVenda + comissaoVenda + icmsVendaEfetivo + outrosCustosVariaveis + custosFixos + resultadoDesejado;
+  // Somatória de deduções em percentual
+  const deducoesSaidaPerc = round2(
+    pisCofinsVenda + 
+    comissaoVenda + 
+    icmsVendaEfetivo + 
+    outrosCustosVariaveis + 
+    custosFixos + 
+    resultadoDesejado
+  );
+  
   const divisor = (100 - deducoesSaidaPerc) / 100;
+  const precoVendaAlvo = divisor > 0 ? round2(custoFinal / divisor) : 0;
   
-  // Preço de Venda: 112,33 / 0,4225 = 265,87
-  const precoVendaAlvo = divisor > 0 ? custoFinal / divisor : 0;
-  const margemAbsoluta = precoVendaAlvo * (resultadoDesejado / 100);
+  // Valores absolutos na saída para o relatório
+  const valorIcmsVenda = round2(precoVendaAlvo * (icmsVendaEfetivo / 100));
+  const valorPisCofinsVenda = round2(precoVendaAlvo * (pisCofinsVenda / 100));
+  const margemAbsoluta = round2(precoVendaAlvo * (resultadoDesejado / 100));
   
-  const deducoesVariaveisSemMargem = pisCofinsVenda + comissaoVenda + icmsVendaEfetivo + outrosCustosVariaveis + custosFixos;
-  const precoEquilibrio = (100 - deducoesVariaveisSemMargem) > 0 ? custoFinal / ((100 - deducoesVariaveisSemMargem) / 100) : 0;
-  
-  const impostosTotais = stAPagar + (precoVendaAlvo * (icmsVendaEfetivo / 100)) + (precoVendaAlvo * (pisCofinsVenda / 100));
+  const precoEquilibrio = (100 - (deducoesSaidaPerc - resultadoDesejado)) > 0 
+    ? round2(custoFinal / ((100 - (deducoesSaidaPerc - resultadoDesejado)) / 100)) 
+    : 0;
 
   return {
     valorTotalNota,
@@ -121,13 +128,14 @@ export const calculateCosts = (inputs: SimulationInputs): SimulationResults => {
     totalDeducoesVendaPerc: deducoesSaidaPerc,
     icmsVendaEfetivo,
     margemAbsoluta,
-    impostosTotais
+    impostosTotais: round2(stAPagar + valorIcmsVenda + valorPisCofinsVenda)
   };
 };
 
 export const generatePriceMatrix = (custoFinal: number, inputs: SimulationInputs): any => {
-  const { mode, icmsVenda } = inputs;
-  let icmsVendaEfetivo = mode === 'substituido' ? 0 : (mode === 'reduzido' ? icmsVenda * (1 - inputs.percReducaoBase / 100) : icmsVenda);
+  const { mode, icmsVenda, percReducaoBase } = inputs;
+  let icmsVendaEfetivo = mode === 'substituido' ? 0 : (mode === 'reduzido' ? icmsVenda * (1 - percReducaoBase / 100) : icmsVenda);
+  
   const baseDeducoes = inputs.pisCofinsVenda + inputs.comissaoVenda + icmsVendaEfetivo + inputs.outrosCustosVariaveis + inputs.custosFixos;
   
   const categorias = [
@@ -140,15 +148,15 @@ export const generatePriceMatrix = (custoFinal: number, inputs: SimulationInputs
 
   return categorias.map(cat => {
     const total = baseDeducoes + cat.margin;
-    const basePrice = total < 100 ? custoFinal / ((100 - total) / 100) : 0;
+    const basePrice = total < 100 ? round2(custoFinal / ((100 - total) / 100)) : 0;
     return {
       label: cat.label,
       margin: cat.margin,
       levels: {
-        A: basePrice * 0.95,
+        A: round2(basePrice * 0.95),
         B: basePrice,
-        C: basePrice * 1.05,
-        D: basePrice * 1.15
+        C: round2(basePrice * 1.05),
+        D: round2(basePrice * 1.15)
       }
     };
   });
