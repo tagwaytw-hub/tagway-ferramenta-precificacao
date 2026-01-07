@@ -27,11 +27,12 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
   const handleUfChange = (field: 'ufOrigem' | 'ufDestino', val: string) => {
     const newOrigem = field === 'ufOrigem' ? val : inputs.ufOrigem;
     const newDestino = field === 'ufDestino' ? val : inputs.ufDestino;
+    
     const destUf = UF_LIST.find(u => u.sigla === newDestino);
     const interRate = getInterstateRate(newOrigem, newDestino);
-    const rawAdjMva = calculateAdjustedMva(inputs.mvaOriginal, interRate, destUf?.icms || 18);
     
-    // NÃO ARREDONDAR: Truncar para 2 casas decimais
+    // Recalcula MVA Ajustada baseada na nova rota de estados
+    const rawAdjMva = calculateAdjustedMva(inputs.mvaOriginal, interRate, destUf?.icms || 18);
     const adjMva = Math.floor(rawAdjMva * 100) / 100;
 
     setInputs(prev => ({
@@ -47,8 +48,6 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
     const destUf = UF_LIST.find(u => u.sigla === inputs.ufDestino);
     const interRate = getInterstateRate(inputs.ufOrigem, inputs.ufDestino);
     const rawAdjMva = calculateAdjustedMva(ncm.mvaOriginal, interRate, destUf?.icms || 18);
-    
-    // NÃO ARREDONDAR: Truncar para 2 casas decimais
     const adjMva = Math.floor(rawAdjMva * 100) / 100;
     
     setInputs(prev => ({
@@ -83,26 +82,37 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
 
       {/* Rota Fiscal */}
       <div className="grid grid-cols-2 gap-4">
+        {/* UF ORIGEM */}
         <div className="space-y-2">
-          <label className="text-[9px] font-black text-white/40 uppercase tracking-widest ml-1">Origem</label>
-          <div className="relative">
+          <label className="text-[9px] font-black text-white/40 uppercase tracking-widest ml-1">Compra de (UF)</label>
+          <div className="relative group">
             <select 
-              value={inputs.ufOrigem} onChange={(e) => handleUfChange('ufOrigem', e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-black outline-none appearance-none cursor-pointer focus:border-white/20 transition-all"
+              value={inputs.ufOrigem} 
+              onChange={(e) => handleUfChange('ufOrigem', e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-black outline-none appearance-none cursor-pointer focus:border-white/20 transition-all hover:bg-white/10"
             >
-              {UF_LIST.map(uf => <option key={uf.sigla} value={uf.sigla} className="bg-slate-900">{uf.sigla}</option>)}
+              {UF_LIST.map(uf => <option key={uf.sigla} value={uf.sigla} className="bg-slate-900 text-white">{uf.sigla}</option>)}
             </select>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-40 group-hover:opacity-100 transition-opacity">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"/></svg>
+            </div>
           </div>
         </div>
+
+        {/* UF DESTINO - SUA SEDE (LIVRE) */}
         <div className="space-y-2">
-          <label className="text-[9px] font-black text-white/40 uppercase tracking-widest ml-1">Destino</label>
-          <div className="relative">
+          <label className="text-[9px] font-black text-white/40 uppercase tracking-widest ml-1">Destino (Sua Sede)</label>
+          <div className="relative group">
             <select 
-              value={inputs.ufDestino} onChange={(e) => handleUfChange('ufDestino', e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-black outline-none appearance-none cursor-pointer focus:border-white/20 transition-all"
+              value={inputs.ufDestino}
+              onChange={(e) => handleUfChange('ufDestino', e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-black outline-none appearance-none cursor-pointer focus:border-white/20 transition-all hover:bg-white/10"
             >
-              {UF_LIST.map(uf => <option key={uf.sigla} value={uf.sigla} className="bg-slate-900">{uf.sigla}</option>)}
+              {UF_LIST.map(uf => <option key={uf.sigla} value={uf.sigla} className="bg-slate-900 text-white">{uf.sigla}</option>)}
             </select>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-40 group-hover:opacity-100 transition-opacity">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"/></svg>
+            </div>
           </div>
         </div>
       </div>
@@ -140,11 +150,11 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
       {/* Quick Summary */}
       <div className="grid grid-cols-2 gap-4 pt-2">
          <div className="bg-white/5 p-3 rounded-xl border border-white/5 text-center">
-            <p className="text-[8px] font-black text-white/30 uppercase mb-1">Inter</p>
+            <p className="text-[8px] font-black text-white/30 uppercase mb-1">Inter (Compra)</p>
             <p className="text-sm font-black text-white font-mono">{inputs.icmsInterestadual}%</p>
          </div>
          <div className={`bg-white/5 p-3 rounded-xl border border-white/5 text-center transition-opacity ${inputs.mode === 'tributado' ? 'opacity-20' : 'opacity-100'}`}>
-            <p className="text-[8px] font-black text-white/30 uppercase mb-1">MVA Adj</p>
+            <p className="text-[8px] font-black text-white/30 uppercase mb-1">MVA Ajustada</p>
             <p className="text-sm font-black text-amber-400 font-mono">
               {inputs.mode === 'tributado' ? '0.00' : inputs.mva.toFixed(2)}%
             </p>

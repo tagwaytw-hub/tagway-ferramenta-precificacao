@@ -5,26 +5,13 @@ import ResultsTable from './components/ResultsTable';
 import FiscalHeader from './components/FiscalHeader';
 import ProductsView from './components/ProductsView';
 import OverheadView from './components/OverheadView';
+import ConfiguracaoView from './components/ConfiguracaoView';
+import AdminView from './components/AdminView';
 import Login from './components/Login';
 import { SimulationInputs, CostItem, VariableCostItem } from './types';
-import { calculateCosts, generatePriceMatrix } from './utils/calculations';
+import { calculateCosts, generatePriceMatrix, getInterstateRate } from './utils/calculations';
 import { supabase } from './lib/supabase';
-
-const defaultFixedCosts: CostItem[] = [
-  { id: 'f1-1', categoria: 'PESSOAL / RH', descricao: 'Salários administrativos', valor: 5000 },
-  { id: 'f1-2', categoria: 'PESSOAL / RH', descricao: 'Pró-labore dos sócios', valor: 2000 },
-  { id: 'f2-1', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'Aluguel do imóvel', valor: 2500 },
-  { id: 'f2-2', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'Condomínio', valor: 500 },
-  { id: 'f3-3', categoria: 'UTILIDADES', descricao: 'Internet', valor: 150 },
-  { id: 'f4-1', categoria: 'TECNOLOGIA / TI', descricao: 'Sistema ERP', valor: 500 },
-  { id: 'f5-1', categoria: 'SERVIÇOS TERCEIRIZADOS', descricao: 'Contabilidade', valor: 800 },
-  { id: 'f6-1', categoria: 'DESPESAS ADMINISTRATIVAS', descricao: 'Material de escritório', valor: 200 },
-];
-
-const defaultVariableCosts: VariableCostItem[] = [
-  { id: 'v1-4', categoria: 'IMPOSTOS SOBRE VENDAS', descricao: 'PIS e COFINS Saída', percentual: 9.25 },
-  { id: 'v1-1', categoria: 'IMPOSTOS SOBRE VENDAS', descricao: 'Simples Nacional', percentual: 6 },
-];
+import { UF_LIST } from './utils/ncmData';
 
 const defaultInputs: SimulationInputs = {
   nomeProduto: 'Exemplo Planilha Ref',
@@ -38,7 +25,7 @@ const defaultInputs: SimulationInputs = {
   icmsCreditoMercadoria: 7.00,
   icmsCreditoFrete: 7.00,
   ufOrigem: 'SP',
-  ufDestino: 'BA',
+  ufDestino: 'SP',
   ncmCodigo: '6907',
   pisCofinsRate: 9.25,
   excluirIcmsPis: true,
@@ -54,7 +41,17 @@ const defaultInputs: SimulationInputs = {
   precoVendaDesejado: 0
 };
 
-type Tab = 'calculadora' | 'catalogo' | 'meus-produtos' | 'overhead' | 'storage-period' | 'configuracao';
+const defaultFixedCosts: CostItem[] = [
+  { id: 'f1-1', categoria: 'PESSOAL / RH', descricao: 'Salários administrativos', valor: 5000 },
+  { id: 'f1-2', categoria: 'PESSOAL / RH', descricao: 'Pró-labore dos sócios', valor: 2000 },
+  { id: 'f2-1', categoria: 'ESTRUTURA / OCUPAÇÃO', descricao: 'Aluguel do imóvel', valor: 2500 },
+];
+
+const defaultVariableCosts: VariableCostItem[] = [
+  { id: 'v1-4', categoria: 'IMPOSTOS SOBRE VENDAS', descricao: 'PIS e COFINS Saída', percentual: 9.25 },
+];
+
+type Tab = 'calculadora' | 'catalogo' | 'meus-produtos' | 'overhead' | 'configuracao' | 'master';
 
 const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
@@ -64,23 +61,21 @@ const App: React.FC = () => {
   const [savedSimulations, setSavedSimulations] = useState<any[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   const [faturamento, setFaturamento] = useState<number>(100000);
   const [fixedCosts, setFixedCosts] = useState<CostItem[]>(defaultFixedCosts);
   const [variableCosts, setVariableCosts] = useState<VariableCostItem[]>(defaultVariableCosts);
   const [isAutoSync, setIsAutoSync] = useState(false);
 
-  // Sincronização automática Overhead -> Calculadora (Custo Fixo %)
   useEffect(() => {
     if (isAutoSync) {
       const totalFixed = fixedCosts.reduce((acc, curr) => acc + curr.valor, 0);
       const totalVarPerc = variableCosts.reduce((acc, curr) => acc + curr.percentual, 0);
       const fixedPercOnFat = faturamento > 0 ? (totalFixed / faturamento) * 100 : 0;
-      const totalOverheadWeight = fixedPercOnFat + totalVarPerc;
-      const truncatedOverhead = Math.floor(totalOverheadWeight * 100) / 100;
-      
-      if (Math.abs(inputs.custosFixos - truncatedOverhead) > 0.001) {
-        setInputs(prev => ({ ...prev, custosFixos: truncatedOverhead }));
+      const totalOverheadWeight = Math.floor((fixedPercOnFat + totalVarPerc) * 100) / 100;
+      if (Math.abs(inputs.custosFixos - totalOverheadWeight) > 0.001) {
+        setInputs(prev => ({ ...prev, custosFixos: totalOverheadWeight }));
       }
     }
   }, [faturamento, fixedCosts, variableCosts, isAutoSync, inputs.custosFixos]);
@@ -94,7 +89,8 @@ const App: React.FC = () => {
         if (currentSession) {
           await Promise.all([
             fetchMyProducts(currentSession),
-            fetchOverheadConfig(currentSession)
+            fetchOverheadConfig(currentSession),
+            fetchUserProfile(currentSession)
           ]);
         }
         setIsInitialized(true);
@@ -108,13 +104,9 @@ const App: React.FC = () => {
         if (newSession) {
           fetchMyProducts(newSession);
           fetchOverheadConfig(newSession);
+          fetchUserProfile(newSession);
         } else {
-          setSavedSimulations([]);
-          setFixedCosts(defaultFixedCosts);
-          setVariableCosts(defaultVariableCosts);
-          setFaturamento(100000);
-          setInputs(defaultInputs);
-          setIsAutoSync(false);
+          setUserProfile(null);
         }
       }
     });
@@ -122,38 +114,69 @@ const App: React.FC = () => {
     return () => { mounted = false; subscription.unsubscribe(); };
   }, []);
 
-  const fetchOverheadConfig = async (userSession: any) => {
+  const fetchUserProfile = async (userSession: any) => {
     if (!userSession?.user?.id) return;
-    try {
-      const { data, error } = await supabase
-        .from('overhead_configs')
-        .select('faturamento, fixed_costs, variable_costs, is_auto_sync')
-        .eq('user_id', userSession.user.id)
-        .maybeSingle();
+    
+    // Tenta buscar o perfil
+    let { data, error } = await supabase
+      .from('user_configs')
+      .select('*')
+      .eq('user_id', userSession.user.id)
+      .maybeSingle();
 
-      if (error) {
-        console.warn('Erro ao carregar overhead (pode ser cache):', error.message);
-        return;
-      }
+    // Se o perfil não existir, cria um perfil padrão para este usuário
+    // Isso garante que o status de admin possa ser verificado
+    if (!data && !error) {
+      const { data: newData, error: insertError } = await supabase
+        .from('user_configs')
+        .insert([{ 
+          user_id: userSession.user.id, 
+          email: userSession.user.email,
+          nome_completo: userSession.user.user_metadata?.full_name || 'Usuário',
+          is_admin: false 
+        }])
+        .select()
+        .single();
       
+      if (!insertError) data = newData;
+    }
+
+    if (data) {
+      setUserProfile(data);
+      // Aplica configurações padrão se o usuário já as tiver definido em Ajustes
+      if (data.uf_padrao_destino || data.margem_padrao) {
+        setInputs(prev => {
+          const newUfDestino = data.uf_padrao_destino || prev.ufDestino;
+          const destUf = UF_LIST.find(u => u.sigla === newUfDestino);
+          const interRate = getInterstateRate(prev.ufOrigem, newUfDestino);
+          
+          return { 
+            ...prev, 
+            ufDestino: newUfDestino,
+            icmsInternoDestino: destUf?.icms || prev.icmsInternoDestino,
+            icmsInterestadual: interRate,
+            resultadoDesejado: data.margem_padrao || prev.resultadoDesejado
+          };
+        });
+      }
+    }
+  };
+
+  const fetchOverheadConfig = async (userSession: any) => {
+    try {
+      const { data } = await supabase.from('overhead_configs').select('*').eq('user_id', userSession.user.id).maybeSingle();
       if (data) {
-        if (data.faturamento !== undefined) setFaturamento(Number(data.faturamento));
-        if (Array.isArray(data.fixed_costs)) setFixedCosts(data.fixed_costs);
-        if (Array.isArray(data.variable_costs)) setVariableCosts(data.variable_costs);
+        if (data.faturamento) setFaturamento(Number(data.faturamento));
+        if (data.fixed_costs) setFixedCosts(data.fixed_costs);
+        if (data.variable_costs) setVariableCosts(data.variable_costs);
         if (data.is_auto_sync !== undefined) setIsAutoSync(!!data.is_auto_sync);
       }
-    } catch (e) {
-      console.warn('Configuração padrão ativa.');
-    }
+    } catch (e) { console.warn('Overhead default.'); }
   };
 
   const fetchMyProducts = async (currentSession = session) => {
     if (!currentSession?.user?.id) return;
-    const { data } = await supabase
-      .from('simulacoes')
-      .select('*')
-      .eq('user_id', currentSession.user.id)
-      .order('created_at', { ascending: false });
+    const { data } = await supabase.from('simulacoes').select('*').eq('user_id', currentSession.user.id).order('created_at', { ascending: false });
     if (data) setSavedSimulations(data);
   };
 
@@ -170,29 +193,14 @@ const App: React.FC = () => {
       alert('Simulação salva com sucesso!');
       await fetchMyProducts();
       setActiveTab('meus-produtos');
-    } catch (err: any) {
-      alert('Erro ao salvar: ' + (err.message || JSON.stringify(err)));
-    } finally {
-      setIsSaving(false);
-    }
+    } catch (err: any) { alert('Erro: ' + err.message); } finally { setIsSaving(false); }
   };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('Excluir esta simulação?')) return;
-    try {
-      const { error } = await supabase.from('simulacoes').delete().eq('id', id);
-      if (error) throw error;
-      setSavedSimulations(prev => prev.filter(p => p.id !== id));
-    } catch (err: any) {
-      alert('Erro ao excluir: ' + (err.message || JSON.stringify(err)));
-    }
-  };
-
-  if (!isInitialized) return null;
-  if (!session) return <Login onLoginSuccess={setSession} />;
 
   const results = calculateCosts(inputs);
   const priceMatrix = generatePriceMatrix(results.custoFinal, inputs);
+
+  if (!isInitialized) return null;
+  if (!session) return <Login onLoginSuccess={setSession} />;
 
   return (
     <div className="h-screen w-full flex flex-col lg:flex-row bg-[#f8fafc] overflow-hidden text-slate-900">
@@ -209,26 +217,31 @@ const App: React.FC = () => {
           <MenuButton active={activeTab === 'meus-produtos'} onClick={() => setActiveTab('meus-produtos')} label="Meus Produtos" collapsed={sidebarCollapsed} icon="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
           <MenuButton active={activeTab === 'overhead'} onClick={() => setActiveTab('overhead')} label="Overhead" collapsed={sidebarCollapsed} icon="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2"/>
           <MenuButton active={activeTab === 'configuracao'} onClick={() => setActiveTab('configuracao')} label="Ajustes" collapsed={sidebarCollapsed} icon="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+          {userProfile?.is_admin && (
+            <MenuButton active={activeTab === 'master'} onClick={() => setActiveTab('master')} label="Master" collapsed={sidebarCollapsed} icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04M12 2.944v10m0 0a2 2 0 100 4 2 2 0 000-4z"/>
+          )}
         </nav>
-        <div className="hidden lg:flex p-4 mt-auto flex-col space-y-2 border-t border-white/5">
-          <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="w-full flex items-center gap-4 p-4 text-white/40 hover:text-white rounded-2xl transition-all font-black text-[10px] uppercase tracking-widest leading-none">
-             <svg className={`w-5 h-5 transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/></svg>
-             {!sidebarCollapsed && "Recolher"}
-          </button>
-          <button onClick={() => supabase.auth.signOut()} className="w-full flex items-center gap-4 p-4 text-white/30 hover:text-rose-500 hover:bg-rose-500/10 rounded-2xl transition-all font-black text-[10px] uppercase tracking-widest leading-none">
-             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-             {!sidebarCollapsed && "Sair"}
-          </button>
-        </div>
       </aside>
 
       <main className="flex-1 overflow-hidden flex flex-col relative pb-[70px] lg:pb-0">
+        <div className="absolute top-6 right-8 z-[90] hidden md:flex items-center gap-4 animate-slide-up">
+           <div className="glass-card border border-slate-200/50 px-5 py-2.5 rounded-2xl flex items-center gap-3 shadow-xl shadow-black/5">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-800">
+                {userProfile?.is_admin ? 'MASTER' : 'BEM-VINDO'}, {userProfile?.nome_completo?.split(' ')[0] || 'Operador'}
+              </span>
+           </div>
+           <div className="bg-black text-white px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg">
+             {userProfile?.regime_tributario || 'Lucro Real'}
+           </div>
+        </div>
+
         {activeTab === 'calculadora' && (
           <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
             <div className="w-full lg:w-[380px] border-b lg:border-b-0 lg:border-r border-slate-200 bg-white overflow-y-auto custom-scrollbar p-6 pt-0 space-y-8 shadow-inner">
               <div className="flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-sm z-30 -mx-6 px-6 py-5 border-b border-slate-100 mb-6">
                 <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Parâmetros</h2>
-                <button onClick={handleSave} disabled={isSaving} className="bg-black hover:bg-slate-800 text-white text-[9px] font-black uppercase px-6 py-2.5 rounded-xl transition-all shadow-xl shadow-black/10 active:scale-95 disabled:opacity-50">{isSaving ? 'Salvando...' : 'Salvar'}</button>
+                <button onClick={handleSave} disabled={isSaving} className="bg-black hover:bg-slate-800 text-white text-[9px] font-black uppercase px-6 py-2.5 rounded-xl transition-all shadow-xl shadow-black/10">{isSaving ? 'Gravando...' : 'Salvar'}</button>
               </div>
               <div className="space-y-8">
                 <FiscalHeader inputs={inputs} setInputs={setInputs}/>
@@ -240,50 +253,26 @@ const App: React.FC = () => {
             </div>
           </div>
         )}
+
+        {activeTab === 'configuracao' && (
+          <div className="flex-1 p-6 md:p-12 overflow-y-auto custom-scrollbar bg-slate-50">
+            <ConfiguracaoView userId={session?.user?.id} />
+          </div>
+        )}
+
+        {activeTab === 'master' && userProfile?.is_admin && (
+          <div className="flex-1 p-6 md:p-12 overflow-y-auto custom-scrollbar bg-slate-50">
+            <AdminView />
+          </div>
+        )}
+
         {activeTab === 'overhead' && (
           <div className="flex-1 p-6 md:p-12 overflow-y-auto custom-scrollbar bg-slate-50">
-            <OverheadView 
-              faturamento={faturamento} setFaturamento={setFaturamento}
-              fixedCosts={fixedCosts} setFixedCosts={setFixedCosts}
-              variableCosts={variableCosts} setVariableCosts={setVariableCosts}
-              userId={session?.user?.id}
-              isAutoSync={isAutoSync} setIsAutoSync={setIsAutoSync}
-            />
+            <OverheadView faturamento={faturamento} setFaturamento={setFaturamento} fixedCosts={fixedCosts} setFixedCosts={setFixedCosts} variableCosts={variableCosts} setVariableCosts={setVariableCosts} userId={session?.user?.id} isAutoSync={isAutoSync} setIsAutoSync={setIsAutoSync} />
           </div>
         )}
         {activeTab === 'catalogo' && <div className="flex-1 p-6 md:p-12 overflow-y-auto custom-scrollbar bg-white"><ProductsView onSelectNcm={(ncm) => { setInputs(prev => ({...prev, ncmCodigo: ncm.codigo, mvaOriginal: ncm.mvaOriginal, nomeProduto: ncm.descricao})); setActiveTab('calculadora'); }}/></div>}
-        {activeTab === 'meus-produtos' && (
-          <div className="flex-1 p-6 md:p-12 overflow-y-auto custom-scrollbar bg-slate-50">
-            <div className="max-w-4xl mx-auto space-y-8">
-              <header className="border-b border-slate-200 pb-8"><h2 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tighter uppercase italic">Histórico</h2></header>
-              <div className="grid gap-4">
-                {savedSimulations.map(sim => (
-                  <div key={sim.id} className="bg-white border border-slate-200 p-6 rounded-[2rem] flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-2xl transition-all group hover:border-black">
-                    <div className="flex items-center gap-6">
-                      <div className="w-14 h-14 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-black group-hover:text-white transition-all shadow-sm"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>
-                      <div className="overflow-hidden">
-                        <h4 className="font-black text-slate-800 tracking-tight text-lg truncate">{sim.nome_produto}</h4>
-                        <div className="flex items-center flex-wrap gap-2 mt-1 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                           <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-mono">{sim.dados.ncmCodigo}</span>
-                           <span>{new Date(sim.created_at).toLocaleDateString('pt-BR')}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => { setInputs(sim.dados); setActiveTab('calculadora'); }} className="bg-black text-white px-8 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg">Abrir</button>
-                      <button onClick={() => handleDelete(sim.id)} className="p-3.5 text-slate-300 hover:text-rose-500 rounded-xl transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
-                    </div>
-                  </div>
-                ))}
-                {savedSimulations.length === 0 && (
-                  <div className="py-20 text-center bg-white rounded-3xl border-2 border-dashed border-slate-200">
-                    <p className="text-slate-400 font-black uppercase text-xs tracking-widest">Nenhuma simulação salva ainda.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        {activeTab === 'meus-produtos' && <div className="flex-1 p-6 md:p-12 overflow-y-auto custom-scrollbar bg-slate-50"><div className="max-w-4xl mx-auto space-y-8"><header className="border-b border-slate-200 pb-8"><h2 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tighter uppercase italic leading-tight">Meus Produtos</h2></header><div className="grid gap-4">{savedSimulations.map(sim => (<div key={sim.id} className="bg-white border border-slate-200 p-6 rounded-[2rem] flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-2xl transition-all group hover:border-black"><div className="flex items-center gap-6"><div className="w-14 h-14 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-black group-hover:text-white transition-all shadow-sm"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div><div><h4 className="font-black text-slate-800 tracking-tight text-lg truncate">{sim.nome_produto}</h4><span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{new Date(sim.created_at).toLocaleDateString('pt-BR')}</span></div></div><button onClick={() => { setInputs(sim.dados); setActiveTab('calculadora'); }} className="bg-black text-white px-8 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg">Abrir Cálculo</button></div>))}</div></div></div>}
       </main>
     </div>
   );
