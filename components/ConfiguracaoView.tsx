@@ -91,12 +91,12 @@ const ConfiguracaoView: React.FC<{ userId: string }> = ({ userId }) => {
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <ConfigField label="Nome Completo" value={configs.nome_completo} onChange={(v) => setConfigs({...configs, nome_completo: v})} />
-              <ConfigField label="E-mail de Acesso" type="email" value={configs.email} onChange={(v) => setConfigs({...configs, email: v})} />
-              <ConfigField label="Telefone / WhatsApp" value={configs.telefone} onChange={(v) => setConfigs({...configs, telefone: v})} />
-              <ConfigField label="Data de Nascimento" type="date" value={configs.data_nascimento} onChange={(v) => setConfigs({...configs, data_nascimento: v})} />
-              <ConfigField label="Alterar Senha" type="password" value={password} onChange={setPassword} placeholder="Mínimo 6 caracteres" />
-              <ConfigField label="Nome da Empresa" value={configs.empresa_nome} onChange={(v) => setConfigs({...configs, empresa_nome: v})} />
+              <ConfigField label="Nome Completo" value={configs.nome_completo} onChange={(v: string) => setConfigs({...configs, nome_completo: v})} />
+              <ConfigField label="E-mail de Acesso" type="email" value={configs.email} onChange={(v: string) => setConfigs({...configs, email: v})} />
+              <ConfigField label="Telefone / WhatsApp" value={configs.telefone} onChange={(v: string) => setConfigs({...configs, telefone: v})} />
+              <ConfigField label="Data de Nascimento" type="date" value={configs.data_nascimento} onChange={(v: string) => setConfigs({...configs, data_nascimento: v})} />
+              <ConfigField label="Alterar Senha" type="password" value={password} onChange={(v: string) => setPassword(v)} placeholder="Mínimo 6 caracteres" />
+              <ConfigField label="Nome da Empresa" value={configs.empresa_nome} onChange={(v: string) => setConfigs({...configs, empresa_nome: v})} />
             </div>
           </section>
 
@@ -146,7 +146,7 @@ const ConfiguracaoView: React.FC<{ userId: string }> = ({ userId }) => {
                 <p className="text-[8px] text-white/20 font-bold uppercase leading-tight italic">Este campo define o estado de destino padrão para todas as suas simulações de compra.</p>
               </div>
 
-              <ConfigField dark label="Margem Net Padrão (%)" type="number" value={configs.margem_padrao} onChange={(v) => setConfigs({...configs, margem_padrao: parseFloat(v)})} />
+              <ConfigField dark label="Margem Net Padrão (%)" type="number" value={configs.margem_padrao} onChange={(v: string) => setConfigs({...configs, margem_padrao: parseFloat(v)})} />
               
               <div className="pt-6 border-t border-white/5">
                 <label className="flex items-center justify-between cursor-pointer group">
@@ -180,7 +180,16 @@ const ConfiguracaoView: React.FC<{ userId: string }> = ({ userId }) => {
   );
 };
 
-const ConfigField = ({ label, value, onChange, placeholder, type = 'text', dark = false }: any) => (
+interface ConfigFieldProps {
+  label: string;
+  value: any;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: string;
+  dark?: boolean;
+}
+
+const ConfigField: React.FC<ConfigFieldProps> = ({ label, value, onChange, placeholder, type = 'text', dark = false }) => (
   <div className="space-y-2">
     <label className={`text-[9px] font-black uppercase tracking-widest ml-1 ${dark ? 'text-white/40' : 'text-slate-400'}`}>{label}</label>
     <input 
@@ -197,9 +206,17 @@ const ConfigField = ({ label, value, onChange, placeholder, type = 'text', dark 
   </div>
 );
 
-const RegimeButton = ({ label, active, onClick, disabled }: any) => (
+interface RegimeButtonProps {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  disabled?: boolean;
+}
+
+const RegimeButton: React.FC<RegimeButtonProps> = ({ label, active, onClick, disabled }) => (
   <button 
     onClick={onClick}
+    disabled={disabled}
     className={`p-6 rounded-2xl border-2 transition-all text-center flex flex-col items-center gap-3 ${
       active 
       ? 'bg-black border-black text-white shadow-xl scale-[1.02]' 

@@ -86,10 +86,10 @@ const AdminView: React.FC = () => {
           <section className="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-xl space-y-6 sticky top-8">
             <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">Novo Usuário</h3>
             <form onSubmit={handleCreateUser} className="space-y-4">
-              <AdminInput label="Nome Completo" value={newUser.nome} onChange={(v) => setNewUser({...newUser, nome: v})} />
-              <AdminInput label="E-mail" type="email" value={newUser.email} onChange={(v) => setNewUser({...newUser, email: v})} />
-              <AdminInput label="Senha Inicial" type="password" value={newUser.senha} onChange={(v) => setNewUser({...newUser, senha: v})} />
-              <AdminInput label="Empresa" value={newUser.empresa} onChange={(v) => setNewUser({...newUser, empresa: v})} />
+              <AdminInput label="Nome Completo" value={newUser.nome} onChange={(v: string) => setNewUser({...newUser, nome: v})} />
+              <AdminInput label="E-mail" type="email" value={newUser.email} onChange={(v: string) => setNewUser({...newUser, email: v})} />
+              <AdminInput label="Senha Inicial" type="password" value={newUser.senha} onChange={(v: string) => setNewUser({...newUser, senha: v})} />
+              <AdminInput label="Empresa" value={newUser.empresa} onChange={(v: string) => setNewUser({...newUser, empresa: v})} />
               
               <div className="space-y-2">
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Regime Inicial</label>
@@ -168,7 +168,14 @@ const AdminView: React.FC = () => {
   );
 };
 
-const AdminInput = ({ label, value, onChange, type = 'text' }: any) => (
+interface AdminInputProps {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+}
+
+const AdminInput: React.FC<AdminInputProps> = ({ label, value, onChange, type = 'text' }) => (
   <div className="space-y-1.5">
     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
     <input 
