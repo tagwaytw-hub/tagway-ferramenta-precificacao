@@ -78,9 +78,12 @@ const App: React.FC = () => {
       const fixedPercOnFat = faturamento > 0 ? (totalFixed / faturamento) * 100 : 0;
       const totalOverheadWeight = fixedPercOnFat + totalVarPerc;
       const truncatedOverhead = Math.floor(totalOverheadWeight * 100) / 100;
-      setInputs(prev => ({ ...prev, custosFixos: truncatedOverhead }));
+      
+      if (Math.abs(inputs.custosFixos - truncatedOverhead) > 0.001) {
+        setInputs(prev => ({ ...prev, custosFixos: truncatedOverhead }));
+      }
     }
-  }, [faturamento, fixedCosts, variableCosts, isAutoSync]);
+  }, [faturamento, fixedCosts, variableCosts, isAutoSync, inputs.custosFixos]);
 
   useEffect(() => {
     let mounted = true;
@@ -106,12 +109,12 @@ const App: React.FC = () => {
           fetchMyProducts(newSession);
           fetchOverheadConfig(newSession);
         } else {
-          // Limpa estados ao sair
           setSavedSimulations([]);
           setFixedCosts(defaultFixedCosts);
           setVariableCosts(defaultVariableCosts);
           setFaturamento(100000);
           setInputs(defaultInputs);
+          setIsAutoSync(false);
         }
       }
     });
@@ -124,23 +127,23 @@ const App: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('overhead_configs')
-        .select('*')
+        .select('faturamento, fixed_costs, variable_costs, is_auto_sync')
         .eq('user_id', userSession.user.id)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.warn('Erro ao carregar overhead (pode ser cache):', error.message);
+        return;
+      }
       
       if (data) {
-        setFaturamento(data.faturamento || 100000);
-        if (Array.isArray(data.fixed_costs) && data.fixed_costs.length > 0) {
-          setFixedCosts(data.fixed_costs);
-        }
-        if (Array.isArray(data.variable_costs) && data.variable_costs.length > 0) {
-          setVariableCosts(data.variable_costs);
-        }
+        if (data.faturamento !== undefined) setFaturamento(Number(data.faturamento));
+        if (Array.isArray(data.fixed_costs)) setFixedCosts(data.fixed_costs);
+        if (Array.isArray(data.variable_costs)) setVariableCosts(data.variable_costs);
+        if (data.is_auto_sync !== undefined) setIsAutoSync(!!data.is_auto_sync);
       }
     } catch (e) {
-      console.warn('Configuração de overhead personalizada não encontrada. Usando padrões do sistema.');
+      console.warn('Configuração padrão ativa.');
     }
   };
 
@@ -164,24 +167,24 @@ const App: React.FC = () => {
         dados: inputs 
       }]);
       if (error) throw error;
-      alert('Produto salvo com sucesso!');
+      alert('Simulação salva com sucesso!');
       await fetchMyProducts();
       setActiveTab('meus-produtos');
     } catch (err: any) {
-      alert('Erro ao salvar produto: ' + err.message);
+      alert('Erro ao salvar: ' + (err.message || JSON.stringify(err)));
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Deseja realmente excluir este produto?')) return;
+    if (!confirm('Excluir esta simulação?')) return;
     try {
       const { error } = await supabase.from('simulacoes').delete().eq('id', id);
       if (error) throw error;
       setSavedSimulations(prev => prev.filter(p => p.id !== id));
     } catch (err: any) {
-      alert('Erro ao excluir: ' + err.message);
+      alert('Erro ao excluir: ' + (err.message || JSON.stringify(err)));
     }
   };
 
@@ -244,6 +247,7 @@ const App: React.FC = () => {
               fixedCosts={fixedCosts} setFixedCosts={setFixedCosts}
               variableCosts={variableCosts} setVariableCosts={setVariableCosts}
               userId={session?.user?.id}
+              isAutoSync={isAutoSync} setIsAutoSync={setIsAutoSync}
             />
           </div>
         )}

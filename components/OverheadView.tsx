@@ -12,17 +12,21 @@ interface OverheadViewProps {
   variableCosts: VariableCostItem[];
   setVariableCosts: (costs: VariableCostItem[]) => void;
   userId?: string;
+  isAutoSync: boolean;
+  setIsAutoSync: (val: boolean) => void;
 }
 
 const OverheadView: React.FC<OverheadViewProps> = ({
   faturamento, setFaturamento,
   fixedCosts, setFixedCosts,
   variableCosts, setVariableCosts,
-  userId
+  userId,
+  isAutoSync, setIsAutoSync
 }) => {
   const [expandedFixed, setExpandedFixed] = useState<string[]>(['PESSOAL / RH']);
   const [expandedVar, setExpandedVar] = useState<string[]>(['IMPOSTOS SOBRE VENDAS']);
   const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
 
   const fixedCategories = [
     'PESSOAL / RH', 'ESTRUTURA / OCUPAÇÃO', 'UTILIDADES', 'TECNOLOGIA / TI', 
@@ -50,32 +54,37 @@ const OverheadView: React.FC<OverheadViewProps> = ({
 
   const handleSaveConfig = async () => {
     if (!userId) {
-      alert("Identificação do usuário não encontrada. Tente sair e entrar novamente.");
+      alert("Erro: Sessão não encontrada. Faça login novamente.");
       return;
     }
     
     setIsSaving(true);
     try {
-      // O upsert sincroniza os dados. Se já existir uma linha com esse user_id, ele atualiza.
-      // Se não existir, ele cria uma nova.
-      const { error } = await supabase.from('overhead_configs').upsert({
+      const payload: any = {
         user_id: userId,
-        faturamento: faturamento,
+        faturamento: Number(faturamento),
         fixed_costs: fixedCosts,
         variable_costs: variableCosts,
+        is_auto_sync: !!isAutoSync,
         updated_at: new Date().toISOString()
-      }, { 
-        onConflict: 'user_id' 
-      });
+      };
+
+      const { error } = await supabase
+        .from('overhead_configs')
+        .upsert(payload, { onConflict: 'user_id' });
 
       if (error) {
-        console.error("Erro no Supabase:", error);
-        throw error;
+        if (error.code === 'PGRST204') {
+          throw new Error("O banco de dados ainda está processando a nova coluna. Aguarde 30 segundos e tente novamente.");
+        }
+        throw new Error(error.message || `Erro código ${error.code}`);
       }
       
-      alert('Seu Overhead foi salvo e sincronizado com o banco de dados!');
+      setLastSaved(new Date().toLocaleTimeString());
+      alert('Sincronizado com sucesso!');
     } catch (err: any) {
-      alert('Falha ao salvar no banco: ' + (err.message || 'Verifique as permissões da tabela.'));
+      const msg = err.message || (typeof err === 'object' ? JSON.stringify(err) : String(err));
+      alert('Falha ao Salvar: ' + msg);
     } finally {
       setIsSaving(false);
     }
@@ -97,16 +106,27 @@ const OverheadView: React.FC<OverheadViewProps> = ({
              </div>
              <div>
                <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Meu Overhead</h2>
-               <button 
-                onClick={handleSaveConfig}
-                disabled={isSaving}
-                className={`mt-2 text-[9px] font-black uppercase px-4 py-2 rounded-lg transition-all shadow-lg active:scale-95 disabled:opacity-50 ${isSaving ? 'bg-slate-400' : 'bg-emerald-500 hover:bg-emerald-600'} text-white`}
-               >
-                 {isSaving ? 'Gravando no Banco...' : 'Sincronizar com Nuvem'}
-               </button>
+               <div className="flex items-center gap-3 mt-2">
+                 <button 
+                  onClick={handleSaveConfig}
+                  disabled={isSaving}
+                  className={`text-[9px] font-black uppercase px-4 py-2 rounded-lg transition-all shadow-lg active:scale-95 disabled:opacity-50 ${isSaving ? 'bg-slate-400' : 'bg-emerald-500 hover:bg-emerald-600'} text-white`}
+                 >
+                   {isSaving ? 'Gravando...' : 'Sincronizar Cloud'}
+                 </button>
+                 {lastSaved && <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Último save: {lastSaved}</span>}
+               </div>
              </div>
           </div>
-          <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] ml-1">Configurações globais de faturamento e despesas estruturais</p>
+          <div className="flex items-center gap-3 mt-4 ml-1">
+             <span className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Auto Sync (Calculadora):</span>
+             <button 
+                onClick={() => setIsAutoSync(!isAutoSync)}
+                className={`px-3 py-1 rounded-full text-[8px] font-black uppercase transition-all border ${isAutoSync ? 'bg-blue-600 border-blue-600 text-white' : 'bg-slate-100 border-slate-200 text-slate-400'}`}
+             >
+                {isAutoSync ? 'ON - Inteligente' : 'OFF - Manual'}
+             </button>
+          </div>
         </div>
         
         <div className="flex flex-col md:flex-row gap-4">
