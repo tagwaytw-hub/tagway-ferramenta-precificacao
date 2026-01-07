@@ -50,25 +50,32 @@ const OverheadView: React.FC<OverheadViewProps> = ({
 
   const handleSaveConfig = async () => {
     if (!userId) {
-      alert("Sessão não identificada. Por favor, faça login novamente.");
+      alert("Identificação do usuário não encontrada. Tente sair e entrar novamente.");
       return;
     }
     
     setIsSaving(true);
     try {
+      // O upsert sincroniza os dados. Se já existir uma linha com esse user_id, ele atualiza.
+      // Se não existir, ele cria uma nova.
       const { error } = await supabase.from('overhead_configs').upsert({
         user_id: userId,
-        faturamento,
+        faturamento: faturamento,
         fixed_costs: fixedCosts,
         variable_costs: variableCosts,
         updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id' });
+      }, { 
+        onConflict: 'user_id' 
+      });
 
-      if (error) throw error;
-      alert('Configuração de Overhead salva com sucesso!');
+      if (error) {
+        console.error("Erro no Supabase:", error);
+        throw error;
+      }
+      
+      alert('Seu Overhead foi salvo e sincronizado com o banco de dados!');
     } catch (err: any) {
-      console.error("Erro ao salvar overhead:", err);
-      alert('Erro ao salvar: ' + (err.message || 'Erro desconhecido no banco de dados.'));
+      alert('Falha ao salvar no banco: ' + (err.message || 'Verifique as permissões da tabela.'));
     } finally {
       setIsSaving(false);
     }
@@ -77,8 +84,8 @@ const OverheadView: React.FC<OverheadViewProps> = ({
   const toggleFixed = (cat: string) => setExpandedFixed(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
   const toggleVar = (cat: string) => setExpandedVar(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
 
-  const addFixed = (cat: string) => setFixedCosts([...fixedCosts, { id: Math.random().toString(), categoria: cat, descricao: 'Nova Despesa', valor: 0 }]);
-  const addVar = (cat: string) => setVariableCosts([...variableCosts, { id: Math.random().toString(), categoria: cat, descricao: 'Novo Custo', percentual: 0 }]);
+  const addFixed = (cat: string) => setFixedCosts([...fixedCosts, { id: Math.random().toString(), categoria: cat, descricao: 'Novo Item', valor: 0 }]);
+  const addVar = (cat: string) => setVariableCosts([...variableCosts, { id: Math.random().toString(), categoria: cat, descricao: 'Novo Item', percentual: 0 }]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-32 animate-slide-up">
@@ -89,22 +96,22 @@ const OverheadView: React.FC<OverheadViewProps> = ({
                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
              </div>
              <div>
-               <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Controlador de Overhead</h2>
+               <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Meu Overhead</h2>
                <button 
                 onClick={handleSaveConfig}
                 disabled={isSaving}
                 className={`mt-2 text-[9px] font-black uppercase px-4 py-2 rounded-lg transition-all shadow-lg active:scale-95 disabled:opacity-50 ${isSaving ? 'bg-slate-400' : 'bg-emerald-500 hover:bg-emerald-600'} text-white`}
                >
-                 {isSaving ? 'Gravando Dados...' : 'Salvar Configuração'}
+                 {isSaving ? 'Gravando no Banco...' : 'Sincronizar com Nuvem'}
                </button>
              </div>
           </div>
-          <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] ml-1">Análise Determinística de Custo Total & Break-even</p>
+          <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] ml-1">Configurações globais de faturamento e despesas estruturais</p>
         </div>
         
         <div className="flex flex-col md:flex-row gap-4">
           <div className="w-full md:w-64 bg-white p-5 rounded-[2rem] shadow-xl border border-slate-200 group focus-within:border-black transition-all">
-            <label className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1 group-focus-within:text-black transition-colors">Faturamento Estimado</label>
+            <label className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1 group-focus-within:text-black transition-colors">Faturamento Mensal Estimado</label>
             <div className="flex items-baseline gap-2">
               <span className="text-xl font-black text-slate-300 italic">R$</span>
               <input 
@@ -117,12 +124,12 @@ const OverheadView: React.FC<OverheadViewProps> = ({
           </div>
 
           <div className="w-full md:w-64 bg-black p-5 rounded-[2rem] shadow-2xl shadow-black/20 border border-white/5 text-white">
-            <label className="block text-[8px] font-black text-white/40 uppercase tracking-widest mb-1">Custo Total %</label>
+            <label className="block text-[8px] font-black text-white/40 uppercase tracking-widest mb-1">Impacto Total (%)</label>
             <div className="flex items-baseline gap-2">
               <span className={`text-4xl font-black font-mono tracking-tighter ${totalCostPerc > 100 ? 'text-rose-500' : 'text-emerald-400'}`}>
                 {totalCostPerc.toFixed(1)}%
               </span>
-              <span className="text-[10px] font-black text-white/20 uppercase">Peso Total</span>
+              <span className="text-[10px] font-black text-white/20 uppercase">Peso</span>
             </div>
           </div>
         </div>
@@ -132,7 +139,7 @@ const OverheadView: React.FC<OverheadViewProps> = ({
         <KPICard label="Custos Fixos ($)" value={totalFixed} sub={`${fixedPercOnFat.toFixed(1)}% do Fat.`} color="text-slate-900" />
         <KPICard label="Margem de Contribuição" value={margemContribuicaoValue} sub={`${margemContribuicaoPerc.toFixed(1)}% de Sobra`} color="text-blue-600" />
         <KPICard label="Resultado Operacional" value={lucroLiquido} sub={`${faturamento > 0 ? ((lucroLiquido/faturamento)*100).toFixed(1) : 0}% Margem Líquida`} color={lucroLiquido >= 0 ? 'text-emerald-500' : 'text-rose-500'} />
-        <KPICard label="Ponto de Equilíbrio" value={pontoEquilibrio} sub="Meta de Faturamento" color="text-amber-500" />
+        <KPICard label="Ponto de Equilíbrio" value={pontoEquilibrio} sub="Meta p/ Lucro Zero" color="text-amber-500" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">

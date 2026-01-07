@@ -70,7 +70,7 @@ const App: React.FC = () => {
   const [variableCosts, setVariableCosts] = useState<VariableCostItem[]>(defaultVariableCosts);
   const [isAutoSync, setIsAutoSync] = useState(false);
 
-  // Sincronização automática do Overhead com a Calculadora
+  // Sincronização automática Overhead -> Calculadora (Custo Fixo %)
   useEffect(() => {
     if (isAutoSync) {
       const totalFixed = fixedCosts.reduce((acc, curr) => acc + curr.valor, 0);
@@ -78,28 +78,23 @@ const App: React.FC = () => {
       const fixedPercOnFat = faturamento > 0 ? (totalFixed / faturamento) * 100 : 0;
       const totalOverheadWeight = fixedPercOnFat + totalVarPerc;
       const truncatedOverhead = Math.floor(totalOverheadWeight * 100) / 100;
-      setInputs(prev => ({
-        ...prev,
-        custosFixos: truncatedOverhead
-      }));
+      setInputs(prev => ({ ...prev, custosFixos: truncatedOverhead }));
     }
   }, [faturamento, fixedCosts, variableCosts, isAutoSync]);
 
   useEffect(() => {
     let mounted = true;
     const init = async () => {
-      try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        if (mounted) {
-          setSession(currentSession);
-          if (currentSession) {
-            fetchMyProducts(currentSession);
-            fetchOverheadConfig(currentSession);
-          }
-          setIsInitialized(true);
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (mounted) {
+        setSession(currentSession);
+        if (currentSession) {
+          await Promise.all([
+            fetchMyProducts(currentSession),
+            fetchOverheadConfig(currentSession)
+          ]);
         }
-      } catch (err) {
-        if (mounted) setIsInitialized(true);
+        setIsInitialized(true);
       }
     };
     init();
@@ -110,6 +105,13 @@ const App: React.FC = () => {
         if (newSession) {
           fetchMyProducts(newSession);
           fetchOverheadConfig(newSession);
+        } else {
+          // Limpa estados ao sair
+          setSavedSimulations([]);
+          setFixedCosts(defaultFixedCosts);
+          setVariableCosts(defaultVariableCosts);
+          setFaturamento(100000);
+          setInputs(defaultInputs);
         }
       }
     });
@@ -118,7 +120,7 @@ const App: React.FC = () => {
   }, []);
 
   const fetchOverheadConfig = async (userSession: any) => {
-    if (!userSession) return;
+    if (!userSession?.user?.id) return;
     try {
       const { data, error } = await supabase
         .from('overhead_configs')
@@ -126,9 +128,10 @@ const App: React.FC = () => {
         .eq('user_id', userSession.user.id)
         .maybeSingle();
 
-      if (data && !error) {
-        setFaturamento(data.faturamento);
-        // Se houver dados salvos, use-os integralmente (não apenas os defaults)
+      if (error) throw error;
+      
+      if (data) {
+        setFaturamento(data.faturamento || 100000);
         if (Array.isArray(data.fixed_costs) && data.fixed_costs.length > 0) {
           setFixedCosts(data.fixed_costs);
         }
@@ -137,37 +140,49 @@ const App: React.FC = () => {
         }
       }
     } catch (e) {
-      console.error('Falha ao buscar overhead:', e);
+      console.warn('Configuração de overhead personalizada não encontrada. Usando padrões do sistema.');
     }
   };
 
   const fetchMyProducts = async (currentSession = session) => {
-    if (!currentSession) return;
-    const { data } = await supabase.from('simulacoes').select('*').order('created_at', { ascending: false });
+    if (!currentSession?.user?.id) return;
+    const { data } = await supabase
+      .from('simulacoes')
+      .select('*')
+      .eq('user_id', currentSession.user.id)
+      .order('created_at', { ascending: false });
     if (data) setSavedSimulations(data);
   };
 
   const handleSave = async () => {
-    if (!session) return;
+    if (!session?.user?.id) return;
     setIsSaving(true);
     try {
-      await supabase.from('simulacoes').insert([{ 
+      const { error } = await supabase.from('simulacoes').insert([{ 
         user_id: session.user.id, 
         nome_produto: inputs.nomeProduto || 'Produto Sem Nome', 
         dados: inputs 
       }]);
-      alert('Produto salvo!');
+      if (error) throw error;
+      alert('Produto salvo com sucesso!');
       await fetchMyProducts();
       setActiveTab('meus-produtos');
+    } catch (err: any) {
+      alert('Erro ao salvar produto: ' + err.message);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Excluir produto?')) return;
-    await supabase.from('simulacoes').delete().eq('id', id);
-    setSavedSimulations(prev => prev.filter(p => p.id !== id));
+    if (!confirm('Deseja realmente excluir este produto?')) return;
+    try {
+      const { error } = await supabase.from('simulacoes').delete().eq('id', id);
+      if (error) throw error;
+      setSavedSimulations(prev => prev.filter(p => p.id !== id));
+    } catch (err: any) {
+      alert('Erro ao excluir: ' + err.message);
+    }
   };
 
   if (!isInitialized) return null;
@@ -256,6 +271,11 @@ const App: React.FC = () => {
                     </div>
                   </div>
                 ))}
+                {savedSimulations.length === 0 && (
+                  <div className="py-20 text-center bg-white rounded-3xl border-2 border-dashed border-slate-200">
+                    <p className="text-slate-400 font-black uppercase text-xs tracking-widest">Nenhuma simulação salva ainda.</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
