@@ -68,6 +68,32 @@ const App: React.FC = () => {
   const [variableCosts, setVariableCosts] = useState<VariableCostItem[]>(defaultVariableCosts);
   const [isAutoSync, setIsAutoSync] = useState(false);
 
+  // Monitor de Alterações em Tempo Real
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    const channel = supabase
+      .channel(`profile-updates-${session.user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'user_configs',
+          filter: `user_id=eq.${session.user.id}`
+        },
+        (payload) => {
+          console.log('Update de Perfil Detectado:', payload.new);
+          setUserProfile(payload.new);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [session]);
+
   useEffect(() => {
     if (isAutoSync) {
       const totalFixed = fixedCosts.reduce((acc, curr) => acc + curr.valor, 0);
@@ -107,6 +133,7 @@ const App: React.FC = () => {
           fetchUserProfile(newSession);
         } else {
           setUserProfile(null);
+          setActiveTab('calculadora');
         }
       }
     });
@@ -116,49 +143,18 @@ const App: React.FC = () => {
 
   const fetchUserProfile = async (userSession: any) => {
     if (!userSession?.user?.id) return;
-    
-    // Tenta buscar o perfil
-    let { data, error } = await supabase
-      .from('user_configs')
-      .select('*')
-      .eq('user_id', userSession.user.id)
-      .maybeSingle();
-
-    // Se o perfil não existir, cria um perfil padrão para este usuário
-    // Isso garante que o status de admin possa ser verificado
-    if (!data && !error) {
-      const { data: newData, error: insertError } = await supabase
+    try {
+      let { data, error } = await supabase
         .from('user_configs')
-        .insert([{ 
-          user_id: userSession.user.id, 
-          email: userSession.user.email,
-          nome_completo: userSession.user.user_metadata?.full_name || 'Usuário',
-          is_admin: false 
-        }])
-        .select()
-        .single();
-      
-      if (!insertError) data = newData;
-    }
+        .select('*')
+        .eq('user_id', userSession.user.id)
+        .maybeSingle();
 
-    if (data) {
-      setUserProfile(data);
-      // Aplica configurações padrão se o usuário já as tiver definido em Ajustes
-      if (data.uf_padrao_destino || data.margem_padrao) {
-        setInputs(prev => {
-          const newUfDestino = data.uf_padrao_destino || prev.ufDestino;
-          const destUf = UF_LIST.find(u => u.sigla === newUfDestino);
-          const interRate = getInterstateRate(prev.ufOrigem, newUfDestino);
-          
-          return { 
-            ...prev, 
-            ufDestino: newUfDestino,
-            icmsInternoDestino: destUf?.icms || prev.icmsInternoDestino,
-            icmsInterestadual: interRate,
-            resultadoDesejado: data.margem_padrao || prev.resultadoDesejado
-          };
-        });
+      if (data) {
+        setUserProfile(data);
       }
+    } catch (err) {
+      console.error('App: Erro perfil:', err);
     }
   };
 
@@ -171,7 +167,7 @@ const App: React.FC = () => {
         if (data.variable_costs) setVariableCosts(data.variable_costs);
         if (data.is_auto_sync !== undefined) setIsAutoSync(!!data.is_auto_sync);
       }
-    } catch (e) { console.warn('Overhead default.'); }
+    } catch (e) {}
   };
 
   const fetchMyProducts = async (currentSession = session) => {
@@ -190,7 +186,7 @@ const App: React.FC = () => {
         dados: inputs 
       }]);
       if (error) throw error;
-      alert('Simulação salva com sucesso!');
+      alert('Simulação salva!');
       await fetchMyProducts();
       setActiveTab('meus-produtos');
     } catch (err: any) { alert('Erro: ' + err.message); } finally { setIsSaving(false); }
@@ -202,8 +198,38 @@ const App: React.FC = () => {
   if (!isInitialized) return null;
   if (!session) return <Login onLoginSuccess={setSession} />;
 
+  // LOGICA DE BLOQUEIO (Status 'bloqueado')
+  if (userProfile?.status === 'bloqueado' && !userProfile?.is_admin) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-slate-900 p-8 fixed inset-0 z-[5000]">
+        <div className="max-w-md w-full bg-white rounded-[3rem] p-10 text-center space-y-8 shadow-2xl animate-slide-up">
+          <div className="w-20 h-20 bg-rose-100 text-rose-600 rounded-3xl flex items-center justify-center mx-auto shadow-xl">
+             <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 15v2m0 0v3m0-3h3m-3 0H9m12 1a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div className="space-y-4">
+            <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Acesso Bloqueado</h2>
+            <p className="text-slate-500 font-bold text-sm leading-relaxed">Sua conta foi suspensa temporariamente por questões administrativas ou de faturamento.</p>
+          </div>
+          <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Suporte Administrativo</span>
+             <p className="text-xl font-black text-slate-900 font-mono italic">(75) 98323-1773</p>
+          </div>
+          <button onClick={() => supabase.auth.signOut()} className="w-full bg-slate-900 text-white py-4 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-black transition-all">Sair da Conta</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="h-screen w-full flex flex-col lg:flex-row bg-[#f8fafc] overflow-hidden text-slate-900">
+    <div className="h-screen w-full flex flex-col lg:flex-row bg-[#f8fafc] overflow-hidden text-slate-900 relative">
+      {/* Banner de Manutenção (Status 'atualizando') */}
+      {userProfile?.status === 'atualizando' && (
+        <div className="fixed top-0 left-0 w-full bg-blue-600 text-white z-[5000] px-6 py-2 flex items-center justify-center gap-3 shadow-lg border-b border-blue-400/30">
+           <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
+           <span className="text-[10px] font-black uppercase tracking-[0.2em]">O sistema está passando por atualizações fiscais importantes</span>
+        </div>
+      )}
+
       <aside className={`bg-black flex lg:flex-col transition-all duration-300 z-[100] border-t lg:border-t-0 lg:border-r border-white/5 shadow-2xl ${sidebarCollapsed ? 'lg:w-[80px]' : 'lg:w-[280px]'} fixed bottom-0 left-0 w-full lg:relative lg:h-screen h-[70px] lg:h-auto`}>
         <div className="hidden lg:flex p-8 mb-6 items-center justify-between">
           <div className="flex items-center gap-4 overflow-hidden">
@@ -217,22 +243,19 @@ const App: React.FC = () => {
           <MenuButton active={activeTab === 'meus-produtos'} onClick={() => setActiveTab('meus-produtos')} label="Meus Produtos" collapsed={sidebarCollapsed} icon="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
           <MenuButton active={activeTab === 'overhead'} onClick={() => setActiveTab('overhead')} label="Overhead" collapsed={sidebarCollapsed} icon="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2"/>
           <MenuButton active={activeTab === 'configuracao'} onClick={() => setActiveTab('configuracao')} label="Ajustes" collapsed={sidebarCollapsed} icon="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-          {userProfile?.is_admin && (
+          {!!userProfile?.is_admin && (
             <MenuButton active={activeTab === 'master'} onClick={() => setActiveTab('master')} label="Master" collapsed={sidebarCollapsed} icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04M12 2.944v10m0 0a2 2 0 100 4 2 2 0 000-4z"/>
           )}
         </nav>
       </aside>
 
       <main className="flex-1 overflow-hidden flex flex-col relative pb-[70px] lg:pb-0">
-        <div className="absolute top-6 right-8 z-[90] hidden md:flex items-center gap-4 animate-slide-up">
+        <div className="absolute top-12 right-8 z-[90] hidden md:flex items-center gap-4 animate-slide-up">
            <div className="glass-card border border-slate-200/50 px-5 py-2.5 rounded-2xl flex items-center gap-3 shadow-xl shadow-black/5">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <div className={`w-2 h-2 rounded-full animate-pulse ${userProfile?.status === 'ativo' ? 'bg-emerald-500' : userProfile?.status === 'atualizando' ? 'bg-blue-500' : 'bg-rose-500'}`}></div>
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-800">
-                {userProfile?.is_admin ? 'MASTER' : 'BEM-VINDO'}, {userProfile?.nome_completo?.split(' ')[0] || 'Operador'}
+                {userProfile?.is_admin ? 'MASTER' : 'USUÁRIO'}, {userProfile?.nome_completo?.split(' ')[0] || 'Operador'}
               </span>
-           </div>
-           <div className="bg-black text-white px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg">
-             {userProfile?.regime_tributario || 'Lucro Real'}
            </div>
         </div>
 
@@ -260,7 +283,7 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'master' && userProfile?.is_admin && (
+        {activeTab === 'master' && !!userProfile?.is_admin && (
           <div className="flex-1 p-6 md:p-12 overflow-y-auto custom-scrollbar bg-slate-50">
             <AdminView />
           </div>

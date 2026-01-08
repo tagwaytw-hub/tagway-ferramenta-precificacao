@@ -65,8 +65,7 @@ const OverheadView: React.FC<OverheadViewProps> = ({
         faturamento: Number(faturamento),
         fixed_costs: fixedCosts,
         variable_costs: variableCosts,
-        is_auto_sync: !!isAutoSync,
-        updated_at: new Date().toISOString()
+        is_auto_sync: !!isAutoSync
       };
 
       const { error } = await supabase
@@ -74,9 +73,6 @@ const OverheadView: React.FC<OverheadViewProps> = ({
         .upsert(payload, { onConflict: 'user_id' });
 
       if (error) {
-        if (error.code === 'PGRST204') {
-          throw new Error("O banco de dados ainda está processando a nova coluna. Aguarde 30 segundos e tente novamente.");
-        }
         throw new Error(error.message || `Erro código ${error.code}`);
       }
       
