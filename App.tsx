@@ -230,13 +230,30 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <aside className={`bg-black flex lg:flex-col transition-all duration-300 z-[100] border-t lg:border-t-0 lg:border-r border-white/5 shadow-2xl ${sidebarCollapsed ? 'lg:w-[80px]' : 'lg:w-[280px]'} fixed bottom-0 left-0 w-full lg:relative lg:h-screen h-[70px] lg:h-auto`}>
-        <div className="hidden lg:flex p-8 mb-6 items-center justify-between">
+      {/* Sidebar Principal */}
+      <aside className={`bg-black flex lg:flex-col transition-all duration-500 z-[100] border-t lg:border-t-0 lg:border-r border-white/5 shadow-2xl ${sidebarCollapsed ? 'lg:w-[90px]' : 'lg:w-[280px]'} fixed bottom-0 left-0 w-full lg:relative lg:h-screen h-[70px] lg:h-auto`}>
+        {/* Header da Sidebar com botão colapsar */}
+        <div className="hidden lg:flex p-6 mb-6 items-center justify-between border-b border-white/5">
           <div className="flex items-center gap-4 overflow-hidden">
-            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0 border border-white/10 shadow-lg"><svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
-            {!sidebarCollapsed && <div className="flex flex-col leading-none"><span className="text-white font-black tracking-tighter text-2xl italic uppercase">Tagway</span><span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] mt-1">Intelligence</span></div>}
+            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0 border border-white/10 shadow-lg">
+              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            {!sidebarCollapsed && (
+              <div className="flex flex-col leading-none animate-slide-up">
+                <span className="text-white font-black tracking-tighter text-2xl italic uppercase">Tagway</span>
+                <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] mt-1">Intelligence</span>
+              </div>
+            )}
           </div>
+          <button 
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)} 
+            className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all"
+          >
+            <svg className={`w-4 h-4 transition-transform duration-500 ${sidebarCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/></svg>
+          </button>
         </div>
+
+        {/* Navegação Principal */}
         <nav className="flex-1 flex lg:flex-col items-center lg:items-stretch justify-start lg:px-4 lg:space-y-2 p-1 overflow-x-auto lg:overflow-x-visible no-scrollbar">
           <MenuButton active={activeTab === 'calculadora'} onClick={() => setActiveTab('calculadora')} label="Calculadora" collapsed={sidebarCollapsed} icon="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
           <MenuButton active={activeTab === 'catalogo'} onClick={() => setActiveTab('catalogo')} label="Catálogo" collapsed={sidebarCollapsed} icon="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
@@ -247,15 +264,32 @@ const App: React.FC = () => {
             <MenuButton active={activeTab === 'master'} onClick={() => setActiveTab('master')} label="Master" collapsed={sidebarCollapsed} icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04M12 2.944v10m0 0a2 2 0 100 4 2 2 0 000-4z"/>
           )}
         </nav>
+
+        {/* Footer da Sidebar com Sair */}
+        <div className="lg:mt-auto lg:p-4 border-t border-white/5 hidden lg:block">
+           <button 
+             onClick={() => supabase.auth.signOut()}
+             className={`flex items-center gap-4 w-full p-4 rounded-2xl text-rose-500 hover:bg-rose-500/10 transition-all group overflow-hidden ${sidebarCollapsed ? 'justify-center' : ''}`}
+           >
+             <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+             {!sidebarCollapsed && <span className="text-[11px] font-black uppercase tracking-widest whitespace-nowrap animate-slide-up">Sair do Sistema</span>}
+           </button>
+        </div>
       </aside>
 
       <main className="flex-1 overflow-hidden flex flex-col relative pb-[70px] lg:pb-0">
-        <div className="absolute top-12 right-8 z-[90] hidden md:flex items-center gap-4 animate-slide-up">
-           <div className="glass-card border border-slate-200/50 px-5 py-2.5 rounded-2xl flex items-center gap-3 shadow-xl shadow-black/5">
-              <div className={`w-2 h-2 rounded-full animate-pulse ${userProfile?.status === 'ativo' ? 'bg-emerald-500' : userProfile?.status === 'atualizando' ? 'bg-blue-500' : 'bg-rose-500'}`}></div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-800">
-                {userProfile?.is_admin ? 'MASTER' : 'USUÁRIO'}, {userProfile?.nome_completo?.split(' ')[0] || 'Operador'}
-              </span>
+        {/* Saudação Superior Flutuante */}
+        <div className="absolute top-10 right-10 z-[90] hidden md:flex items-center gap-4">
+           <div className="glass-card border border-slate-200/50 px-6 py-3 rounded-2xl flex items-center gap-4 shadow-xl shadow-black/5 animate-slide-up">
+              <div className={`w-2.5 h-2.5 rounded-full animate-pulse ${userProfile?.status === 'ativo' ? 'bg-emerald-500' : userProfile?.status === 'atualizando' ? 'bg-blue-500' : 'bg-rose-500'}`}></div>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-800 leading-none mb-1">
+                  {userProfile?.nome_completo || 'Operador'}
+                </span>
+                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                  {userProfile?.is_admin ? 'Master Admin' : userProfile?.empresa_nome || 'Tagway Cloud'}
+                </span>
+              </div>
            </div>
         </div>
 
@@ -304,10 +338,10 @@ const App: React.FC = () => {
 interface MenuButtonProps { active: boolean; onClick: () => void; icon: string; label: string; collapsed: boolean; }
 const MenuButton: React.FC<MenuButtonProps> = ({ active, onClick, icon, label, collapsed }) => (
   <button onClick={onClick} className={`flex flex-col lg:flex-row items-center lg:w-full gap-2 lg:gap-4 p-3 lg:p-4 lg:rounded-2xl transition-all relative group shrink-0 ${active ? 'bg-white text-black lg:shadow-xl' : 'text-white/40 hover:text-white lg:hover:bg-white/10'}`}>
-    <div className="w-6 h-6 flex items-center justify-center shrink-0">
+    <div className={`w-6 h-6 flex items-center justify-center shrink-0 ${collapsed ? 'w-full' : ''}`}>
       <svg className={`w-5 h-5 shrink-0 transition-colors ${active ? 'text-black' : 'text-white/40 group-hover:text-white'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d={icon}/></svg>
     </div>
-    {!collapsed && <span className="text-[9px] lg:text-[11px] font-black uppercase tracking-[0.1em] lg:tracking-[0.15em] whitespace-nowrap">{label}</span>}
+    {!collapsed && <span className="text-[9px] lg:text-[11px] font-black uppercase tracking-[0.1em] lg:tracking-[0.15em] whitespace-nowrap animate-slide-up">{label}</span>}
   </button>
 );
 
