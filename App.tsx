@@ -55,6 +55,20 @@ export const stringifyError = (err: any): string => {
   return msg || JSON.stringify(err);
 };
 
+// Ícone de Cérebro (Tagway AI/BI Style)
+const BrainIcon = () => (
+  <svg className="w-6 h-6" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M50 15C38.9543 15 30 23.9543 30 35C30 37.0252 30.3005 38.98 30.8571 40.8163C24.7143 41.8367 20 47.1429 20 53.5C20 60.4036 25.5964 66 32.5 66C32.1667 67.9592 32 69.9592 32 72C32 83.0457 40.9543 92 52 92C63.0457 92 72 83.0457 72 72C72 69.9592 71.8333 67.9592 71.5 66C78.4036 66 84 60.4036 84 53.5C84 47.1429 79.2857 41.8367 73.1429 40.8163C73.6995 38.98 74 37.0252 74 35C74 23.9543 65.0457 15 54 15H50Z" fill="url(#grad_app)" />
+    <text x="50" y="62" textAnchor="middle" fill="white" fontSize="14" fontWeight="900" style={{ fontFamily: 'Inter' }}>TW</text>
+    <defs>
+      <linearGradient id="grad_app" x1="20" y1="53.5" x2="84" y2="53.5" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stopColor="#FF7A00" />
+        <stop offset="1" stopColor="#9D00FF" />
+      </linearGradient>
+    </defs>
+  </svg>
+);
+
 const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
   const [inputs, setInputs] = useState<SimulationInputs>(defaultInputs);
@@ -182,7 +196,9 @@ const App: React.FC = () => {
       <aside className={`bg-black flex lg:flex-col transition-all duration-500 z-[100] border-t lg:border-t-0 lg:border-r border-white/5 shadow-2xl ${sidebarCollapsed ? 'lg:w-[90px]' : 'lg:w-[280px]'} fixed bottom-0 left-0 w-full lg:relative lg:h-screen h-[70px] lg:h-auto overflow-y-auto no-scrollbar`}>
         <div className="hidden lg:flex p-6 mb-4 items-center justify-between border-b border-white/5">
           <div className="flex items-center gap-4 overflow-hidden">
-            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0 border border-white/10"><svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
+            <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center shrink-0 border border-white/10">
+              <BrainIcon />
+            </div>
             {!sidebarCollapsed && <span className="text-white font-black tracking-tighter text-2xl italic uppercase animate-slide-up">Tagway</span>}
           </div>
           <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="p-2 hover:bg-white/10 rounded-lg text-white/40">

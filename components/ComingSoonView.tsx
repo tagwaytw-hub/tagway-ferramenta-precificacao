@@ -35,7 +35,7 @@ const ComingSoonView: React.FC<ComingSoonViewProps> = ({ title, desc, icon }) =>
       </div>
 
       <div className="pt-10">
-        <p className="text-[9px] font-bold text-slate-300 uppercase tracking-[0.2em]">Tagway Pro Intelligence — Acelerando sua visão financeira</p>
+        <p className="text-[9px] font-bold text-slate-300 uppercase tracking-[0.2em]">Tagway Intelligence — Acelerando sua visão financeira</p>
       </div>
     </div>
   </div>

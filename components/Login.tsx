@@ -1,9 +1,23 @@
+
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 interface LoginProps {
   onLoginSuccess: (session: any) => void;
 }
+
+const BrainHeroIcon = () => (
+  <svg className="w-12 h-12" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M50 15C38.9543 15 30 23.9543 30 35C30 37.0252 30.3005 38.98 30.8571 40.8163C24.7143 41.8367 20 47.1429 20 53.5C20 60.4036 25.5964 66 32.5 66C32.1667 67.9592 32 69.9592 32 72C32 83.0457 40.9543 92 52 92C63.0457 92 72 83.0457 72 72C72 69.9592 71.8333 67.9592 71.5 66C78.4036 66 84 60.4036 84 53.5C84 47.1429 79.2857 41.8367 73.1429 40.8163C73.6995 38.98 74 37.0252 74 35C74 23.9543 65.0457 15 54 15H50Z" fill="url(#grad_hero)" />
+    <text x="50" y="62" textAnchor="middle" fill="white" fontSize="14" fontWeight="900" style={{ fontFamily: 'Inter' }}>TW</text>
+    <defs>
+      <linearGradient id="grad_hero" x1="20" y1="53.5" x2="84" y2="53.5" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stopColor="#FF7A00" />
+        <stop offset="1" stopColor="#9D00FF" />
+      </linearGradient>
+    </defs>
+  </svg>
+);
 
 const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
@@ -18,7 +32,6 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
       if (error) {
-        // Extrai mensagem real para evitar [object Object]
         alert(`Erro de login: ${error.message || 'Credenciais inválidas'}`);
       } else if (data.session) {
         onLoginSuccess(data.session);
@@ -38,11 +51,11 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       <div className="hidden md:flex flex-1 bg-[#0f172a] p-20 flex-col justify-between relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[120px] -mr-96 -mt-96"></div>
         <div className="relative z-10">
-          <div className="w-14 h-14 bg-blue-600 rounded-[20px] flex items-center justify-center shadow-2xl shadow-blue-500/40">
-            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          <div className="w-20 h-20 bg-white/5 rounded-[24px] flex items-center justify-center shadow-2xl border border-white/10 backdrop-blur-md">
+            <BrainHeroIcon />
           </div>
-          <h1 className="text-6xl font-black text-white mt-12 tracking-tighter leading-none italic">TAGWAY<br/>PRO</h1>
-          <div className="h-1.5 w-24 bg-blue-600 mt-6 rounded-full"></div>
+          <h1 className="text-6xl font-black text-white mt-12 tracking-tighter leading-none italic">TAGWAY</h1>
+          <div className="h-1.5 w-24 bg-gradient-to-r from-orange-500 to-purple-600 mt-6 rounded-full"></div>
         </div>
         <div className="relative z-10 text-slate-400 space-y-4">
           <p className="text-2xl font-medium tracking-tight leading-snug max-w-sm">A nova inteligência para simulações fiscais e tributárias determinísticas.</p>
@@ -56,8 +69,11 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       {/* Form Side */}
       <div className="flex-1 flex items-center justify-center p-8 bg-white md:rounded-l-[4rem] shadow-[-20px_0_40px_rgba(0,0,0,0.02)] z-20">
         <div className="w-full max-w-sm space-y-12">
-          <div className="md:hidden text-center mb-8">
-            <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic">Tagway Pro</h1>
+          <div className="md:hidden text-center mb-8 flex flex-col items-center">
+             <div className="w-16 h-16 mb-4">
+               <BrainHeroIcon />
+             </div>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic">Tagway</h1>
           </div>
           
           <div className="space-y-4">
