@@ -1,10 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = 'https://pvisyuhhyruuxrylzpqr.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2aXN5dWhoeXJ1dXhyeWx6cHFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczOTQ2NDEsImV4cCI6MjA4Mjk3MDY0MX0.NGc5ws9ERsgDzelKYMiDZFA34MSyPiwn10agfQU1OnQ';
 
 interface UserProfile {
   user_id: string;
@@ -18,11 +14,9 @@ interface UserProfile {
 
 const AdminView: React.FC = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
-  const [currentAdminStatus, setCurrentAdminStatus] = useState<{is_admin: boolean, email: string} | null>(null);
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [newUser, setNewUser] = useState({
     nome: '',
@@ -33,72 +27,22 @@ const AdminView: React.FC = () => {
   });
 
   useEffect(() => {
-    checkAdminStatus();
     fetchUsers();
   }, []);
-
-  const checkAdminStatus = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      const { data } = await supabase.from('user_configs').select('is_admin, email').eq('user_id', session.user.id).single();
-      if (data) setCurrentAdminStatus(data);
-      else if (session.user.email === 'tagwaytw@gmail.com') {
-        setCurrentAdminStatus({ is_admin: true, email: 'tagwaytw@gmail.com' });
-      }
-    }
-  };
 
   const fetchUsers = async () => {
     setErrorMessage(null);
     try {
       const { data, error } = await supabase
         .from('user_configs')
-        .select('*')
-        .order('nome_completo', { ascending: true });
+        .select('*');
       
       if (error) throw error;
-      if (data) setUsers(data as UserProfile[]);
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Erro ao carregar usuários.');
-    }
-  };
-
-  const handleDeleteUser = async (userId: string, userName: string) => {
-    const isMaster = currentAdminStatus?.email === 'tagwaytw@gmail.com';
-    
-    if (!currentAdminStatus?.is_admin && !isMaster) {
-      alert("ERRO: O Banco de Dados não identifica você como um Admin.");
-      return;
-    }
-
-    const confirmation = window.prompt(`Para apagar ${userName.toUpperCase()}, digite EXCLUIR:`);
-    if (confirmation !== 'EXCLUIR') return;
-
-    setIsDeleting(userId);
-    try {
-      // 1. Apagar dependências
-      await supabase.from('simulacoes').delete().eq('user_id', userId);
-      await supabase.from('overhead_configs').delete().eq('user_id', userId);
-      
-      // 2. Apagar Perfil Principal
-      const { error, count } = await supabase
-        .from('user_configs')
-        .delete({ count: 'exact' })
-        .eq('user_id', userId);
-
-      if (error) throw error;
-
-      if (count === 0 && !isMaster) {
-        throw new Error("O banco recusou a exclusão. Verifique as políticas RLS.");
+      if (data) {
+        setUsers(data as UserProfile[]);
       }
-
-      alert(`Sucesso! O usuário ${userName} foi removido.`);
-      setExpandedUserId(null);
-      fetchUsers();
     } catch (err: any) {
-      alert(`FALHA NA EXCLUSÃO: ${err.message}`);
-    } finally {
-      setIsDeleting(null);
+      setErrorMessage(err.message || 'Erro ao conectar com o banco de dados.');
     }
   };
 
@@ -117,10 +61,10 @@ const AdminView: React.FC = () => {
         .eq('user_id', user.user_id);
 
       if (error) throw error;
-      alert('Usuário atualizado!');
+      alert('Alterações aplicadas instantaneamente!');
       fetchUsers();
     } catch (err: any) {
-      alert(`Erro na atualização: ${err.message}`);
+      alert(`ERRO AO SALVAR: ${err.message}`);
     } finally {
       setIsUpdating(null);
     }
@@ -129,17 +73,13 @@ const AdminView: React.FC = () => {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUser.email || !newUser.senha || !newUser.nome) {
-      alert('Preencha os campos obrigatórios.');
+      alert('Nome, E-mail e Senha são obrigatórios.');
       return;
     }
     
     setIsRegistering(true);
-    const tempClient = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: { persistSession: false, autoRefreshToken: false }
-    });
-
     try {
-      const { data: authData, error: authError } = await tempClient.auth.signUp({
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newUser.email,
         password: newUser.senha,
         options: { data: { full_name: newUser.nome } }
@@ -161,12 +101,12 @@ const AdminView: React.FC = () => {
         ]);
 
         if (configError) throw configError;
-        alert('OPERADOR CRIADO!');
+        alert('OPERADOR CRIADO COM SUCESSO!');
         setNewUser({ nome: '', email: '', senha: '', empresa: '', regime: 'Real' });
         fetchUsers();
       }
     } catch (err: any) {
-      alert(`Erro no cadastro: ${err.message}`);
+      alert(`ERRO NO CADASTRO: ${err.message}\n\nNota: Verifique se o redirecionamento de e-mail está configurado no painel Supabase.`);
     } finally {
       setIsRegistering(false);
     }
@@ -178,15 +118,6 @@ const AdminView: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-10 pb-20 animate-slide-up">
-      <div className={`p-4 rounded-2xl border flex items-center justify-between ${currentAdminStatus?.is_admin ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-rose-50 border-rose-100 text-rose-700'}`}>
-         <div className="flex items-center gap-3">
-            <div className={`w-2 h-2 rounded-full animate-pulse ${currentAdminStatus?.is_admin ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
-            <span className="text-[10px] font-black uppercase tracking-widest">
-              Status do seu Acesso: {currentAdminStatus?.is_admin ? 'ADMINISTRADOR VALIDADO' : 'OPERADOR COMUM'}
-            </span>
-         </div>
-      </div>
-
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-200 pb-8">
         <div>
           <div className="flex items-center gap-3">
@@ -198,7 +129,7 @@ const AdminView: React.FC = () => {
           <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mt-2">Gestão de Licenças e Operadores</p>
         </div>
         <button onClick={fetchUsers} className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
-          Atualizar Lista
+          Sincronizar Banco
         </button>
       </header>
 
@@ -206,6 +137,13 @@ const AdminView: React.FC = () => {
         <div className="xl:col-span-1 space-y-6">
           <section className="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-xl space-y-6 sticky top-8">
             <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">Cadastrar Operador</h3>
+            
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl">
+               <p className="text-[9px] font-black text-amber-700 uppercase tracking-widest leading-relaxed">
+                 DICA: Se o link de e-mail falhar, desative "Confirm Email" no painel do Supabase para liberação imediata.
+               </p>
+            </div>
+
             <form onSubmit={handleCreateUser} className="space-y-4">
               <AdminInput label="Nome" value={newUser.nome} onChange={(v) => setNewUser({...newUser, nome: v})} />
               <AdminInput label="E-mail" type="email" value={newUser.email} onChange={(v) => setNewUser({...newUser, email: v})} />
@@ -237,13 +175,19 @@ const AdminView: React.FC = () => {
               <div key={user.user_id} className={`bg-white border rounded-[2rem] overflow-hidden transition-all duration-300 ${expandedUserId === user.user_id ? 'border-black shadow-2xl scale-[1.01]' : 'border-slate-200 shadow-sm hover:border-slate-300'}`}>
                 <button onClick={() => setExpandedUserId(expandedUserId === user.user_id ? null : user.user_id)} className="w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 transition-colors">
                   <div className="flex items-center gap-4">
-                    <div className={`w-3 h-3 rounded-full ${user.status === 'ativo' ? 'bg-emerald-500' : user.status === 'atualizando' ? 'bg-blue-500' : 'bg-rose-500'}`}></div>
+                    <div className={`w-3 h-3 rounded-full ${user.status === 'ativo' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : user.status === 'atualizando' ? 'bg-blue-500' : 'bg-rose-500'}`}></div>
                     <div>
                       <h4 className="font-black text-slate-900 tracking-tight leading-none mb-1">{user.nome_completo || 'Sem Nome'}</h4>
                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{user.email}</p>
                     </div>
                   </div>
-                  <svg className={`w-5 h-5 text-slate-300 transition-transform ${expandedUserId === user.user_id ? 'rotate-180 text-black' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"/></svg>
+                  <div className="flex items-center gap-6">
+                    <div className="hidden md:block text-right">
+                       <span className="text-[9px] font-black text-slate-300 uppercase block leading-none mb-1">Status</span>
+                       <span className={`text-[10px] font-black uppercase italic ${user.status === 'ativo' ? 'text-emerald-500' : user.status === 'atualizando' ? 'text-blue-500' : 'text-rose-500'}`}>{user.status}</span>
+                    </div>
+                    <svg className={`w-5 h-5 text-slate-300 transition-transform ${expandedUserId === user.user_id ? 'rotate-180 text-black' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"/></svg>
+                  </div>
                 </button>
 
                 {expandedUserId === user.user_id && (
@@ -267,26 +211,34 @@ const AdminView: React.FC = () => {
                     </div>
 
                     <div className="space-y-6">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Acesso</label>
+                        <div className="flex items-center justify-between">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Configuração de Acesso</label>
+                        </div>
                         <div className="grid grid-cols-3 gap-3">
                            <StatusButton label="ATIVO" active={user.status === 'ativo'} onClick={() => updateUserInState(user.user_id, 'status', 'ativo')} color="emerald" />
                            <StatusButton label="MANUTENÇÃO" active={user.status === 'atualizando'} onClick={() => updateUserInState(user.user_id, 'status', 'atualizando')} color="blue" />
                            <StatusButton label="BLOQUEADO" active={user.status === 'bloqueado'} onClick={() => updateUserInState(user.user_id, 'status', 'bloqueado')} color="rose" />
                         </div>
+                        
+                        <div className="bg-slate-50 rounded-2xl p-4 grid grid-cols-1 md:grid-cols-3 gap-4 border border-slate-100">
+                          <div className="flex gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1 shrink-0"></div>
+                            <p className="text-[8px] font-bold text-slate-500 uppercase leading-tight"><b className="text-slate-700">ATIVO:</b> Acesso total liberado.</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1 shrink-0"></div>
+                            <p className="text-[8px] font-bold text-slate-500 uppercase leading-tight"><b className="text-slate-700">MANUTENÇÃO:</b> Mostra banner de alerta fiscal mas permite uso.</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1 shrink-0"></div>
+                            <p className="text-[8px] font-bold text-slate-500 uppercase leading-tight"><b className="text-slate-700">BLOQUEADO:</b> Trava a tela do usuário imediatamente.</p>
+                          </div>
+                        </div>
                     </div>
 
-                    <div className="pt-8 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
-                      <div className="bg-rose-50 p-6 rounded-2xl border border-rose-100 flex-1 w-full">
-                        <button 
-                          onClick={() => handleDeleteUser(user.user_id, user.nome_completo)}
-                          disabled={isDeleting === user.user_id || user.email === 'tagwaytw@gmail.com'}
-                          className="w-full md:w-auto bg-rose-600 text-white px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg hover:bg-rose-700 disabled:opacity-30"
-                        >
-                          {isDeleting === user.user_id ? 'EXCLUINDO...' : 'DELETAR OPERADOR'}
-                        </button>
-                      </div>
-                      <button onClick={() => handleUpdateUser(user)} disabled={isUpdating === user.user_id} className="bg-black text-white px-10 py-4 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl w-full md:w-auto">
-                        {isUpdating === user.user_id ? 'Salvando...' : 'Salvar Alterações'}
+                    <div className="pt-6 border-t border-slate-50 flex justify-end">
+                      <button onClick={() => handleUpdateUser(user)} disabled={isUpdating === user.user_id} className="bg-black text-white px-10 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl disabled:opacity-50 transition-all active:scale-95">
+                        {isUpdating === user.user_id ? 'Processando...' : 'Aplicar Mudanças'}
                       </button>
                     </div>
                   </div>
@@ -311,9 +263,9 @@ const AdminInput: React.FC<AdminInputProps> = ({ label, value, onChange, type = 
 interface StatusButtonProps { label: string; active: boolean; onClick: () => void; color: 'emerald' | 'blue' | 'rose'; }
 const StatusButton: React.FC<StatusButtonProps> = ({ label, active, onClick, color }) => {
   const styles = {
-    emerald: active ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg' : 'bg-white text-slate-400 border-slate-100',
-    blue: active ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : 'bg-white text-slate-400 border-slate-100',
-    rose: active ? 'bg-rose-600 text-white border-rose-600 shadow-lg' : 'bg-white text-slate-400 border-slate-100',
+    emerald: active ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/20' : 'bg-white text-slate-400 border-slate-100 hover:border-emerald-200',
+    blue: active ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20' : 'bg-white text-slate-400 border-slate-100 hover:border-blue-200',
+    rose: active ? 'bg-rose-600 text-white border-rose-600 shadow-lg shadow-rose-500/20' : 'bg-white text-slate-400 border-slate-100 hover:border-rose-200',
   };
   return (
     <button type="button" onClick={(e) => { e.stopPropagation(); onClick(); }} className={`py-3 rounded-xl border-2 font-black uppercase text-[9px] tracking-widest transition-all ${styles[color]}`}>
