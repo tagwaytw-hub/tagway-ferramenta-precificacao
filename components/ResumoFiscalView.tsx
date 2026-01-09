@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { SimulationResults, SimulationInputs } from '../types';
-import { formatCurrency, formatPercent } from '../utils/calculations';
+import { formatCurrency } from '../utils/calculations';
 
 interface ResumoFiscalViewProps {
   results: SimulationResults;
@@ -85,7 +85,7 @@ const ResumoFiscalView: React.FC<ResumoFiscalViewProps> = ({ results, inputs }) 
                  </div>
                  <div className="flex-1 bg-white/5 rounded-2xl p-4 border border-white/5">
                    <span className="text-[8px] font-black text-white/30 uppercase tracking-widest block mb-1">Deduções Totais</span>
-                   <span className="text-lg font-black text-rose-400 font-mono tracking-tighter">{inputs.totalDeducoesVendaPerc || results.totalDeducoesVendaPerc}%</span>
+                   <span className="text-lg font-black text-rose-400 font-mono tracking-tighter">{results.totalDeducoesVendaPerc}%</span>
                  </div>
               </div>
             </div>

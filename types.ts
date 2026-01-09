@@ -26,6 +26,7 @@ export interface SimulationInputs {
   percReducaoBase: number;
   simulationMode: 'buyToSell' | 'sellToBuy';
   precoVendaDesejado: number;
+  totalDeducoesVendaPerc?: number;
 }
 
 export interface CostItem {
