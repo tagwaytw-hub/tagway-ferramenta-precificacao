@@ -183,32 +183,43 @@ const App: React.FC = () => {
         <div className="hidden lg:flex p-6 mb-4 items-center justify-between border-b border-white/5">
           <div className="flex items-center gap-4 overflow-hidden">
             <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0 border border-white/10"><svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
-            {!sidebarCollapsed && <span className="text-white font-black tracking-tighter text-2xl italic uppercase">Tagway</span>}
+            {!sidebarCollapsed && <span className="text-white font-black tracking-tighter text-2xl italic uppercase animate-slide-up">Tagway</span>}
           </div>
+          <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="p-2 hover:bg-white/10 rounded-lg text-white/40">
+             <svg className={`w-4 h-4 transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M11 19l-7-7 7-7"/></svg>
+          </button>
         </div>
         
         <nav className="flex-1 flex lg:flex-col items-center lg:items-stretch justify-start lg:px-4 lg:space-y-1 p-1">
-          <div className="hidden lg:block text-[8px] font-black text-white/20 uppercase tracking-[0.2em] px-4 py-2">Operacional</div>
+          <div className={`hidden lg:block text-[8px] font-black text-white/20 uppercase tracking-[0.2em] px-4 py-2 transition-opacity ${sidebarCollapsed ? 'opacity-0 h-0 p-0 overflow-hidden' : 'opacity-100'}`}>Operacional</div>
           <MenuButton active={activeTab === 'calculadora'} onClick={() => setActiveTab('calculadora')} label="Calculadora" collapsed={sidebarCollapsed} icon="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
           <MenuButton active={activeTab === 'resumo-fiscal'} onClick={() => setActiveTab('resumo-fiscal')} label="Resumo Fiscal" collapsed={sidebarCollapsed} icon="M9 17v-2m3 2v-4m3 2v-6m-8-2h8a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"/>
           <MenuButton active={activeTab === 'catalogo'} onClick={() => setActiveTab('catalogo')} label="Catálogo" collapsed={sidebarCollapsed} icon="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
           <MenuButton active={activeTab === 'meus-produtos'} onClick={() => setActiveTab('meus-produtos')} label="Meus Produtos" collapsed={sidebarCollapsed} icon="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
           
-          <div className="hidden lg:block text-[8px] font-black text-white/20 uppercase tracking-[0.2em] px-4 py-4 border-t border-white/5 mt-2"> ROADMAP 2026</div>
+          <div className={`hidden lg:block text-[8px] font-black text-white/20 uppercase tracking-[0.2em] px-4 py-4 border-t border-white/5 mt-2 transition-opacity ${sidebarCollapsed ? 'opacity-0 h-0 p-0 overflow-hidden' : 'opacity-100'}`}> ROADMAP 2026</div>
           <MenuButton active={activeTab === 'logistica'} onClick={() => setActiveTab('logistica')} label="Logística" collapsed={sidebarCollapsed} icon="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" isDev />
           <MenuButton active={activeTab === 'estoque'} onClick={() => setActiveTab('estoque')} label="Estoque Médio" collapsed={sidebarCollapsed} icon="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" isDev />
           <MenuButton active={activeTab === 'metas'} onClick={() => setActiveTab('metas')} label="Metas" collapsed={sidebarCollapsed} icon="M13 10V3L4 14h7v7l9-11h-7z" isDev />
-          <MenuButton active={activeTab === 'dre'} onClick={() => setActiveTab('dre')} label="DRE" collapsed={sidebarCollapsed} icon="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2" isDev />
-          <MenuButton active={activeTab === 'caixa'} onClick={() => setActiveTab('caixa')} label="Fluxo de Caixa" collapsed={sidebarCollapsed} icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" isDev />
+          <MenuButton active={activeTab === 'dre'} onClick={() => setActiveTab('dre')} label="DRE" collapsed={sidebarCollapsed} icon="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2" isDev />
+          <MenuButton active={activeTab === 'caixa'} onClick={() => setActiveTab('caixa')} label="Fluxo de Caixa" collapsed={sidebarCollapsed} icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" isDev />
           <MenuButton active={activeTab === 'ia'} onClick={() => setActiveTab('ia')} label="Módulo IA" collapsed={sidebarCollapsed} icon="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" isDev isAi />
 
-          <div className="hidden lg:block text-[8px] font-black text-white/20 uppercase tracking-[0.2em] px-4 py-4 border-t border-white/5 mt-2">Configuração</div>
+          <div className={`hidden lg:block text-[8px] font-black text-white/20 uppercase tracking-[0.2em] px-4 py-4 border-t border-white/5 mt-2 transition-opacity ${sidebarCollapsed ? 'opacity-0 h-0 p-0 overflow-hidden' : 'opacity-100'}`}>Configuração</div>
           <MenuButton active={activeTab === 'overhead'} onClick={() => setActiveTab('overhead')} label="Overhead" collapsed={sidebarCollapsed} icon="M4 6h16M4 12h16m-7 6h7"/>
           <MenuButton active={activeTab === 'configuracao'} onClick={() => setActiveTab('configuracao')} label="Ajustes" collapsed={sidebarCollapsed} icon="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
           {hasAdminAccess && <MenuButton active={activeTab === 'master'} onClick={() => setActiveTab('master')} label="Master" collapsed={sidebarCollapsed} icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04M12 2.944v10m0 0a2 2 0 100 4 2 2 0 000-4z"/>}
         </nav>
+
         <div className="lg:mt-auto lg:p-4 border-t border-white/5 hidden lg:block">
-           <button onClick={() => supabase.auth.signOut()} className={`flex items-center gap-4 w-full p-4 rounded-2xl text-rose-500 hover:bg-rose-500/10 transition-all ${sidebarCollapsed ? 'justify-center' : ''}`}><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>{!sidebarCollapsed && <span className="text-[11px] font-black uppercase tracking-widest">Sair</span>}</button>
+           <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className={`hidden lg:flex items-center gap-4 w-full p-4 rounded-2xl text-white/20 hover:text-white hover:bg-white/10 transition-all mb-2 ${sidebarCollapsed ? 'justify-center' : ''}`}>
+             <svg className={`w-5 h-5 transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+             {!sidebarCollapsed && <span className="text-[10px] font-black uppercase tracking-widest">Recolher</span>}
+           </button>
+           <button onClick={() => supabase.auth.signOut()} className={`flex items-center gap-4 w-full p-4 rounded-2xl text-rose-500 hover:bg-rose-500/10 transition-all ${sidebarCollapsed ? 'justify-center' : ''}`}>
+             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+             {!sidebarCollapsed && <span className="text-[11px] font-black uppercase tracking-widest">Sair</span>}
+           </button>
         </div>
       </aside>
 
@@ -259,13 +270,13 @@ const App: React.FC = () => {
 
 interface MenuButtonProps { active: boolean; onClick: () => void; icon: string; label: string; collapsed: boolean; isDev?: boolean; isAi?: boolean; }
 const MenuButton: React.FC<MenuButtonProps> = ({ active, onClick, icon, label, collapsed, isDev, isAi }) => (
-  <button onClick={onClick} className={`flex flex-col lg:flex-row items-center lg:w-full gap-2 lg:gap-3 p-2.5 lg:p-3 lg:rounded-xl transition-all relative group shrink-0 ${active ? 'bg-white text-black lg:shadow-xl' : 'text-white/40 hover:text-white lg:hover:bg-white/10'}`}>
+  <button onClick={onClick} className={`flex flex-col lg:flex-row items-center lg:w-full gap-2 lg:gap-3 p-2.5 lg:p-3 lg:rounded-xl transition-all relative group shrink-0 ${active ? 'bg-white text-black lg:shadow-xl' : 'text-white/40 hover:text-white lg:hover:bg-white/10'} ${collapsed ? 'justify-center' : ''}`}>
     <div className={`relative ${isAi && 'animate-pulse'}`}>
       <svg className={`w-4 h-4 shrink-0 transition-colors ${active ? 'text-black' : isAi ? 'text-indigo-400' : 'text-white/40 group-hover:text-white'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d={icon}/></svg>
       {isDev && !active && <div className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-indigo-500 rounded-full"></div>}
     </div>
     {!collapsed && (
-      <div className="flex items-center justify-between flex-1">
+      <div className="flex items-center justify-between flex-1 overflow-hidden transition-all duration-300">
         <span className={`text-[9px] font-black uppercase tracking-widest whitespace-nowrap ${isAi ? 'text-indigo-200' : ''}`}>{label}</span>
         {isDev && !active && <span className="hidden lg:block text-[6px] font-black bg-indigo-500/20 text-indigo-300 px-1 py-0.5 rounded leading-none">2026</span>}
       </div>
