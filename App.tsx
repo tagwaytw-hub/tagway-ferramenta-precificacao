@@ -345,7 +345,7 @@ const App: React.FC = () => {
         <nav className="lg:hidden mobile-dock fixed bottom-6 left-6 right-6 h-[72px] rounded-[2.2rem] flex items-center justify-around px-4 z-[100] shadow-2xl">
            <DockItem active={activeTab === 'calculadora'} onClick={() => setActiveTab('calculadora')} icon="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3" label="Calc" />
            <DockItem active={activeTab === 'resumo-fiscal'} onClick={() => setActiveTab('resumo-fiscal')} icon="M9 17v-2m3 2v-4m3 2v-6m-8-2h8a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z" label="Fisco" />
-           <DockItem active={activeTab === 'jarvis'} onClick={() => setActiveTab('jarvis'} icon="M13 10V3L4 14h7v7l9-11h-7z" label="Jarvis" isAi />
+           <DockItem active={activeTab === 'jarvis'} onClick={() => setActiveTab('jarvis')} icon="M13 10V3L4 14h7v7l9-11h-7z" label="Jarvis" isAi />
            <DockItem active={activeTab === 'overhead'} onClick={() => setActiveTab('overhead')} icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" label="Fixos" />
            <DockItem active={activeTab === 'configuracao'} onClick={() => setActiveTab('configuracao')} icon="M4 6h16M4 12h16m-7 6h7" label="Menu" />
         </nav>
