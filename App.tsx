@@ -55,17 +55,17 @@ export const stringifyError = (err: any): string => {
   return msg || JSON.stringify(err);
 };
 
-// Ícone de Cérebro (Tagway AI/BI Style)
+// Componente BrainIcon com gradiente laranja/roxo conforme nova marca
 const BrainIcon = () => (
   <svg className="w-6 h-6" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M50 15C38.9543 15 30 23.9543 30 35C30 37.0252 30.3005 38.98 30.8571 40.8163C24.7143 41.8367 20 47.1429 20 53.5C20 60.4036 25.5964 66 32.5 66C32.1667 67.9592 32 69.9592 32 72C32 83.0457 40.9543 92 52 92C63.0457 92 72 83.0457 72 72C72 69.9592 71.8333 67.9592 71.5 66C78.4036 66 84 60.4036 84 53.5C84 47.1429 79.2857 41.8367 73.1429 40.8163C73.6995 38.98 74 37.0252 74 35C74 23.9543 65.0457 15 54 15H50Z" fill="url(#grad_app)" />
-    <text x="50" y="62" textAnchor="middle" fill="white" fontSize="14" fontWeight="900" style={{ fontFamily: 'Inter' }}>TW</text>
     <defs>
-      <linearGradient id="grad_app" x1="20" y1="53.5" x2="84" y2="53.5" gradientUnits="userSpaceOnUse">
-        <stop offset="0" stopColor="#FF7A00" />
-        <stop offset="1" stopColor="#9D00FF" />
+      <linearGradient id="sidebar_grad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#FF7A00" />
+        <stop offset="100%" stopColor="#9D00FF" />
       </linearGradient>
     </defs>
+    <path d="M50 15C38.9 15 30 23.9 30 35C30 37.1 30.3 39.1 30.9 41C24.8 42 20 47.3 20 53.5C20 60.4 25.6 66 32.5 66C32.2 68 32 70 32 72C32 83 41 92 52 92C63 92 72 83 72 72C72 70 71.8 68 71.5 66C78.4 66 84 60.4 84 53.5C84 47.3 79.2 42 73.1 41C73.7 39.1 74 37.1 74 35C74 23.9 65.1 15 54 15H50Z" fill="url(#sidebar_grad)" />
+    <text x="50" y="62" textAnchor="middle" fill="white" fontSize="14" fontWeight="900" style={{ fontFamily: 'Inter' }}>TW</text>
   </svg>
 );
 
@@ -183,7 +183,7 @@ const App: React.FC = () => {
       <div className="h-screen w-full flex items-center justify-center bg-[#0f172a] p-8 fixed inset-0 z-[5000]">
         <div className="max-w-md bg-white rounded-[3rem] p-10 text-center shadow-2xl animate-slide-up">
           <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-3xl flex items-center justify-center mx-auto mb-6"><svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div>
-          <h2 className="text-2xl font-black text-slate-900 mb-4 uppercase italic">Perfil Indisponível</h2>
+          <h2 className="text-2xl font-black text-slate-900 mb-4 uppercase italic tracking-tighter">Perfil Indisponível</h2>
           <p className="text-slate-500 text-sm mb-8 font-medium">{profileError}</p>
           <button onClick={() => supabase.auth.signOut()} className="w-full bg-slate-900 text-white py-4 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-black transition-all shadow-lg">Sair da Conta</button>
         </div>
@@ -193,13 +193,13 @@ const App: React.FC = () => {
 
   return (
     <div className="h-screen w-full flex flex-col lg:flex-row bg-[#f8fafc] overflow-hidden text-slate-900 relative">
-      <aside className={`bg-black flex lg:flex-col transition-all duration-500 z-[100] border-t lg:border-t-0 lg:border-r border-white/5 shadow-2xl ${sidebarCollapsed ? 'lg:w-[90px]' : 'lg:w-[280px]'} fixed bottom-0 left-0 w-full lg:relative lg:h-screen h-[70px] lg:h-auto overflow-y-auto no-scrollbar`}>
+      <aside className={`bg-[#0f172a] flex lg:flex-col transition-all duration-500 z-[100] border-t lg:border-t-0 lg:border-r border-white/5 shadow-2xl ${sidebarCollapsed ? 'lg:w-[90px]' : 'lg:w-[280px]'} fixed bottom-0 left-0 w-full lg:relative lg:h-screen h-[70px] lg:h-auto overflow-y-auto no-scrollbar`}>
         <div className="hidden lg:flex p-6 mb-4 items-center justify-between border-b border-white/5">
           <div className="flex items-center gap-4 overflow-hidden">
-            <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center shrink-0 border border-white/10">
+            <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center shrink-0 border border-white/10 backdrop-blur-md">
               <BrainIcon />
             </div>
-            {!sidebarCollapsed && <span className="text-white font-black tracking-tighter text-2xl italic uppercase animate-slide-up">Tagway</span>}
+            {!sidebarCollapsed && <span className="text-white font-black tracking-tighter text-2xl italic uppercase animate-slide-up">TAGWAY</span>}
           </div>
           <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="p-2 hover:bg-white/10 rounded-lg text-white/40">
              <svg className={`w-4 h-4 transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M11 19l-7-7 7-7"/></svg>
@@ -233,7 +233,7 @@ const App: React.FC = () => {
              {!sidebarCollapsed && <span className="text-[10px] font-black uppercase tracking-widest">Recolher</span>}
            </button>
            <button onClick={() => supabase.auth.signOut()} className={`flex items-center gap-4 w-full p-4 rounded-2xl text-rose-500 hover:bg-rose-500/10 transition-all ${sidebarCollapsed ? 'justify-center' : ''}`}>
-             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013-3v1"/></svg>
              {!sidebarCollapsed && <span className="text-[11px] font-black uppercase tracking-widest">Sair</span>}
            </button>
         </div>
