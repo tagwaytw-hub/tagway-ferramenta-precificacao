@@ -55,17 +55,17 @@ export const stringifyError = (err: any): string => {
   return msg || JSON.stringify(err);
 };
 
-// Componente BrainIcon com gradiente laranja/roxo conforme nova marca
+// Componente BrainIcon - Fiel à nova marca (Esquerda Laranja / Direita Roxo)
 const BrainIcon = () => (
-  <svg className="w-6 h-6" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg className="w-9 h-9 shrink-0" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="sidebar_grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <linearGradient id="brain_grad_sidebar" x1="0%" y1="0%" x2="100%" y2="0%">
         <stop offset="0%" stopColor="#FF7A00" />
         <stop offset="100%" stopColor="#9D00FF" />
       </linearGradient>
     </defs>
-    <path d="M50 15C38.9 15 30 23.9 30 35C30 37.1 30.3 39.1 30.9 41C24.8 42 20 47.3 20 53.5C20 60.4 25.6 66 32.5 66C32.2 68 32 70 32 72C32 83 41 92 52 92C63 92 72 83 72 72C72 70 71.8 68 71.5 66C78.4 66 84 60.4 84 53.5C84 47.3 79.2 42 73.1 41C73.7 39.1 74 37.1 74 35C74 23.9 65.1 15 54 15H50Z" fill="url(#sidebar_grad)" />
-    <text x="50" y="62" textAnchor="middle" fill="white" fontSize="14" fontWeight="900" style={{ fontFamily: 'Inter' }}>TW</text>
+    <path d="M50 15C38.9 15 30 23.9 30 35C30 37.1 30.3 39.1 30.9 41C24.8 42 20 47.3 20 53.5C20 60.4 25.6 66 32.5 66C32.2 68 32 70 32 72C32 83 41 92 52 92C63 92 72 83 72 72C72 70 71.8 68 71.5 66C78.4 66 84 60.4 84 53.5C84 47.3 79.2 42 73.1 41C73.7 39.1 74 37.1 74 35C74 23.9 65.1 15 54 15H50Z" fill="url(#brain_grad_sidebar)" />
+    <text x="50" y="63" textAnchor="middle" fill="white" fontSize="14" fontWeight="900" style={{ fontFamily: 'Inter' }}>TW</text>
   </svg>
 );
 
@@ -180,7 +180,7 @@ const App: React.FC = () => {
 
   if (profileError && !isMaster) {
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-[#0f172a] p-8 fixed inset-0 z-[5000]">
+      <div className="h-screen w-full flex items-center justify-center bg-[#000000] p-8 fixed inset-0 z-[5000]">
         <div className="max-w-md bg-white rounded-[3rem] p-10 text-center shadow-2xl animate-slide-up">
           <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-3xl flex items-center justify-center mx-auto mb-6"><svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div>
           <h2 className="text-2xl font-black text-slate-900 mb-4 uppercase italic tracking-tighter">Perfil Indisponível</h2>
@@ -193,13 +193,19 @@ const App: React.FC = () => {
 
   return (
     <div className="h-screen w-full flex flex-col lg:flex-row bg-[#f8fafc] overflow-hidden text-slate-900 relative">
-      <aside className={`bg-[#0f172a] flex lg:flex-col transition-all duration-500 z-[100] border-t lg:border-t-0 lg:border-r border-white/5 shadow-2xl ${sidebarCollapsed ? 'lg:w-[90px]' : 'lg:w-[280px]'} fixed bottom-0 left-0 w-full lg:relative lg:h-screen h-[70px] lg:h-auto overflow-y-auto no-scrollbar`}>
+      {/* Sidebar - Black Background (Requested) */}
+      <aside className={`bg-[#000000] flex lg:flex-col transition-all duration-500 z-[100] border-t lg:border-t-0 lg:border-r border-white/5 shadow-2xl ${sidebarCollapsed ? 'lg:w-[90px]' : 'lg:w-[280px]'} fixed bottom-0 left-0 w-full lg:relative lg:h-screen h-[70px] lg:h-auto overflow-y-auto no-scrollbar`}>
+        {/* Header Logo - Horizontal (Imagem 3) */}
         <div className="hidden lg:flex p-6 mb-4 items-center justify-between border-b border-white/5">
           <div className="flex items-center gap-4 overflow-hidden">
-            <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center shrink-0 border border-white/10 backdrop-blur-md">
+            <div className="shrink-0 flex items-center justify-center">
               <BrainIcon />
             </div>
-            {!sidebarCollapsed && <span className="text-white font-black tracking-tighter text-2xl italic uppercase animate-slide-up">TAGWAY</span>}
+            {!sidebarCollapsed && (
+              <span className="text-white font-black tracking-tighter text-[2.2rem] italic uppercase animate-slide-up leading-none">
+                TAGWAY
+              </span>
+            )}
           </div>
           <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="p-2 hover:bg-white/10 rounded-lg text-white/40">
              <svg className={`w-4 h-4 transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M11 19l-7-7 7-7"/></svg>
