@@ -49,13 +49,11 @@ export const calculateCosts = (inputs: SimulationInputs): SimulationResults => {
   const valorTotalNota = round2(valorCompra + valorIpi + freteValor);
   
   // 2. DADOS COMPRA (Créditos ICMS)
-  // Base de ICMS na entrada costuma ser Mercadoria + Frete
-  const baseCalculoIcmsEntrada = round2(valorCompra + freteValor);
   const creditoIcmsMercadoria = round2(valorCompra * (icmsCreditoMercadoria / 100));
   const creditoIcmsFrete = round2(freteValor * (icmsCreditoFrete / 100));
   const totalCreditoIcms = round2(creditoIcmsMercadoria + creditoIcmsFrete);
   
-  // 3. SUBSTITUIÇÃO TRIBUTÁRIA (Se aplicável)
+  // 3. SUBSTITUIÇÃO TRIBUTÁRIA
   let stAPagar = 0;
   let baseCalculoSt = 0;
   let icmsStBruto = 0;
@@ -63,12 +61,10 @@ export const calculateCosts = (inputs: SimulationInputs): SimulationResults => {
   if (mode === 'substituido') {
     baseCalculoSt = round2(valorTotalNota * (1 + mva / 100));
     icmsStBruto = round2(baseCalculoSt * (icmsInternoDestino / 100));
-    // Deducão do ST usa o crédito próprio
     stAPagar = round2(Math.max(0, icmsStBruto - totalCreditoIcms));
   }
 
   // 4. CRÉDITOS PIS E COFINS
-  // Base PIS/COFINS = (Total Nota - Crédito ICMS) para alinhar com os R$ 9,15 da planilha
   const baseCreditoPisCofins = round2(valorTotalNota - totalCreditoIcms);
   const creditoPisCofinsValor = round2(baseCreditoPisCofins * (pisCofinsRate / 100));
 
@@ -77,11 +73,10 @@ export const calculateCosts = (inputs: SimulationInputs): SimulationResults => {
   if (mode === 'substituido') {
     custoFinal = round2(valorTotalNota + stAPagar - creditoPisCofinsValor);
   } else {
-    // Tributação Normal: Subtrai todos os créditos do desembolso total
     custoFinal = round2(valorTotalNota - totalCreditoIcms - creditoPisCofinsValor);
   }
 
-  // 6. DADOS VENDA (Preço de Venda via Markup Divisor)
+  // 6. DADOS VENDA (Markup Divisor)
   let icmsVendaEfetivo = icmsVenda;
   if (mode === 'substituido') {
     icmsVendaEfetivo = 0;
@@ -89,7 +84,6 @@ export const calculateCosts = (inputs: SimulationInputs): SimulationResults => {
     icmsVendaEfetivo = round2(icmsVenda * (1 - (inputs.percReducaoBase / 100)));
   }
 
-  // Somatória de deduções em percentual
   const deducoesSaidaPerc = round2(
     pisCofinsVenda + 
     comissaoVenda + 
@@ -102,7 +96,6 @@ export const calculateCosts = (inputs: SimulationInputs): SimulationResults => {
   const divisor = (100 - deducoesSaidaPerc) / 100;
   const precoVendaAlvo = divisor > 0 ? round2(custoFinal / divisor) : 0;
   
-  // Valores absolutos na saída para o relatório
   const valorIcmsVenda = round2(precoVendaAlvo * (icmsVendaEfetivo / 100));
   const valorPisCofinsVenda = round2(precoVendaAlvo * (pisCofinsVenda / 100));
   const margemAbsoluta = round2(precoVendaAlvo * (resultadoDesejado / 100));
@@ -143,7 +136,7 @@ export const generatePriceMatrix = (custoFinal: number, inputs: SimulationInputs
     { label: 'Curva A', margin: 10 },
     { label: 'Curva B', margin: 12 },
     { label: 'Curva C', margin: 15 },
-    { label: 'Serviço/Espec.', margin: 20 }
+    { label: 'Produtos Técnicos', margin: 20 }
   ];
 
   return categorias.map(cat => {
