@@ -5,9 +5,11 @@ interface ComingSoonViewProps {
   title: string;
   desc: string;
   icon: string;
+  status?: string;
+  date?: string;
 }
 
-const ComingSoonView: React.FC<ComingSoonViewProps> = ({ title, desc, icon }) => (
+const ComingSoonView: React.FC<ComingSoonViewProps> = ({ title, desc, icon, status = "Arquitetura de Dados", date = "Q1 2026" }) => (
   <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-20 text-center animate-slide-up">
     <div className="max-w-xl w-full space-y-10">
       <div className="relative mx-auto w-32 h-32">
@@ -26,11 +28,11 @@ const ComingSoonView: React.FC<ComingSoonViewProps> = ({ title, desc, icon }) =>
       <div className="grid grid-cols-2 gap-4 pt-10">
         <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
            <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2">Status</span>
-           <span className="text-xs font-black text-slate-900 uppercase">Arquitetura de Dados</span>
+           <span className="text-xs font-black text-slate-900 uppercase">{status}</span>
         </div>
         <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
            <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2">Lançamento</span>
-           <span className="text-xs font-black text-indigo-600 uppercase">Q1 2026</span>
+           <span className="text-xs font-black text-indigo-600 uppercase">{date}</span>
         </div>
       </div>
 
