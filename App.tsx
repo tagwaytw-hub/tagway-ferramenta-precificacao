@@ -37,7 +37,7 @@ const defaultInputs: SimulationInputs = {
   comissaoVenda: 0.0,
   icmsVenda: 20.50,
   outrosCustosVariaveis: 0.00,
-  custosFixos: 20.00,
+  custosFixos: 26.00, // Ajustado para os 26% solicitados
   resultadoDesejado: 8.00,
   mode: 'substituido',
   percReducaoBase: 0,
@@ -45,7 +45,8 @@ const defaultInputs: SimulationInputs = {
   precoVendaDesejado: 0
 };
 
-type Tab = 'calculadora' | 'catalogo' | 'meus-produtos' | 'overhead' | 'resumo-fiscal' | 'configuracao' | 'master' | 'ia';
+type Tab = 'calculadora' | 'catalogo' | 'meus-produtos' | 'overhead' | 'resumo-fiscal' | 'configuracao' | 'master' | 
+           'logistica' | 'estoque' | 'metas' | 'dre' | 'caixa' | 'ia';
 
 export const stringifyError = (err: any): string => {
   if (!err) return 'Erro desconhecido';
@@ -54,7 +55,6 @@ export const stringifyError = (err: any): string => {
   return msg || JSON.stringify(err);
 };
 
-// Ícones Oficiais (Brain)
 export const TagwayIcon = ({ size = "w-10 h-10" }: { size?: string }) => (
   <svg className={size} viewBox="0 0 1080.48 979.51" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path fill="#8200AD" d="M720.75 939.52c-63.17,0 -128.66,-80.82l0 -144.42 107.39 0 42.44 73.51c-3.8,6.11 -6,13.32 -6,21.05 0,22.04 17.87,39.91 39.91,39.91 22.04,0 39.91,-17.87 39.91,-39.91 0,-22.04 -17.87,-39.91 -39.91,-39.91 -2.14,0 -4.24,0.17 -6.29,0.49l-50.95 -88.25 -126.5 0 0 -83.93 -33.11 0 0 265.73c6.35,65.19 76.35,116.54 161.77,116.54 73.21,0 135.1,-37.73 155.29,-89.55 63.33,3.57 124.42,-50.92 140.89,-129.09 7.75,-36.79 4.35,-72.76 -7.62,-102.87 45.14,-41.1 73.6,-110.69 71,-188.52 -3.39,-101.69 -58.74,-185.36 -131.04,-208.38 6.12,-15.29 9.49,-31.99 9.49,-49.47 0,-73.56 -59.64,-133.2 -133.2,-133.2 -7.51,0 -14.87,0.62 -22.04,1.81 -16.06,-46.41 -66.05,-80.25 -125.22,-80.25 -52.95,0 -98.55,27.1 -119.06,66.06l0 324.33 33.11 0 0 -71.05 83.87 0 58.22 -105.5 0.68 -1.23c1.42,-0.22 2.82,-0.51 4.19,-0.88 5.69,-2.59 11.12,-5.53 16.27,-8.78 8.19,-7.31 13.35,-17.95 13.35,-29.79 0,-22.04 -17.87,-39.91 -39.91,-39.91 -22.04,0 -39.91,17.87 -39.91,39.91 0,11.9 5.2,22.58 13.46,29.89l-45.9 83.17 -64.33 0 0 -204.91c19.64,-23.45 51.04,-38.64 86.42,-38.64 51.6,0 94.73,32.31 105.27,75.44 10.39,-3.2 21.42,-4.92 32.86,-4.92 61.59,0 111.51,49.93 111.51,111.51 0,20.5 -5.54,39.71 -15.19,56.22 71.05,22.01 125.14,97.54 128.5,189.11 2.84,77.55 -31.46,146.13 -84.1,181.6 13.07,20.74 20.67,45.51 20.67,72.11 0,73.07 -57.31,132.3 -128,132.3 -0.07,0 -0.13,0 -0.2,0 -11.4,47.5 -64.97,83.46 -129.34,83.46z"/>
@@ -78,8 +78,9 @@ export const TagwayHorizontalLogo = ({ className = "w-auto h-8" }: { className?:
         <path fill="#8200AD" d="M2762.17 1631.41l325.9 0c20.54,47 67.44,79.86 122.02,79.86 73.5,0 133.1,-59.59 133.1,-133.1 0,-73.51 -59.59,-133.1 -133.1,-133.1 -53.04,0 -98.83,31.02 -120.23,75.91l-356.87 0 -174.81 99.33 -278.93 0 0 110.42 308.11 0 7.51 -4.27 167.3 -95.06z"/>
         <path fill="#8200AD" d="M2458.86 1400.72l330.74 -292.9c23.98,23.35 56.73,37.74 92.85,37.74 73.5,0 133.1,-59.59 133.1,-133.1 0,-73.51 -59.59,-133.1 -133.1,-133.1 -67.58,0 -123.4,50.36 -131.96,115.6l-336.21 297.74 -137.05 0 0 110.42 181.63 0 0 -2.41z"/>
         <path fill="#FF6600" d="M508.93 1485.19l-375.76 27.15c29.51,-280.18 202.14,-506.47 424.63,-575.39 -2.7,-4.62 -5.3,-9.3 -7.81,-14.04l244.93 102.35c3.96,33.82 24.63,62.52 53.53,77.66l-110.16 207.4c-13.34,-3 -27.22,-4.59 -41.47,-4.59 -100.99,0 -183.39,79.59 -187.91,179.46zm286.15 -151.79l117.07 -220.4 3.65 -6.89 5.2 4.98 240.19 229.9c-1.19,3.22 -2.19,6.54 -2.95,9.95l-312.42 28.05c-13.98,-18.1 -31.17,-33.58 -50.74,-45.59zm833.76 1097.61l0 432.86c-15.32,55.62 -48.05,106.21 -93.54,148.16l-477.19 -347.35c6.02,-14.86 9.33,-31.11 9.33,-48.13 0,-8.09 -0.75,-16 -2.18,-23.66l221.57 -29.75c18.51,24.92 48.16,41.06 81.59,41.06 56.11,0 101.59,-45.48 101.59,-101.6 0,-7.93 -0.9,-15.65 -2.63,-23.06l161.44 -48.54zm-425.5 -1134.06l-229.67 -219.83c14.16,-17.39 22.64,-39.58 22.64,-63.75 0,-55.8 -45.23,-101.04 -101.03,-101.04 -37.97,0 -71.04,20.94 -88.31,51.9l-287.7 -120.21c-7.91,-30.2 -12.13,-61.89 -12.13,-94.57 0,-205.4 166.51,-371.91 371.91,-371.91 38.14,0 74.94,5.74 109.58,16.41 35.14,-143.86 178.98,-251.59 351.09,-251.59 118,0 222.72,50.65 288.22,128.86l0 721.16 -193.64 -1.95 -119.71 -225.38c36.49,-23.45 60.67,-64.4 60.67,-111 0,-58.34 -37.89,-107.83 -90.4,-125.21l-14.3 -168.9 -60.91 3.23 13.59 160.55c-63.26,9.7 -111.71,64.35 -111.71,130.33 0,72.82 59.04,131.86 131.86,131.86 4.36,0 8.66,-0.21 12.91,-0.62l141.15 265.74 230.48 2.32 0 11.68 0 236.42 110.42 0 0 -1081.13c-68.4,-129.92 -220.47,-220.3 -397.07,-220.3 -197.36,0 -364.07,112.86 -417.62,267.64 -23.91,-3.98 -48.47,-6.05 -73.5,-6.05 -245.35,0 -444.25,198.89 -444.25,444.24 0,58.3 11.24,113.98 31.64,164.98 -241.13,76.77 -425.71,355.83 -437.02,694.97 -8.67,259.56 86.25,491.65 236.8,628.73 -39.91,100.4 -51.27,220.38 -25.42,343.07 54.93,260.72 258.68,442.45 469.9,430.53 67.35,172.84 273.74,298.66 517.9,298.66 258.03,0 473.87,-140.51 528.01,-328.54 5.64,-19.56 9.51,-39.65 11.51,-60.13l0 -890.52 -108.69 0 0 405.22 -1.74 0.52 -175.88 52.89c-18.22,-27.26 -49.28,-45.21 -84.52,-45.21 -56.11,0 -101.6,45.48 -101.6,101.59 0,0.54 0.01,1.09 0.01,1.63l-228.7 30.7c-6.02,-7.29 -12.83,-13.91 -20.31,-19.72l164.05 -360.33c44.4,-12.96 74.08,-54.04 73.03,-100.19 -5.15,-27.45 -3.82,-32.76 -18.86,-56.37l0 0c-18.43,-25.77 -48.6,-42.57 -82.7,-42.57 -7.04,0 -13.91,0.72 -20.54,2.08l-283.81 -353.42c22.59,-31.04 35.93,-69.26 35.93,-110.59 0,-19.64 -3.02,-38.58 -8.6,-56.39l293.27 -26.32c13.85,20.42 37.26,33.83 63.8,33.83 42.55,0 77.04,-34.5 77.04,-77.04 0,-42.55 -34.5,-77.05 -77.04,-77.05 -10.66,0 -20.83,2.17 -30.06,6.08zm-920 759.46c-100.33,-124.35 -159.72,-295.42 -154.28,-482.57l386.97 -27.95c14.53,50.59 49.72,92.42 95.85,115.81l-207.26 351.67c-5.62,-0.66 -11.34,-1.01 -17.15,-1.01 -40.85,0 -77.76,16.89 -104.13,44.04zm413.5 -374.48c40.4,0 77.83,-12.74 108.48,-34.42l273.6 340.69c-15.12,16.28 -24.97,37.52 -26.83,61l-519.53 108.73c0,-0.16 0,-0.32 0,-0.48 0,-52.29 -27.65,-98.11 -69.13,-123.65l208.36 -353.53c8.19,1.09 16.55,1.65 25.05,1.65zm-356.02 731.87c0,-39.71 5.08,-78.19 14.59,-114.8 10.32,2.32 21.04,3.55 32.06,3.55 35.08,0 67.25,-12.44 92.34,-33.16l342.85 293.3c-7.58,16.37 -11.81,34.62 -11.81,53.86 0,6.23 0.45,12.36 1.3,18.35l-282.57 145.16c-113.85,-79.25 -188.75,-213.71 -188.75,-366.25zm251.76 402.51l242.57 -124.6c23.31,32.19 61.21,53.15 104,53.15 31.77,0 60.84,-11.55 83.25,-30.68l462.98 337c-76.77,51.24 -176.55,82.21 -285.63,82.21 -214.68,0 -393.35,-119.92 -431.38,-278.36 -0.21,0 -0.43,0 -0.65,0 -62.41,0 -121.7,-13.84 -175.13,-38.72zm-73.05 -593.28l546.18 -114.3c11.44,19.48 29.2,34.81 50.45,43.18l-154.06 338.38c-7.45,-1.35 -15.13,-2.05 -22.96,-2.05 -29.52,0 -56.71,9.97 -78.38,26.72l-341.23 -291.93zm-2.91 0.61c0.37,-0.72 0.73,-1.43 1.09,-2.16l1.82 1.55 -2.91 0.61z"/>
-        <path fill="#4D4D4D" fill-rule="nonzero" d="M4777.68 2721.46l0 -1844.66 647.62 0 0 -313.08 -1608.32 0 0 313.08 650.7 0 0 1844.66 310 0zm1332.08 -1691.2l263.97 758.12 -534.06 0 270.09 -758.12zm641.49 1681.99l331.49 0 -862.48 -2176.15 -227.13 0 -862.48 2176.15 334.56 0c67.53,-178.02 174.96,-435.84 257.82,-632.28l770.4 0 257.82 632.28zm2341.89 -1378.12c-113.57,-570.89 -610.8,-782.68 -1022.09,-782.68 -592.38,0 -1055.84,454.26 -1055.84,1089.61 0,632.29 454.25,1086.54 1055.84,1086.54 389.81,0 831.78,-263.96 979.11,-675.25l0 3.07c27.62,-70.6 42.97,-190.29 58.32,-371.39l-1157.14 0 0 310 794.96 0c-128.92,313.07 -411.29,435.84 -675.25,435.84 -420.5,0 -745.84,-334.56 -745.84,-788.82 0,-451.19 325.35,-779.61 745.84,-779.61 273.17,0 604.66,125.85 690.6,472.68l331.49 0zm1728.02 1396.53l230.2 0 715.15 -2163.86 -325.35 0c-159.61,488.02 -346.83,1034.36 -515.65,1546.94l-349.9 -1000.6 -248.61 0 -352.97 1003.67 -512.57 -1550 -322.28 0 715.14 2163.86 230.2 0c110.5,-325.35 242.48,-690.59 365.24,-1040.5l371.39 1040.5zm1645.15 -1700.4l263.97 758.12 -534.06 0 270.09 -758.12zm641.49 1681.99l331.49 0 -862.48 -2176.15 -227.13 0 -862.48 2176.15 334.56 0c67.53,-178.02 174.96,-435.84 257.82,-632.28l770.4 0 257.82 632.28zm-95.14 -2145.45l794.95 1270.69 0 874.76 313.07 0 0 -874.76 798.03 -1270.69 -368.32 0 -586.24 942.28 -586.24 -942.28 -365.24 0z"/>
+        <path fill="#FF6600" fill-rule="nonzero" d="M1577.8 1875.57l0 -382.06 134.13 0 0 -64.84 -333.1 0 0 64.84 134.77 0 0 382.06 64.2 0zm447.57 1.9l47.68 0 148.12 -448.17 -67.38 0c-33.06,101.08 -71.83,214.23 -106.8,320.4l-72.47 -207.24 -51.49 0 -73.11 207.88 -106.16 -321.03 -66.75 0 148.12 448.17 47.68 0c22.89,-67.38 50.22,-143.03 75.65,-215.5l76.92 215.5z"/>
       </g>
+      <path fill="white" fill-rule="nonzero" d="M4777.68 2721.46l0 -1844.66 647.62 0 0 -313.08 -1608.32 0 0 313.08 650.7 0 0 1844.66 310 0zm1332.08 -1691.2l263.97 758.12 -534.06 0 270.09 -758.12zm641.49 1681.99l331.49 0 -862.48 -2176.15 -227.13 0 -862.48 2176.15 334.56 0c67.53,-178.02 174.96,-435.84 257.82,-632.28l770.4 0 257.82 632.28zm2341.89 -1378.12c-113.57,-570.89 -610.8,-782.68 -1022.09,-782.68 -592.38,0 -1055.84,454.26 -1055.84,1089.61 0,632.29 454.25,1086.54 1055.84,1086.54 389.81,0 831.78,-263.96 979.11,-675.25l0 3.07c27.62,-70.6 42.97,-190.29 58.32,-371.39l-1157.14 0 0 310 794.96 0c-128.92,313.07 -411.29,435.84 -675.25,435.84 -420.5,0 -745.84,-334.56 -745.84,-788.82 0,-451.19 325.35,-779.61 745.84,-779.61 273.17,0 604.66,125.85 690.6,472.68l331.49 0zm1728.02 1396.53l230.2 0 715.15 -2163.86 -325.35 0c-159.61,488.02 -346.83,1034.36 -515.65,1546.94l-349.9 -1000.6 -248.61 0 -352.97 1003.67 -512.57 -1550 -322.28 0 715.14 2163.86 230.2 0c110.5,-325.35 242.48,-690.59 365.24,-1040.5l371.39 1040.5zm1645.15 -1700.4l263.97 758.12 -534.06 0 270.09 -758.12zm641.49 1681.99l331.49 0 -862.48 -2176.15 -227.13 0 -862.48 2176.15 334.56 0c67.53,-178.02 174.96,-435.84 257.82,-632.28l770.4 0 257.82 632.28zm-95.14 -2145.45l794.95 1270.69 0 874.76 313.07 0 0 -874.76 798.03 -1270.69 -368.32 0 -586.24 942.28 -586.24 -942.28 -365.24 0z"/>
     </g>
   </svg>
 );
@@ -199,7 +200,7 @@ const App: React.FC = () => {
   return (
     <div className="h-screen w-full flex flex-col lg:flex-row bg-[#000000] overflow-hidden text-slate-900 relative">
       
-      {/* Desktop Sidebar */}
+      {/* Desktop Sidebar Restored with Roadmap */}
       <aside className={`hidden lg:flex bg-[#000000] flex-col transition-all duration-500 z-[100] border-r border-white/5 shadow-2xl ${sidebarCollapsed ? 'w-[90px]' : 'w-[280px]'} h-screen overflow-y-auto no-scrollbar`}>
         <div className="p-6 mb-4 items-center justify-between flex border-b border-white/5">
           <div className="flex items-center gap-4 overflow-hidden h-10">
@@ -209,17 +210,28 @@ const App: React.FC = () => {
              <svg className={`w-4 h-4 transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M11 19l-7-7 7-7"/></svg>
           </button>
         </div>
+
         <nav className="flex-1 px-4 space-y-1">
+          <div className={`text-[8px] font-black text-white/20 uppercase tracking-[0.2em] px-4 py-2 transition-opacity ${sidebarCollapsed ? 'opacity-0 h-0 p-0' : 'opacity-100'}`}>Operacional</div>
           <MenuButton active={activeTab === 'calculadora'} onClick={() => setActiveTab('calculadora')} label="Calculadora" collapsed={sidebarCollapsed} icon="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
           <MenuButton active={activeTab === 'resumo-fiscal'} onClick={() => setActiveTab('resumo-fiscal')} label="Análise Fisco" collapsed={sidebarCollapsed} icon="M9 17v-2m3 2v-4m3 2v-6m-8-2h8a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"/>
           <MenuButton active={activeTab === 'catalogo'} onClick={() => setActiveTab('catalogo')} label="NCM 2025" collapsed={sidebarCollapsed} icon="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           <MenuButton active={activeTab === 'meus-produtos'} onClick={() => setActiveTab('meus-produtos')} label="Simulações" collapsed={sidebarCollapsed} icon="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-          <MenuButton active={activeTab === 'ia'} onClick={() => setActiveTab('ia')} label="AI Insight" collapsed={sidebarCollapsed} icon="M13 10V3L4 14h7v7l9-11h-7z" isAi />
-          <div className="h-px bg-white/5 my-4 mx-4"></div>
+          <MenuButton active={activeTab === 'ia'} onClick={() => setActiveTab('ia')} label="IA Insight" collapsed={sidebarCollapsed} icon="M13 10V3L4 14h7v7l9-11h-7z" isAi />
+          
+          <div className={`text-[8px] font-black text-white/20 uppercase tracking-[0.2em] px-4 py-4 border-t border-white/5 mt-2 transition-opacity ${sidebarCollapsed ? 'opacity-0 h-0 p-0' : 'opacity-100'}`}>Roadmap 2026</div>
+          <MenuButton active={activeTab === 'logistica'} onClick={() => setActiveTab('logistica')} label="Logística" collapsed={sidebarCollapsed} icon="M8 17a2 2 0 100 4 2 2 0 000-4zM18 17a2 2 0 100 4 2 2 0 000-4zM6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h12l4 5v3a2 2 0 01-2 2h-1" isDev />
+          <MenuButton active={activeTab === 'estoque'} onClick={() => setActiveTab('estoque')} label="Estoque" collapsed={sidebarCollapsed} icon="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" isDev />
+          <MenuButton active={activeTab === 'metas'} onClick={() => setActiveTab('metas')} label="Metas" collapsed={sidebarCollapsed} icon="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" isDev />
+          <MenuButton active={activeTab === 'dre'} onClick={() => setActiveTab('dre')} label="DRE" collapsed={sidebarCollapsed} icon="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" isDev />
+          <MenuButton active={activeTab === 'caixa'} onClick={() => setActiveTab('caixa')} label="Caixa" collapsed={sidebarCollapsed} icon="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" isDev />
+
+          <div className={`text-[8px] font-black text-white/20 uppercase tracking-[0.2em] px-4 py-4 border-t border-white/5 mt-2 transition-opacity ${sidebarCollapsed ? 'opacity-0 h-0 p-0' : 'opacity-100'}`}>Configuração</div>
           <MenuButton active={activeTab === 'overhead'} onClick={() => setActiveTab('overhead')} label="Meu Overhead" collapsed={sidebarCollapsed} icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2"/>
           <MenuButton active={activeTab === 'configuracao'} onClick={() => setActiveTab('configuracao')} label="Ajustes" collapsed={sidebarCollapsed} icon="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-          {hasAdminAccess && <MenuButton active={activeTab === 'master'} onClick={() => setActiveTab('master')} label="Master Control" collapsed={sidebarCollapsed} icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944"/>}
+          {hasAdminAccess && <MenuButton active={activeTab === 'master'} onClick={() => setActiveTab('master')} label="Master" collapsed={sidebarCollapsed} icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944"/>}
         </nav>
+
         <div className="p-4 border-t border-white/5">
            <button onClick={() => supabase.auth.signOut()} className="flex items-center gap-4 w-full p-4 rounded-2xl text-rose-500 hover:bg-rose-500/10 transition-all">
              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 16l4-4m4 4H7"/></svg>
@@ -265,32 +277,21 @@ const App: React.FC = () => {
           {activeTab === 'overhead' && <div className="p-6"><OverheadView faturamento={faturamento} setFaturamento={setFaturamento} fixedCosts={fixedCosts} setFixedCosts={setFixedCosts} variableCosts={variableCosts} setVariableCosts={setVariableCosts} userId={session?.user?.id} isAutoSync={isAutoSync} setIsAutoSync={setIsAutoSync} /></div>}
           {activeTab === 'configuracao' && <div className="p-6"><ConfiguracaoView userId={session?.user?.id} /></div>}
           {activeTab === 'master' && hasAdminAccess && <div className="p-6"><AdminView /></div>}
+          
+          {/* Roadmap Views */}
+          {activeTab === 'logistica' && <ComingSoonView title="Logística Inteligente" desc="Cálculo automático de fretes, cubagem e integração com transportadoras." icon="M8 17a2 2 0 100 4 2 2 0 000-4zM18 17a2 2 0 100 4 2 2 0 000-4zM6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h12l4 5v3a2 2 0 01-2 2h-1" />}
+          {activeTab === 'estoque' && <ComingSoonView title="Gestão de Estoque" desc="Giro de estoque, curva ABC valorizada e avisos de reposição automática." icon="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />}
+          {activeTab === 'metas' && <ComingSoonView title="Metas de Venda" desc="Acompanhamento em tempo real das metas por vendedor e categoria." icon="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />}
+          {activeTab === 'dre' && <ComingSoonView title="DRE Gerencial" desc="DRE automático gerado a partir de suas vendas e overhead configurado." icon="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />}
+          {activeTab === 'caixa' && <ComingSoonView title="Fluxo de Caixa" desc="Projeção de recebíveis e pagamentos fiscais centralizados." icon="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />}
         </div>
-
-        {/* Mobile Action Sheet (Drawer) */}
-        {isMobileSheetOpen && (
-          <div className="lg:hidden fixed inset-0 z-[1000] flex flex-col justify-end">
-             <div className="sheet-overlay absolute inset-0" onClick={() => setIsMobileSheetOpen(false)}></div>
-             <div className="sheet-content relative bg-white rounded-t-[3rem] max-h-[90vh] overflow-y-auto p-6 pb-20 no-scrollbar">
-                <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-8"></div>
-                <div className="flex justify-between items-center mb-8">
-                  <h3 className="text-xl font-black text-slate-900 uppercase italic">Parâmetros Atuais</h3>
-                  <button onClick={handleSave} disabled={isSaving} className="bg-emerald-500 text-white px-5 py-2 rounded-xl text-[10px] font-black uppercase shadow-lg active:scale-95 disabled:opacity-50">
-                    {isSaving ? 'Salvando...' : 'Gravar'}
-                  </button>
-                </div>
-                <FiscalHeader inputs={inputs} setInputs={setInputs}/>
-                <div className="h-10"></div>
-                <Sidebar inputs={inputs} setInputs={setInputs} isAutoSync={isAutoSync} setIsAutoSync={setIsAutoSync} />
-             </div>
-          </div>
-        )}
 
         {/* Mobile Bottom Dock Premium */}
         <nav className="lg:hidden mobile-dock fixed bottom-6 left-6 right-6 h-[72px] rounded-[2rem] flex items-center justify-around px-4 z-[100]">
            <DockItem active={activeTab === 'calculadora'} onClick={() => setActiveTab('calculadora')} icon="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3" label="Home" />
            <DockItem active={activeTab === 'resumo-fiscal'} onClick={() => setActiveTab('resumo-fiscal')} icon="M9 17v-2m3 2v-4m3 2v-6m-8-2h8a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z" label="Tax" />
            <DockItem active={activeTab === 'ia'} onClick={() => setActiveTab('ia')} icon="M13 10V3L4 14h7v7l9-11h-7z" label="AI" isAi />
+           <DockItem active={activeTab === 'overhead'} onClick={() => setActiveTab('overhead')} icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" label="Fixos" />
            <DockItem active={activeTab === 'configuracao'} onClick={() => setActiveTab('configuracao')} icon="M4 6h16M4 12h16m-7 6h7" label="Menu" />
         </nav>
       </main>
@@ -307,10 +308,16 @@ const DockItem = ({ active, onClick, icon, label, isAi }: any) => (
   </button>
 );
 
-const MenuButton = ({ active, onClick, icon, label, collapsed, isAi }: any) => (
+interface MenuButtonProps { active: boolean; onClick: () => void; icon: string; label: string; collapsed: boolean; isDev?: boolean; isAi?: boolean; }
+const MenuButton: React.FC<MenuButtonProps> = ({ active, onClick, icon, label, collapsed, isDev, isAi }) => (
   <button onClick={onClick} className={`flex items-center w-full gap-4 p-4 rounded-2xl transition-all ${active ? 'bg-white/10 text-white shadow-xl shadow-black/20' : 'text-white/40 hover:bg-white/5 hover:text-white'}`}>
     <svg className={`w-5 h-5 shrink-0 ${isAi ? 'text-indigo-400' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d={icon}/></svg>
-    {!collapsed && <span className="text-[11px] font-black uppercase tracking-widest">{label}</span>}
+    {!collapsed && (
+      <div className="flex items-center justify-between flex-1 overflow-hidden">
+        <span className="text-[11px] font-black uppercase tracking-widest">{label}</span>
+        {isDev && <span className="bg-indigo-500/20 text-indigo-300 text-[6px] font-black px-1.5 py-0.5 rounded leading-none uppercase ml-2">2026</span>}
+      </div>
+    )}
   </button>
 );
 

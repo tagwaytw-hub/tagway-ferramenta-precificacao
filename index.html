@@ -32,21 +32,10 @@
       }
 
       .mobile-dock {
-        background: rgba(0, 0, 0, 0.8);
-        backdrop-filter: blur(30px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
-      }
-
-      /* Sistema de Gaveta (Sheet) */
-      .sheet-overlay {
-        background: rgba(0,0,0,0.6);
-        backdrop-filter: blur(4px);
-        transition: opacity 0.3s ease;
-      }
-      .sheet-content {
-        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        box-shadow: 0 -20px 60px rgba(0,0,0,0.3);
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: env(safe-area-inset-bottom);
       }
 
       @keyframes slideUp {
@@ -55,11 +44,8 @@
       }
       .animate-slide-up { animation: slideUp 0.4s ease-out forwards; }
       
+      /* Botão ripple effect sutil */
       .btn-touch:active { transform: scale(0.96); opacity: 0.8; }
-      
-      /* Ocultar barra no mobile safari */
-      .no-scrollbar::-webkit-scrollbar { display: none; }
-      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
   <script type="importmap">
 {
