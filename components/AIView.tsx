@@ -11,7 +11,7 @@ interface AIViewProps {
 
 const AIView: React.FC<AIViewProps> = ({ results, inputs }) => {
   const [messages, setMessages] = useState<{ role: 'user' | 'ai', text: string }[]>([
-    { role: 'ai', text: `Olá! Sou o Tagway AI. Analisei sua simulação para o produto "${inputs.nomeProduto}". Como posso ajudar a otimizar sua lucratividade hoje?` }
+    { role: 'ai', text: `Olá! Sou o Tagway AI. Analisei sua simulação para o produto "${inputs.nomeProduto || 'não nomeado'}". Como posso ajudar a otimizar sua lucratividade hoje?` }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -34,31 +34,25 @@ const AIView: React.FC<AIViewProps> = ({ results, inputs }) => {
       
       const context = `
         VOCÊ É: Um Consultor Especialista em Tributação e Lucratividade da Tagway Technology.
-        CONDIÇÕES ATUAIS DA SIMULAÇÃO:
-        - Produto: ${inputs.nomeProduto}
-        - Rota: ${inputs.ufOrigem} para ${inputs.ufDestino}
-        - Valor Compra: ${formatCurrency(inputs.valorCompra)}
-        - MVA: ${inputs.mva}%
-        - Custo Final: ${formatCurrency(results.custoFinal)}
-        - Preço de Venda Alvo: ${formatCurrency(results.precoVendaAlvo)}
-        - Margem Líquida Alvo: ${inputs.resultadoDesejado}% (${formatCurrency(results.margemAbsoluta)})
-        - ICMS ST Pago: ${formatCurrency(results.stAPagar)}
+        PRODUTO ATUAL: ${inputs.nomeProduto || 'N/A'}
+        ROTA: ${inputs.ufOrigem} -> ${inputs.ufDestino}
+        VALOR COMPRA: ${formatCurrency(inputs.valorCompra)}
+        MVA: ${inputs.mva}%
+        CUSTO FINAL: ${formatCurrency(results.custoFinal)}
+        VENDA ALVO: ${formatCurrency(results.precoVendaAlvo)}
+        LUCRO: ${inputs.resultadoDesejado}% (${formatCurrency(results.margemAbsoluta)})
         
-        REGRAS:
-        1. Responda de forma executiva, curta e focada em lucro.
-        2. Use negrito para valores importantes.
-        3. Se o usuário perguntar sobre redução de impostos, sugira analisar o MVA ou a redução de base.
+        REGRAS: Responda de forma executiva, curta e focada em lucro. Use negrito para valores.
       `;
 
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: [
-          { role: 'user', parts: [{ text: `${context}\n\nPergunta do Usuário: ${userMsg}` }] }
-        ]
+        contents: `${context}\n\nPergunta do Usuário: ${userMsg}`
       });
 
       setMessages(prev => [...prev, { role: 'ai', text: response.text || "Desculpe, tive um problema ao processar sua análise." }]);
     } catch (error) {
+      console.error(error);
       setMessages(prev => [...prev, { role: 'ai', text: "Erro na conexão com o cérebro da Tagway AI. Verifique sua rede." }]);
     } finally {
       setIsLoading(false);
@@ -74,14 +68,8 @@ const AIView: React.FC<AIViewProps> = ({ results, inputs }) => {
           </div>
           <div>
             <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Tagway AI Expert</h2>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 flex items-center gap-2">
-               <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-               Processamento Neural Ativo
-            </p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Processamento Neural Ativo</p>
           </div>
-        </div>
-        <div className="hidden md:block bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border border-indigo-100">
-           Contexto: {inputs.nomeProduto}
         </div>
       </header>
 
@@ -115,18 +103,17 @@ const AIView: React.FC<AIViewProps> = ({ results, inputs }) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Ex: Como reduzir o ICMS ST nesta rota?"
-            className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-8 py-5 pr-20 text-sm font-medium focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-600 outline-none transition-all"
+            placeholder="Pergunte sobre lucros, impostos ou MVA..."
+            className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-8 py-5 pr-20 text-sm font-medium outline-none"
           />
           <button 
             onClick={handleSend}
             disabled={isLoading}
-            className="absolute right-3 top-3 bottom-3 bg-black text-white px-6 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-indigo-600 transition-all shadow-lg active:scale-95 disabled:opacity-50"
+            className="absolute right-3 top-3 bottom-3 bg-black text-white px-6 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-indigo-600 transition-all"
           >
             Enviar
           </button>
         </div>
-        <p className="text-center text-[8px] font-bold text-slate-300 uppercase tracking-widest mt-4">As análises da IA devem ser conferidas com o contador oficial da empresa.</p>
       </div>
     </div>
   );
