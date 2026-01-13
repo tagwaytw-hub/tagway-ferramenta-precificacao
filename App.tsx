@@ -171,7 +171,7 @@ const App: React.FC = () => {
       
       if (error) {
         if (error.message?.includes('schema cache') || error.message?.includes('not found')) {
-           alert('ERRO: A tabela "saved_simulations" não foi encontrada. Verifique se executou o SQL de criação no Supabase.');
+           alert('ERRO: A tabela "saved_simulations" não foi encontrada no banco. Por favor, execute o script SQL de criação no seu painel do Supabase.');
         } else {
            throw new Error(error.message);
         }
@@ -180,7 +180,7 @@ const App: React.FC = () => {
       }
     } catch (e: any) {
       console.error('Erro ao salvar simulação:', e);
-      alert('Erro técnico ao salvar: ' + (e.message || 'Verifique sua conexão.'));
+      alert('Erro ao salvar: ' + (e.message || 'Falha técnica. Verifique sua rede.'));
     } finally {
       setIsSavingSim(false);
     }
@@ -208,6 +208,13 @@ const App: React.FC = () => {
           <DesktopMenuButton active={activeTab === 'overhead'} onClick={() => setActiveTab('overhead')} label="Overhead" icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" />
           <DesktopMenuButton active={activeTab === 'jarvis'} onClick={() => setActiveTab('jarvis')} label="Jarvis AI" icon="M13 10V3L4 14h7v7l9-11h-7z" isAi />
           
+          <div className="pt-4 pb-2 text-[9px] font-black text-white/20 uppercase tracking-widest pl-4">Ecossistema (Dev)</div>
+          <DesktopMenuButton active={activeTab === 'logistica'} onClick={() => setActiveTab('logistica')} label="Logística" icon="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" isDev />
+          <DesktopMenuButton active={activeTab === 'estoque'} onClick={() => setActiveTab('estoque')} label="Estoque" icon="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14v4m0 0l8 4m-8-4l-8 4m8 5v3" isDev />
+          <DesktopMenuButton active={activeTab === 'metas'} onClick={() => setActiveTab('metas')} label="Metas" icon="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" isDev />
+          <DesktopMenuButton active={activeTab === 'dre'} onClick={() => setActiveTab('dre')} label="DRE Real" icon="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" isDev />
+          <DesktopMenuButton active={activeTab === 'caixa'} onClick={() => setActiveTab('caixa')} label="Fluxo Caixa" icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" isDev />
+
           <div className="pt-6">
             <DesktopMenuButton active={activeTab === 'configuracao'} onClick={() => setActiveTab('configuracao')} label="Configuração" icon="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
             {isMaster && <DesktopMenuButton active={activeTab === 'master'} onClick={() => setActiveTab('master')} label="Master" icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944" />}
@@ -223,12 +230,7 @@ const App: React.FC = () => {
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 max-w-[1600px] mx-auto animate-slide-up">
               <div className="w-full lg:w-80 space-y-6 shrink-0">
                 <FiscalHeader inputs={inputs} setInputs={setInputs} />
-                <Sidebar 
-                  inputs={inputs} 
-                  setInputs={setInputs} 
-                  isAutoSync={isAutoSync} 
-                  setIsAutoSync={setIsAutoSync} 
-                />
+                <Sidebar inputs={inputs} setInputs={setInputs} isAutoSync={isAutoSync} setIsAutoSync={setIsAutoSync} />
                 <button 
                   onClick={handleSaveSimulation} 
                   disabled={isSavingSim}
@@ -238,51 +240,33 @@ const App: React.FC = () => {
                 </button>
               </div>
               <div className="flex-1">
-                <ResultsTable 
-                  results={results} 
-                  priceMatrix={priceMatrix} 
-                  inputs={inputs} 
-                  onReset={handleReset} 
-                />
+                <ResultsTable results={results} priceMatrix={priceMatrix} inputs={inputs} onReset={handleReset} />
               </div>
             </div>
           )}
           
-          {activeTab === 'meus-produtos' && (
-            <MyProductsView onSelect={(sim) => { setInputs(sim.inputs); setActiveTab('calculadora'); }} />
-          )}
+          {activeTab === 'meus-produtos' && <MyProductsView onSelect={(sim) => { setInputs(sim.inputs); setActiveTab('calculadora'); }} />}
+          {activeTab === 'resumo-fiscal' && <ResumoFiscalView results={results} inputs={inputs} />}
+          {activeTab === 'catalogo' && <ProductsView onSelectNcm={(n) => { setInputs(p => ({...p, ...n, nomeProduto: n.descricao})); setActiveTab('calculadora'); }} />}
+          {activeTab === 'overhead' && <OverheadView faturamento={faturamento} setFaturamento={setFaturamento} fixedCosts={fixedCosts} setFixedCosts={setFixedCosts} variableCosts={variableCosts} setVariableCosts={setVariableCosts} userId={session?.user?.id} isAutoSync={isAutoSync} setIsAutoSync={setIsAutoSync} />}
+          {activeTab === 'jarvis' && <AIView results={results} inputs={inputs} />}
+          {activeTab === 'configuracao' && <ConfiguracaoView userId={session?.user?.id} />}
+          {activeTab === 'master' && <AdminView />}
           
-          {activeTab === 'resumo-fiscal' && (
-            <ResumoFiscalView results={results} inputs={inputs} />
-          )}
-          
-          {activeTab === 'catalogo' && (
-            <ProductsView onSelectNcm={(n) => { setInputs(p => ({...p, ...n, nomeProduto: n.descricao})); setActiveTab('calculadora'); }} />
-          )}
-          
-          {activeTab === 'overhead' && (
-            <OverheadView 
-              faturamento={faturamento} 
-              setFaturamento={setFaturamento} 
-              fixedCosts={fixedCosts} 
-              setFixedCosts={setFixedCosts} 
-              variableCosts={variableCosts} 
-              setVariableCosts={setVariableCosts} 
-              userId={session?.user?.id} 
-              isAutoSync={isAutoSync} 
-              setIsAutoSync={setIsAutoSync} 
+          {/* Módulos em Desenvolvimento */}
+          {['logistica', 'estoque', 'metas', 'dre', 'caixa'].includes(activeTab) && (
+            <ComingSoonView 
+              title={activeTab.toUpperCase()} 
+              desc="Este módulo está passando por homologação de regras fiscais 2025/2026." 
+              icon={
+                activeTab === 'logistica' ? "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" :
+                activeTab === 'estoque' ? "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14v4m0 0l8 4m-8-4l-8 4m8 5v3" :
+                activeTab === 'metas' ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" :
+                "M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"
+              }
+              date="Q4 2026"
             />
           )}
-          
-          {activeTab === 'jarvis' && (
-            <AIView results={results} inputs={inputs} />
-          )}
-          
-          {activeTab === 'configuracao' && (
-            <ConfiguracaoView userId={session?.user?.id} />
-          )}
-          
-          {activeTab === 'master' && <AdminView />}
         </div>
       </main>
 
@@ -292,6 +276,10 @@ const App: React.FC = () => {
         <MobileDockItem active={activeTab === 'meus-produtos'} onClick={() => setActiveTab('meus-produtos')} label="Meus" icon="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
         <MobileDockItem active={activeTab === 'resumo-fiscal'} onClick={() => setActiveTab('resumo-fiscal')} label="Fisco" icon="M9 17v-2m3 2v-4m3 2v-6m-8-2h8a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z" />
         <MobileDockItem active={activeTab === 'jarvis'} onClick={() => setActiveTab('jarvis')} label="Jarvis" icon="M13 10V3L4 14h7v7l9-11h-7z" isAi />
+        <MobileDockItem active={activeTab === 'logistica'} onClick={() => setActiveTab('logistica')} label="Log" icon="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" isDev />
+        <MobileDockItem active={activeTab === 'estoque'} onClick={() => setActiveTab('estoque')} label="Est" icon="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14v4m0 0l8 4m-8-4l-8 4m8 5v3" isDev />
+        <MobileDockItem active={activeTab === 'metas'} onClick={() => setActiveTab('metas')} label="Meta" icon="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" isDev />
+        <MobileDockItem active={activeTab === 'dre'} onClick={() => setActiveTab('dre')} label="DRE" icon="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" isDev />
         <MobileDockItem active={activeTab === 'configuracao'} onClick={() => setActiveTab('configuracao')} label="Ajuste" icon="M4 6h16M4 12h16m-7 6h7" />
       </nav>
     </div>
