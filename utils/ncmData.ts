@@ -3,14 +3,10 @@ import { NCMEntry } from '../types';
 
 /**
  * Banco de Dados NCM 2025 focado em Materiais de Construção, Acabamento e Pisos.
- * Valores de MVA baseados nos convênios e protocolos vigentes (representativos).
  */
 export const NCM_DATABASE: NCMEntry[] = [
-  // --- SEÇÃO 5.0 CIMENTOS ---
   { codigo: '2523', descricao: 'Cimento (Geral)', mvaOriginal: 20 },
   { codigo: '2523.29.10', descricao: 'Cimento Portland', mvaOriginal: 20 },
-
-  // --- SEÇÃO 8.0 MATERIAIS DE CONSTRUÇÃO E CONGÊNERES (ATUALIZADO 2025) ---
   { codigo: '2522', descricao: 'Cal (Construção)', mvaOriginal: 45 },
   { codigo: '3824.5', descricao: 'Argamassas', mvaOriginal: 45 },
   { codigo: '3910', descricao: 'Silicones em formas primárias', mvaOriginal: 55 },
@@ -31,7 +27,7 @@ export const NCM_DATABASE: NCMEntry[] = [
   { codigo: '7003', descricao: 'Vidro vazado ou laminado', mvaOriginal: 45 },
   { codigo: '7007.19', descricao: 'Vidros temperados', mvaOriginal: 45 },
   { codigo: '7007.29', descricao: 'Vidros laminados', mvaOriginal: 45 },
-  { codigo: '7009', descricao: 'Espelhos de vidro (Exceto automotivo)', mvaOriginal: 45 },
+  { codigo: '7009', descricao: 'Espelhos de vidro', mvaOriginal: 45 },
   { codigo: '7214.2', descricao: 'Vergalhões', mvaOriginal: 45 },
   { codigo: '7307', descricao: 'Acessórios para tubos (Ferro/Aço)', mvaOriginal: 35 },
   { codigo: '7308.3', descricao: 'Portas e janelas de ferro ou aço', mvaOriginal: 45 },
@@ -40,21 +36,11 @@ export const NCM_DATABASE: NCMEntry[] = [
   { codigo: '7610', descricao: 'Portas, janelas e caixilhos (Alumínio)', mvaOriginal: 35 },
   { codigo: '7615.20.00', descricao: 'Pias e artefatos de higiene (Alumínio)', mvaOriginal: 75 },
   { codigo: '8301', descricao: 'Fechaduras e ferrolhos', mvaOriginal: 55 },
-  { codigo: '8302.41.00', descricao: 'Puxadores e guarnições para construção', mvaOriginal: 45 },
+  { codigo: '8302.41.00', descricao: 'Puxadores e guarnições', mvaOriginal: 45 },
   { codigo: '8481', descricao: 'Torneiras e válvulas (Geral)', mvaOriginal: 45 },
   { codigo: '9406', descricao: 'Construções pré-fabricadas', mvaOriginal: 45 },
-
-  // --- OUTROS ---
-  { codigo: '2202.10', descricao: 'Refrigerantes em geral', mvaOriginal: 114 },
-  { codigo: '8517.13', descricao: 'Smartphones / Celulares', mvaOriginal: 9 },
-  { codigo: '3003', descricao: 'Medicamentos referência (Positiva)', mvaOriginal: 38.24 },
-  { codigo: '3004', descricao: 'Medicamentos genéricos (Positiva)', mvaOriginal: 38.24 },
 ];
 
-/**
- * Tabela de Alíquotas Internas (Modal) vigentes em 2025.
- * Diversos estados elevaram suas alíquotas básicas para equilibrar perdas de arrecadação.
- */
 export const UF_LIST = [
   { sigla: 'AC', nome: 'Acre', icms: 19 },
   { sigla: 'AL', nome: 'Alagoas', icms: 19 },
@@ -74,7 +60,7 @@ export const UF_LIST = [
   { sigla: 'PE', nome: 'Pernambuco', icms: 20.5 },
   { sigla: 'PI', nome: 'Piauí', icms: 21 },
   { sigla: 'PR', nome: 'Paraná', icms: 19.5 },
-  { sigla: 'RJ', nome: 'Rio de Janeiro', icms: 20 }, // Incluindo FECP médio
+  { sigla: 'RJ', nome: 'Rio de Janeiro', icms: 20 },
   { sigla: 'RN', nome: 'Rio Grande do Norte', icms: 20 },
   { sigla: 'RO', nome: 'Rondônia', icms: 19.5 },
   { sigla: 'RR', nome: 'Roraima', icms: 20 },

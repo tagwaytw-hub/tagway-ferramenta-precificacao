@@ -25,28 +25,43 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
   }, []);
 
   const handleUfChange = (field: 'ufOrigem' | 'ufDestino', val: string) => {
-    const newOrigem = field === 'ufOrigem' ? val : inputs.ufOrigem;
-    const newDestino = field === 'ufDestino' ? val : inputs.ufDestino;
-    
-    const destUf = UF_LIST.find(u => u.sigla === newDestino);
-    const interRate = getInterstateRate(newOrigem, newDestino);
-    
-    const rawAdjMva = calculateAdjustedMva(inputs.mvaOriginal, interRate, destUf?.icms || 18);
-    const adjMva = Math.floor(rawAdjMva * 100) / 100;
+    setInputs(prev => {
+      const newOrigem = field === 'ufOrigem' ? val : prev.ufOrigem;
+      const newDestino = field === 'ufDestino' ? val : prev.ufDestino;
+      
+      const destUf = UF_LIST.find(u => u.sigla === newDestino);
+      const interstateRate = getInterstateRate(newOrigem, newDestino);
+      const isInternal = newOrigem === newDestino;
 
-    setInputs(prev => ({
-      ...prev,
-      [field]: val,
-      icmsInterestadual: interRate,
-      icmsInternoDestino: destUf?.icms || 18,
-      mva: adjMva
-    }));
+      // Se for interna, a alíquota de crédito (compra) é a alíquota interna do estado
+      const internalRate = destUf?.icms || 18;
+      const effectivePurchaseRate = isInternal ? internalRate : interstateRate;
+
+      // Calcula MVA Ajustada (em operações internas o ajuste resulta na MVA original)
+      const rawAdjMva = calculateAdjustedMva(prev.mvaOriginal, effectivePurchaseRate, internalRate);
+      const adjMva = Math.floor(rawAdjMva * 100) / 100;
+
+      return {
+        ...prev,
+        [field]: val,
+        icmsInterestadual: effectivePurchaseRate,
+        icmsInternoDestino: internalRate,
+        icmsCreditoMercadoria: effectivePurchaseRate,
+        icmsCreditoFrete: effectivePurchaseRate,
+        icmsVenda: internalRate,
+        mva: adjMva
+      };
+    });
   };
 
   const selectNcm = (ncm: any) => {
     const destUf = UF_LIST.find(u => u.sigla === inputs.ufDestino);
-    const interRate = getInterstateRate(inputs.ufOrigem, inputs.ufDestino);
-    const rawAdjMva = calculateAdjustedMva(ncm.mvaOriginal, interRate, destUf?.icms || 18);
+    const interstateRate = getInterstateRate(inputs.ufOrigem, inputs.ufDestino);
+    const isInternal = inputs.ufOrigem === inputs.ufDestino;
+    const internalRate = destUf?.icms || 18;
+    const effectivePurchaseRate = isInternal ? internalRate : interstateRate;
+
+    const rawAdjMva = calculateAdjustedMva(ncm.mvaOriginal, effectivePurchaseRate, internalRate);
     const adjMva = Math.floor(rawAdjMva * 100) / 100;
     
     setInputs(prev => ({
@@ -64,10 +79,14 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
     n.codigo.includes(searchTerm) || n.descricao.toLowerCase().includes(searchTerm.toLowerCase())
   ).slice(0, 8);
 
+  const isInternal = inputs.ufOrigem === inputs.ufDestino;
+  const purchaseLabel = isInternal ? "Operação Interna" : "Inter (Compra)";
+  const purchaseRate = inputs.icmsCreditoMercadoria;
+
   return (
     <div className="bg-black rounded-[1.2rem] lg:rounded-[1.5rem] p-4 lg:p-6 text-white space-y-4 lg:space-y-6 shadow-2xl relative overflow-visible ring-1 ring-white/10">
       
-      {/* Produto - Compact on mobile */}
+      {/* Produto */}
       <div className="space-y-1.5">
         <label className="text-[8px] lg:text-[9px] font-black text-white/40 uppercase tracking-[0.2em] ml-1">Produto / Referência</label>
         <input 
@@ -83,26 +102,26 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
       <div className="grid grid-cols-2 gap-3 lg:gap-4">
         <div className="space-y-1.5">
           <label className="text-[8px] lg:text-[9px] font-black text-white/40 uppercase tracking-widest ml-1">Compra de (UF)</label>
-          <div className="relative group">
+          <div className="relative">
             <select 
               value={inputs.ufOrigem} 
               onChange={(e) => handleUfChange('ufOrigem', e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 lg:py-3 text-[10px] lg:text-xs font-black outline-none appearance-none cursor-pointer focus:border-white/20 transition-all"
+              className="w-full bg-slate-800 border border-white/10 rounded-xl px-3 py-2.5 lg:py-3 text-[10px] lg:text-xs font-black outline-none cursor-pointer focus:border-white/20 transition-all text-white"
             >
-              {UF_LIST.map(uf => <option key={uf.sigla} value={uf.sigla} className="bg-slate-900 text-white">{uf.sigla}</option>)}
+              {UF_LIST.map(uf => <option key={uf.sigla} value={uf.sigla}>{uf.sigla} - {uf.nome}</option>)}
             </select>
           </div>
         </div>
 
         <div className="space-y-1.5">
           <label className="text-[8px] lg:text-[9px] font-black text-white/40 uppercase tracking-widest ml-1">Sua Sede (UF)</label>
-          <div className="relative group">
+          <div className="relative">
             <select 
               value={inputs.ufDestino}
               onChange={(e) => handleUfChange('ufDestino', e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 lg:py-3 text-[10px] lg:text-xs font-black outline-none appearance-none cursor-pointer focus:border-white/20 transition-all"
+              className="w-full bg-slate-800 border border-white/10 rounded-xl px-3 py-2.5 lg:py-3 text-[10px] lg:text-xs font-black outline-none cursor-pointer focus:border-white/20 transition-all text-white"
             >
-              {UF_LIST.map(uf => <option key={uf.sigla} value={uf.sigla} className="bg-slate-900 text-white">{uf.sigla}</option>)}
+              {UF_LIST.map(uf => <option key={uf.sigla} value={uf.sigla}>{uf.sigla} - {uf.nome}</option>)}
             </select>
           </div>
         </div>
@@ -141,8 +160,8 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
       {/* Quick Summary Grid */}
       <div className="grid grid-cols-2 gap-3 lg:gap-4 pt-1">
          <div className="bg-white/5 p-2 lg:p-3 rounded-xl border border-white/5 text-center">
-            <p className="text-[7px] lg:text-[8px] font-black text-white/30 uppercase mb-1">Inter (Compra)</p>
-            <p className="text-xs lg:text-sm font-black text-white font-mono">{inputs.icmsInterestadual}%</p>
+            <p className="text-[7px] lg:text-[8px] font-black text-white/30 uppercase mb-1">{purchaseLabel}</p>
+            <p className="text-xs lg:text-sm font-black text-white font-mono">{purchaseRate.toFixed(1)}%</p>
          </div>
          <div className={`bg-white/5 p-2 lg:p-3 rounded-xl border border-white/5 text-center transition-opacity ${inputs.mode === 'tributado' ? 'opacity-20' : 'opacity-100'}`}>
             <p className="text-[7px] lg:text-[8px] font-black text-white/30 uppercase mb-1">MVA Ajustada</p>

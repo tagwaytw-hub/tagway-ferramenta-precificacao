@@ -67,7 +67,7 @@ const ResumoFiscalView: React.FC<ResumoFiscalViewProps> = ({ results, inputs }) 
                 <span className="text-[9px] font-black text-white/40 uppercase tracking-widest block">Preço de Equilíbrio</span>
                 <p className="text-[10px] text-white/20 font-bold uppercase italic leading-none">Margem Zero / Payback</p>
               </div>
-              <div className="text-2xl font-black text-white font-mono tracking-tighter">{formatCurrency(results.precoEquilibrio)}</div>
+              <div className="text-2xl font-black text-rose-500 font-mono tracking-tighter">{formatCurrency(results.precoEquilibrio)}</div>
             </div>
 
             <div className="h-px bg-white/5"></div>
