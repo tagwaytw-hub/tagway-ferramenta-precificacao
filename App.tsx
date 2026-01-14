@@ -85,16 +85,16 @@ const DesktopMenuButton = ({ active, onClick, label, icon, isAi, isDev, collapse
 const MobileDockItem = ({ active, onClick, icon, label, isAi, isDev }: any) => (
   <button
     onClick={onClick}
-    className={`flex flex-col items-center justify-center gap-1 min-w-[76px] shrink-0 transition-all ${
+    className={`flex flex-col items-center justify-center gap-1 min-w-[64px] transition-all flex-1 ${
       active ? (isAi ? 'text-indigo-600' : 'text-slate-900') : 'text-slate-300'
-    } ${isDev ? 'opacity-50' : ''}`}
+    } ${isDev ? 'opacity-40' : ''}`}
   >
     <div className={`p-2 rounded-xl transition-all ${active ? (isAi ? 'bg-indigo-50' : 'bg-slate-100') : ''}`}>
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d={icon} />
       </svg>
     </div>
-    <span className="text-[8px] font-black uppercase tracking-widest whitespace-nowrap">{label}</span>
+    <span className="text-[7px] font-black uppercase tracking-widest whitespace-nowrap">{label}</span>
   </button>
 );
 
@@ -109,7 +109,7 @@ const App: React.FC = () => {
   const [fixedCosts, setFixedCosts] = useState<CostItem[]>([]);
   const [variableCosts, setVariableCosts] = useState<VariableCostItem[]>([]);
   const [isAutoSync, setIsAutoSync] = useState(false);
-  const [isSavingSim, setIsSavingSim] = useState(false);
+  const [isDbLocked, setIsDbLocked] = useState(false);
 
   const isMaster = useMemo(() => {
     return session?.user?.email?.toLowerCase() === MASTER_EMAIL.toLowerCase();
@@ -119,16 +119,27 @@ const App: React.FC = () => {
     const init = async () => {
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       setSession(currentSession);
+      
       if (currentSession) {
-        const { data } = await supabase.from('user_configs').select('*').eq('user_id', currentSession.user.id).maybeSingle();
-        if (data) setUserProfile(data);
-        const { data: oh } = await supabase.from('overhead_configs').select('*').eq('user_id', currentSession.user.id).maybeSingle();
-        if (oh) {
-          setFaturamento(oh.faturamento || 100000);
-          setFixedCosts(oh.fixed_costs || []);
-          setVariableCosts(oh.variable_costs || []);
-          setIsAutoSync(!!oh.is_auto_sync);
-        }
+        try {
+          const { data, error } = await supabase.from('user_configs').select('*').eq('user_id', currentSession.user.id).maybeSingle();
+          if (error) {
+             const errMsg = error.message || '';
+             const errCode = error.code || '';
+             if (errCode === '42P17' || errMsg.toLowerCase().includes('recursion') || errMsg.toLowerCase().includes('infinite')) {
+                setIsDbLocked(true);
+             }
+          }
+          if (data) setUserProfile(data);
+          
+          const { data: oh } = await supabase.from('overhead_configs').select('*').eq('user_id', currentSession.user.id).maybeSingle();
+          if (oh) {
+            setFaturamento(oh.faturamento || 100000);
+            setFixedCosts(oh.fixed_costs || []);
+            setVariableCosts(oh.variable_costs || []);
+            setIsAutoSync(!!oh.is_auto_sync);
+          }
+        } catch (e) { console.warn("Banco travado."); }
       }
       setIsInitialized(true);
     };
@@ -137,64 +148,6 @@ const App: React.FC = () => {
 
   const results = calculateCosts(inputs);
   const priceMatrix = generatePriceMatrix(results.custoFinal, inputs);
-
-  useEffect(() => {
-    if (isAutoSync && faturamento > 0) {
-      const totalF = fixedCosts.reduce((a, b) => a + b.valor, 0);
-      const totalV = variableCosts.reduce((a, b) => a + b.percentual, 0);
-      const percFixed = (totalF / faturamento) * 100;
-      setInputs(prev => ({
-        ...prev,
-        custosFixos: Number(percFixed.toFixed(2)),
-        outrosCustosVariaveis: Number(totalV.toFixed(2))
-      }));
-    }
-  }, [fixedCosts, variableCosts, faturamento, isAutoSync]);
-
-  const handleReset = () => {
-    setInputs(prev => ({
-      ...prev,
-      nomeProduto: '',
-      valorCompra: 0,
-      ipiPerc: 0,
-      freteValor: 0,
-      ncmCodigo: '',
-      mva: 0,
-      mvaOriginal: 0,
-    }));
-  };
-
-  const handleSaveSimulation = async () => {
-    if (!session) {
-      alert('Sessão expirada. Faça login novamente.');
-      return;
-    }
-    
-    setIsSavingSim(true);
-    try {
-      const { error } = await supabase.from('saved_simulations').insert([{
-        user_id: session.user.id,
-        nome_produto: inputs.nomeProduto || 'Sem Nome',
-        inputs: JSON.parse(JSON.stringify(inputs)),
-        results: JSON.parse(JSON.stringify(results))
-      }]);
-      
-      if (error) {
-        if (error.message?.includes('schema cache') || error.message?.includes('not found')) {
-           alert('ERRO: A tabela "saved_simulations" não foi encontrada no banco. Por favor, execute o script SQL de criação no seu painel do Supabase.');
-        } else {
-           throw new Error(error.message);
-        }
-      } else {
-        alert('Simulação arquivada com sucesso!');
-      }
-    } catch (e: any) {
-      console.error('Erro ao salvar simulação:', e);
-      alert('Erro ao salvar: ' + (e.message || 'Falha técnica. Verifique sua rede.'));
-    } finally {
-      setIsSavingSim(false);
-    }
-  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -205,66 +158,77 @@ const App: React.FC = () => {
   if (!isInitialized) return null;
   if (!session) return <Login onLoginSuccess={setSession} />;
 
+  const menuItems = [
+    { id: 'calculadora', label: 'Calculadora', icon: "M3 12h18M3 6h18M3 18h18" },
+    { id: 'meus-produtos', label: 'Meus Itens', icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" },
+    { id: 'resumo-fiscal', label: 'Análise', icon: "M9 17v-2m3 2v-4m3 2v-6m-8-2h8a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z" },
+    { id: 'catalogo', label: 'NCM 2025', icon: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" },
+    { id: 'overhead', label: 'Overhead', icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" },
+    { id: 'jarvis', label: 'Jarvis AI', icon: "M13 10V3L4 14h7v7l9-11h-7z", isAi: true },
+  ];
+
+  const devItems = [
+    { id: 'logistica', label: 'Logística', icon: "M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" },
+    { id: 'estoque', label: 'Estoque', icon: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" },
+    { id: 'metas', label: 'Metas', icon: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" },
+    { id: 'dre', label: 'DRE Financeiro', icon: "M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
+    { id: 'caixa', label: 'Fluxo Caixa', icon: "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z" }
+  ];
+
   return (
     <div className="flex h-screen w-full bg-[#000000] overflow-hidden text-slate-900">
-      {/* Desktop Aside */}
+      {isDbLocked && isMaster && activeTab !== 'master' && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[999] w-[90%] max-w-lg bg-amber-500 text-white p-5 rounded-3xl shadow-2xl flex items-center justify-between border border-white/20 animate-slide-up">
+           <div className="flex items-center gap-4">
+             <div className="bg-white/20 p-2 rounded-xl">
+                <svg className="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+             </div>
+             <div><p className="text-[10px] font-black uppercase tracking-widest">LOOP DE BANCO (42P17).</p></div>
+           </div>
+           <button onClick={() => setActiveTab('master')} className="bg-white text-amber-600 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest">Reparar</button>
+        </div>
+      )}
+
+      {/* Desktop Sidebar */}
       <aside className={`hidden lg:flex flex-col border-r border-white/5 p-6 transition-all duration-300 ease-in-out relative ${isSidebarCollapsed ? 'w-[100px]' : 'w-[280px]'} h-full overflow-y-auto custom-scrollbar`}>
         <div className="mb-10 flex items-center justify-between">
           {!isSidebarCollapsed ? <TagwayHorizontalLogo className="h-7 w-auto" /> : <CompactLogo />}
-          <button 
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="p-2 text-white/20 hover:text-white transition-colors"
-            title={isSidebarCollapsed ? "Expandir Menu" : "Recolher Menu"}
-          >
-            <svg className={`w-4 h-4 transition-transform duration-300 ${isSidebarCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-            </svg>
+          <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="p-2 text-white/20 hover:text-white transition-colors">
+            <svg className={`w-4 h-4 transition-transform ${isSidebarCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
           </button>
         </div>
         
         <nav className="flex-1 space-y-1">
-          <DesktopMenuButton active={activeTab === 'calculadora'} onClick={() => setActiveTab('calculadora')} label="Calculadora" icon="M3 12h18M3 6h18M3 18h18" collapsed={isSidebarCollapsed} />
-          <DesktopMenuButton active={activeTab === 'meus-produtos'} onClick={() => setActiveTab('meus-produtos')} label="Meus Itens" icon="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" collapsed={isSidebarCollapsed} />
-          <DesktopMenuButton active={activeTab === 'resumo-fiscal'} onClick={() => setActiveTab('resumo-fiscal')} label="Análise Fisco" icon="M9 17v-2m3 2v-4m3 2v-6m-8-2h8a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z" collapsed={isSidebarCollapsed} />
-          <DesktopMenuButton active={activeTab === 'catalogo'} onClick={() => setActiveTab('catalogo')} label="NCM 2025" icon="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" collapsed={isSidebarCollapsed} />
-          <DesktopMenuButton active={activeTab === 'overhead'} onClick={() => setActiveTab('overhead')} label="Overhead" icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" collapsed={isSidebarCollapsed} />
-          <DesktopMenuButton active={activeTab === 'jarvis'} onClick={() => setActiveTab('jarvis')} label="Jarvis AI" icon="M13 10V3L4 14h7v7l9-11h-7z" isAi collapsed={isSidebarCollapsed} />
-          
-          {!isSidebarCollapsed && <div className="pt-4 pb-2 text-[9px] font-black text-white/20 uppercase tracking-widest pl-4">Ecossistema (Dev)</div>}
-          <DesktopMenuButton active={activeTab === 'logistica'} onClick={() => setActiveTab('logistica')} label="Logística" icon="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" isDev collapsed={isSidebarCollapsed} />
-          <DesktopMenuButton active={activeTab === 'estoque'} onClick={() => setActiveTab('estoque')} label="Estoque" icon="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14v4m0 0l8 4m-8-4l-8 4m8 5v3" isDev collapsed={isSidebarCollapsed} />
-          <DesktopMenuButton active={activeTab === 'metas'} onClick={() => setActiveTab('metas')} label="Metas" icon="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" isDev collapsed={isSidebarCollapsed} />
-          <DesktopMenuButton active={activeTab === 'dre'} onClick={() => setActiveTab('dre')} label="DRE Real" icon="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" isDev collapsed={isSidebarCollapsed} />
-          <DesktopMenuButton active={activeTab === 'caixa'} onClick={() => setActiveTab('caixa')} label="Fluxo Caixa" icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" isDev collapsed={isSidebarCollapsed} />
-
-          <div className="pt-6">
-            <DesktopMenuButton active={activeTab === 'configuracao'} onClick={() => setActiveTab('configuracao')} label="Configuração" icon="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" collapsed={isSidebarCollapsed} />
+          {menuItems.map(item => (
+            <DesktopMenuButton key={item.id} active={activeTab === item.id} onClick={() => setActiveTab(item.id as Tab)} label={item.label} icon={item.icon} isAi={item.isAi} collapsed={isSidebarCollapsed} />
+          ))}
+          <div className="pt-6 space-y-1">
+            <p className={`text-[8px] font-black uppercase tracking-[0.3em] text-white/20 mb-3 ml-4 ${isSidebarCollapsed ? 'hidden' : ''}`}>Módulos Operacionais</p>
+            {devItems.map(item => (
+              <DesktopMenuButton key={item.id} active={activeTab === item.id} onClick={() => setActiveTab(item.id as Tab)} label={item.label} icon={item.icon} collapsed={isSidebarCollapsed} />
+            ))}
+          </div>
+          <div className="pt-6 border-t border-white/5 mt-4">
+            <DesktopMenuButton active={activeTab === 'configuracao'} onClick={() => setActiveTab('configuracao')} label="Ajustes" icon="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" collapsed={isSidebarCollapsed} />
             {isMaster && <DesktopMenuButton active={activeTab === 'master'} onClick={() => setActiveTab('master')} label="Master" icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944" collapsed={isSidebarCollapsed} />}
           </div>
         </nav>
-        <button onClick={handleLogout} className={`mt-auto p-4 text-rose-500 font-black uppercase text-[10px] tracking-widest hover:bg-rose-500/10 rounded-xl transition-all border border-rose-500/20 ${isSidebarCollapsed ? 'text-center' : ''}`}>
+        <button onClick={handleLogout} className="mt-auto p-4 text-rose-500 font-black uppercase text-[10px] tracking-widest hover:bg-rose-500/10 rounded-xl transition-all border border-rose-500/20">
           {isSidebarCollapsed ? 'X' : 'Sair'}
         </button>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 bg-[#f8fafc] lg:rounded-l-[3rem] shadow-2xl overflow-hidden flex flex-col">
+      <main className="flex-1 bg-[#f8fafc] lg:rounded-l-[3rem] shadow-2xl overflow-hidden flex flex-col relative">
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-12 pb-32 lg:pb-12">
           {activeTab === 'calculadora' && (
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 max-w-[1600px] mx-auto animate-slide-up">
               <div className="w-full lg:w-80 space-y-6 shrink-0">
                 <FiscalHeader inputs={inputs} setInputs={setInputs} />
                 <Sidebar inputs={inputs} setInputs={setInputs} isAutoSync={isAutoSync} setIsAutoSync={setIsAutoSync} />
-                <button 
-                  onClick={handleSaveSimulation} 
-                  disabled={isSavingSim}
-                  className="w-full bg-emerald-600 text-white py-4 rounded-xl font-black uppercase text-[11px] tracking-widest shadow-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
-                >
-                  {isSavingSim ? 'Gravando...' : 'Arquivar Item'}
-                </button>
               </div>
               <div className="flex-1">
-                <ResultsTable results={results} priceMatrix={priceMatrix} inputs={inputs} onReset={handleReset} />
+                <ResultsTable results={results} priceMatrix={priceMatrix} inputs={inputs} onReset={() => setInputs(defaultInputs)} />
               </div>
             </div>
           )}
@@ -278,33 +242,20 @@ const App: React.FC = () => {
           {activeTab === 'master' && <AdminView />}
           
           {['logistica', 'estoque', 'metas', 'dre', 'caixa'].includes(activeTab) && (
-            <ComingSoonView 
-              title={activeTab.toUpperCase()} 
-              desc="Este módulo está passando por homologação de regras fiscais 2025/2026." 
-              icon={
-                activeTab === 'logistica' ? "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" :
-                activeTab === 'estoque' ? "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14v4m0 0l8 4m-8-4l-8 4m8 5v3" :
-                activeTab === 'metas' ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" :
-                "M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"
-              }
-              date="Q4 2026"
-            />
+            <ComingSoonView title={activeTab.toUpperCase()} desc={`O módulo ${activeTab} está em fase de restauração técnica e será liberado em breve para seu terminal.`} icon="M13 10V3L4 14h7v7l9-11h-7z" />
           )}
         </div>
-      </main>
 
-      {/* Mobile Bottom Dock - Fixed overflow and scrollability */}
-      <nav className="lg:hidden mobile-dock fixed bottom-6 left-4 right-4 h-[76px] rounded-[2rem] flex items-center gap-2 overflow-x-auto no-scrollbar px-6 z-[100] shadow-2xl bg-white border border-slate-100 flex-nowrap">
-        <MobileDockItem active={activeTab === 'calculadora'} onClick={() => setActiveTab('calculadora')} label="Calc" icon="M3 12h18M3 6h18M3 18h18" />
-        <MobileDockItem active={activeTab === 'meus-produtos'} onClick={() => setActiveTab('meus-produtos')} label="Meus" icon="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-        <MobileDockItem active={activeTab === 'resumo-fiscal'} onClick={() => setActiveTab('resumo-fiscal')} label="Fisco" icon="M9 17v-2m3 2v-4m3 2v-6m-8-2h8a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z" />
-        <MobileDockItem active={activeTab === 'overhead'} onClick={() => setActiveTab('overhead')} label="Custos" icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" />
-        <MobileDockItem active={activeTab === 'jarvis'} onClick={() => setActiveTab('jarvis')} label="Jarvis" icon="M13 10V3L4 14h7v7l9-11h-7z" isAi />
-        <MobileDockItem active={activeTab === 'configuracao'} onClick={() => setActiveTab('configuracao')} label="Perfil" icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        {isMaster && (
-          <MobileDockItem active={activeTab === 'master'} onClick={() => setActiveTab('master')} label="Master" icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944" />
-        )}
-      </nav>
+        {/* Mobile Dock Navigation */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] mobile-dock flex items-center justify-around px-2 py-3 border-t border-slate-100 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+           <MobileDockItem active={activeTab === 'calculadora'} onClick={() => setActiveTab('calculadora')} label="Home" icon="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+           <MobileDockItem active={activeTab === 'meus-produtos'} onClick={() => setActiveTab('meus-produtos')} label="Itens" icon="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+           <MobileDockItem active={activeTab === 'jarvis'} onClick={() => setActiveTab('jarvis')} label="Jarvis" icon="M13 10V3L4 14h7v7l9-11h-7z" isAi />
+           <MobileDockItem active={activeTab === 'overhead'} onClick={() => setActiveTab('overhead')} label="Overhead" icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" />
+           <MobileDockItem active={activeTab === 'configuracao'} onClick={() => setActiveTab('configuracao')} label="Ajustes" icon="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+           {isMaster && <MobileDockItem active={activeTab === 'master'} onClick={() => setActiveTab('master')} label="Master" icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944" />}
+        </div>
+      </main>
     </div>
   );
 };

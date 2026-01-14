@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 
 interface UserProfile {
@@ -7,271 +7,338 @@ interface UserProfile {
   nome_completo: string;
   email: string;
   empresa_nome: string;
-  regime_tributario: string;
-  status: 'ativo' | 'atualizando' | 'bloqueado';
+  status: 'ativo' | 'bloqueado' | 'manutencao';
+  telefone?: string;
   is_admin: boolean;
+  role?: string;
+  access_level?: string;
+  senha_acesso?: string;
 }
 
 const AdminView: React.FC = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
-  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [isUpdating, setIsUpdating] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [newUser, setNewUser] = useState({
-    nome: '',
-    email: '',
-    senha: '',
-    empresa: '',
-    regime: 'Real' as 'Simples' | 'Presumido' | 'Real'
-  });
+  const [isNewUser, setIsNewUser] = useState(false);
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
+  const stats = useMemo(() => {
+    const total = users.length;
+    const ativos = users.filter(u => u.status === 'ativo').length;
+    const bloqueados = users.filter(u => u.status === 'bloqueado').length;
+    const manutencao = users.filter(u => u.status === 'manutencao').length;
+    return { total, ativos, bloqueados, manutencao };
+  }, [users]);
+
   const fetchUsers = async () => {
+    setIsLoading(true);
     setErrorMessage(null);
     try {
       const { data, error } = await supabase
         .from('user_configs')
-        .select('*');
+        .select('*')
+        .order('nome_completo', { ascending: true });
       
       if (error) throw error;
-      if (data) {
-        setUsers(data as UserProfile[]);
-      }
+      if (data) setUsers(data as UserProfile[]);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Erro ao conectar com o banco de dados.');
-    }
-  };
-
-  const handleUpdateUser = async (user: UserProfile) => {
-    setIsUpdating(user.user_id);
-    try {
-      const { error } = await supabase
-        .from('user_configs')
-        .update({
-          nome_completo: user.nome_completo,
-          email: user.email,
-          empresa_nome: user.empresa_nome,
-          regime_tributario: user.regime_tributario,
-          status: user.status
-        })
-        .eq('user_id', user.user_id);
-
-      if (error) throw error;
-      alert('Alterações aplicadas instantaneamente!');
-      fetchUsers();
-    } catch (err: any) {
-      alert(`ERRO AO SALVAR: ${err.message}`);
+      setErrorMessage(err.message || "Erro ao ler rede master");
     } finally {
-      setIsUpdating(null);
+      setIsLoading(false);
     }
   };
 
-  const handleCreateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newUser.email || !newUser.senha || !newUser.nome) {
-      alert('Nome, E-mail e Senha são obrigatórios.');
+  const handleOpenAdd = () => {
+    // Limite removido para permitir expansão ilimitada de operadores
+    setIsNewUser(true);
+    setSelectedUser({
+      user_id: '',
+      nome_completo: '',
+      email: '',
+      empresa_nome: '',
+      status: 'ativo',
+      is_admin: false,
+      role: 'Operador',
+      access_level: 'Nível 1',
+      senha_acesso: ''
+    });
+  };
+
+  const handleSave = async () => {
+    if (!selectedUser) return;
+    if (!selectedUser.user_id || !selectedUser.email) {
+      alert("ID do Usuário e E-mail são obrigatórios.");
       return;
     }
-    
-    setIsRegistering(true);
+
+    setIsSyncing(true);
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newUser.email,
-        password: newUser.senha,
-        options: { data: { full_name: newUser.nome } }
-      });
-
-      if (authError) throw authError;
-
-      if (authData.user) {
-        const { error: configError } = await supabase.from('user_configs').insert([
-          {
-            user_id: authData.user.id,
-            nome_completo: newUser.nome,
-            email: newUser.email,
-            empresa_nome: newUser.empresa,
-            regime_tributario: newUser.regime,
-            is_admin: false,
-            status: 'ativo'
-          }
-        ]);
-
-        if (configError) throw configError;
-        alert('OPERADOR CRIADO COM SUCESSO!');
-        setNewUser({ nome: '', email: '', senha: '', empresa: '', regime: 'Real' });
-        fetchUsers();
+      let error;
+      if (isNewUser) {
+        const { error: insError } = await supabase
+          .from('user_configs')
+          .insert([selectedUser]);
+        error = insError;
+      } else {
+        const { error: updError } = await supabase
+          .from('user_configs')
+          .update({
+            nome_completo: selectedUser.nome_completo,
+            empresa_nome: selectedUser.empresa_nome,
+            status: selectedUser.status,
+            role: selectedUser.role,
+            access_level: selectedUser.access_level,
+            telefone: selectedUser.telefone,
+            email: selectedUser.email,
+            senha_acesso: selectedUser.senha_acesso
+          })
+          .eq('user_id', selectedUser.user_id);
+        error = updError;
       }
+      
+      if (error) throw error;
+      
+      alert(`✅ Sincronização Master Concluída: ${selectedUser.nome_completo || 'Operador'} registrado.`);
+      setSelectedUser(null);
+      setIsNewUser(false);
+      fetchUsers();
     } catch (err: any) {
-      alert(`ERRO NO CADASTRO: ${err.message}\n\nNota: Verifique se o redirecionamento de e-mail está configurado no painel Supabase.`);
+      alert("Falha na Sincronização Master: " + (err.message || "Erro de dados"));
     } finally {
-      setIsRegistering(false);
+      setIsSyncing(false);
     }
   };
 
-  const updateUserInState = (userId: string, field: keyof UserProfile, value: any) => {
-    setUsers(prev => prev.map(u => u.user_id === userId ? { ...u, [field]: value } : u));
-  };
+  const filteredUsers = useMemo(() => {
+    return users.filter(u => 
+      (u.email || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+      (u.nome_completo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (u.empresa_nome || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [users, searchTerm]);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10 pb-20 animate-slide-up">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-200 pb-8">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="bg-purple-600 text-white p-2 rounded-lg shadow-lg">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04M12 2.944v10m0 0a2 2 0 100 4 2 2 0 000-4z"/></svg>
-            </div>
-            <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic">Master Control</h2>
+    <div className="max-w-7xl mx-auto space-y-10 pb-40 animate-slide-up">
+      <header className="bg-black p-10 lg:p-12 rounded-[4rem] text-white shadow-2xl relative overflow-hidden border border-white/5">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-600/10 blur-[180px] rounded-full -mr-40 -mt-40"></div>
+        <div className="relative z-10 flex flex-col xl:flex-row justify-between items-center gap-10">
+          <div className="flex items-center gap-6">
+             <div className="bg-indigo-500/20 p-4 rounded-3xl border border-indigo-500/20">
+                <svg className="w-10 h-10 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+             </div>
+             <div>
+               <h2 className="text-4xl lg:text-5xl font-black tracking-tighter uppercase italic leading-none">Controle Master</h2>
+               <p className="text-white/30 text-[10px] font-black uppercase tracking-[0.4em] mt-3">Monitoramento Global de Operadores</p>
+             </div>
           </div>
-          <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mt-2">Gestão de Licenças e Operadores</p>
+
+          <div className="flex flex-wrap justify-center gap-3">
+            <StatPill label="Ativos" value={stats.ativos} color="text-emerald-400" />
+            <StatPill label="Blocked" value={stats.bloqueados} color="text-rose-500" />
+            <StatPill label="Manut." value={stats.manutencao} color="text-amber-400" />
+            <div className="bg-white/10 px-6 py-4 rounded-[1.5rem] border border-white/20 text-center shadow-xl backdrop-blur-md">
+              <span className="text-[7px] font-black text-white/40 uppercase block mb-1 tracking-widest">Operadores Totais</span>
+              <span className="text-xl font-black font-mono text-indigo-400">{stats.total}</span>
+            </div>
+          </div>
+
+          <button 
+            onClick={handleOpenAdd}
+            className="bg-white text-black px-8 py-5 rounded-3xl font-black uppercase text-[11px] tracking-widest hover:bg-indigo-500 hover:text-white transition-all flex items-center gap-3 shadow-2xl active:scale-95 shrink-0"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+            Novo Operador
+          </button>
         </div>
-        <button onClick={fetchUsers} className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
-          Sincronizar Banco
-        </button>
       </header>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        <div className="xl:col-span-1 space-y-6">
-          <section className="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-xl space-y-6 sticky top-8">
-            <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">Cadastrar Operador</h3>
-            
-            <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl">
-               <p className="text-[9px] font-black text-amber-700 uppercase tracking-widest leading-relaxed">
-                 DICA: Se o link de e-mail falhar, desative "Confirm Email" no painel do Supabase para liberação imediata.
-               </p>
-            </div>
+      <div className="relative">
+        <input 
+          type="text" 
+          placeholder="Pesquisar por nome, email ou empresa..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full bg-white border-2 border-slate-100 rounded-[2.5rem] px-8 py-5 pl-16 text-sm font-bold shadow-xl focus:border-black outline-none transition-all"
+        />
+        <svg className="w-6 h-6 absolute left-7 top-1/2 -translate-y-1/2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      </div>
 
-            <form onSubmit={handleCreateUser} className="space-y-4">
-              <AdminInput label="Nome" value={newUser.nome} onChange={(v) => setNewUser({...newUser, nome: v})} />
-              <AdminInput label="E-mail" type="email" value={newUser.email} onChange={(v) => setNewUser({...newUser, email: v})} />
-              <AdminInput label="Senha" type="password" value={newUser.senha} onChange={(v) => setNewUser({...newUser, senha: v})} />
-              <AdminInput label="Empresa" value={newUser.empresa} onChange={(v) => setNewUser({...newUser, empresa: v})} />
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Regime Fiscal</label>
-                <select 
-                  value={newUser.regime}
-                  onChange={(e) => setNewUser({...newUser, regime: e.target.value as any})}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-black outline-none"
+      <div className="bg-white border-2 border-slate-100 rounded-[3rem] overflow-hidden shadow-2xl">
+        <div className="overflow-x-auto no-scrollbar">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-slate-900 text-white uppercase text-[9px] font-black tracking-widest italic">
+                <th className="px-10 py-6">Operador</th>
+                <th className="px-10 py-6">Cargo</th>
+                <th className="px-10 py-6">Empresa</th>
+                <th className="px-10 py-6">Status</th>
+                <th className="px-10 py-6 text-right">Ação</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {isLoading ? (
+                <tr><td colSpan={5} className="p-32 text-center animate-pulse text-[10px] font-black uppercase text-slate-300 tracking-[0.5em]">Lendo Sinais Master...</td></tr>
+              ) : filteredUsers.length === 0 ? (
+                <tr><td colSpan={5} className="p-32 text-center text-[10px] font-black uppercase text-slate-300 tracking-[0.5em]">Nenhum operador registrado</td></tr>
+              ) : filteredUsers.map(user => (
+                <tr 
+                  key={user.user_id} 
+                  className="hover:bg-slate-50 transition-all group cursor-pointer" 
+                  onClick={() => { setIsNewUser(false); setSelectedUser(user); }}
                 >
-                  <option value="Real">Lucro Real</option>
-                  <option value="Presumido">Lucro Presumido</option>
-                  <option value="Simples">Simples Nacional</option>
-                </select>
-              </div>
-              <button type="submit" disabled={isRegistering} className="w-full bg-black text-white py-4 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-xl hover:bg-slate-800 disabled:opacity-50 transition-all">
-                {isRegistering ? 'Criando...' : 'Gerar Acesso'}
-              </button>
-            </form>
-          </section>
-        </div>
-
-        <div className="xl:col-span-2 space-y-6">
-          <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] px-4">Operadores ({users.length})</h3>
-          <div className="space-y-3">
-            {users.map(user => (
-              <div key={user.user_id} className={`bg-white border rounded-[2rem] overflow-hidden transition-all duration-300 ${expandedUserId === user.user_id ? 'border-black shadow-2xl scale-[1.01]' : 'border-slate-200 shadow-sm hover:border-slate-300'}`}>
-                <button onClick={() => setExpandedUserId(expandedUserId === user.user_id ? null : user.user_id)} className="w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-3 h-3 rounded-full ${user.status === 'ativo' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : user.status === 'atualizando' ? 'bg-blue-500' : 'bg-rose-500'}`}></div>
-                    <div>
-                      <h4 className="font-black text-slate-900 tracking-tight leading-none mb-1">{user.nome_completo || 'Sem Nome'}</h4>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{user.email}</p>
+                  <td className="px-10 py-7">
+                    <div className="flex items-center gap-5">
+                       <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 font-black group-hover:bg-black group-hover:text-white transition-all">
+                          {user.nome_completo?.charAt(0) || '?'}
+                       </div>
+                       <div>
+                          <p className="text-sm font-black text-slate-900 tracking-tight leading-none">{user.nome_completo || 'Sem Nome'}</p>
+                          <p className="text-[10px] font-bold text-slate-400 mt-2 italic">{user.email}</p>
+                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-6">
-                    <div className="hidden md:block text-right">
-                       <span className="text-[9px] font-black text-slate-300 uppercase block leading-none mb-1">Status</span>
-                       <span className={`text-[10px] font-black uppercase italic ${user.status === 'ativo' ? 'text-emerald-500' : user.status === 'atualizando' ? 'text-blue-500' : 'text-rose-500'}`}>{user.status}</span>
-                    </div>
-                    <svg className={`w-5 h-5 text-slate-300 transition-transform ${expandedUserId === user.user_id ? 'rotate-180 text-black' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"/></svg>
-                  </div>
-                </button>
-
-                {expandedUserId === user.user_id && (
-                  <div className="p-8 border-t border-slate-100 space-y-8 animate-slide-up">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <AdminInput label="Nome Completo" value={user.nome_completo} onChange={(v) => updateUserInState(user.user_id, 'nome_completo', v)} />
-                      <AdminInput label="E-mail" value={user.email} onChange={(v) => updateUserInState(user.user_id, 'email', v)} />
-                      <AdminInput label="Empresa" value={user.empresa_nome} onChange={(v) => updateUserInState(user.user_id, 'empresa_nome', v)} />
-                      <div className="space-y-1.5">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Regime Fiscal</label>
-                        <select 
-                          value={user.regime_tributario}
-                          onChange={(e) => updateUserInState(user.user_id, 'regime_tributario', e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-black outline-none"
-                        >
-                          <option value="Real">Lucro Real</option>
-                          <option value="Presumido">Lucro Presumido</option>
-                          <option value="Simples">Simples Nacional</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="space-y-6">
-                        <div className="flex items-center justify-between">
-                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Configuração de Acesso</label>
-                        </div>
-                        <div className="grid grid-cols-3 gap-3">
-                           <StatusButton label="ATIVO" active={user.status === 'ativo'} onClick={() => updateUserInState(user.user_id, 'status', 'ativo')} color="emerald" />
-                           <StatusButton label="MANUTENÇÃO" active={user.status === 'atualizando'} onClick={() => updateUserInState(user.user_id, 'status', 'atualizando')} color="blue" />
-                           <StatusButton label="BLOQUEADO" active={user.status === 'bloqueado'} onClick={() => updateUserInState(user.user_id, 'status', 'bloqueado')} color="rose" />
-                        </div>
-                        
-                        <div className="bg-slate-50 rounded-2xl p-4 grid grid-cols-1 md:grid-cols-3 gap-4 border border-slate-100">
-                          <div className="flex gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1 shrink-0"></div>
-                            <p className="text-[8px] font-bold text-slate-500 uppercase leading-tight"><b className="text-slate-700">ATIVO:</b> Acesso total liberado.</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1 shrink-0"></div>
-                            <p className="text-[8px] font-bold text-slate-500 uppercase leading-tight"><b className="text-slate-700">MANUTENÇÃO:</b> Mostra banner de alerta fiscal mas permite uso.</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1 shrink-0"></div>
-                            <p className="text-[8px] font-bold text-slate-500 uppercase leading-tight"><b className="text-slate-700">BLOQUEADO:</b> Trava a tela do usuário imediatamente.</p>
-                          </div>
-                        </div>
-                    </div>
-
-                    <div className="pt-6 border-t border-slate-50 flex justify-end">
-                      <button onClick={() => handleUpdateUser(user)} disabled={isUpdating === user.user_id} className="bg-black text-white px-10 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl disabled:opacity-50 transition-all active:scale-95">
-                        {isUpdating === user.user_id ? 'Processando...' : 'Aplicar Mudanças'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+                  </td>
+                  <td className="px-10 py-7">
+                    <span className="text-[10px] font-black uppercase text-indigo-500 tracking-widest">{user.role || 'Operador'}</span>
+                  </td>
+                  <td className="px-10 py-7">
+                    <span className="text-[10px] font-black uppercase text-slate-400 italic">{user.empresa_nome || 'Tagway'}</span>
+                  </td>
+                  <td className="px-10 py-7">
+                     <StatusBadge status={user.status} />
+                  </td>
+                  <td className="px-10 py-7 text-right">
+                     <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-900">Configurar</span>
+                        <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7"/></svg>
+                     </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
+
+      {selectedUser && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-black/95 backdrop-blur-sm">
+           <div className="bg-white w-full max-w-4xl rounded-[4rem] shadow-2xl overflow-hidden animate-slide-up border border-white/10">
+              <header className="bg-black p-12 text-white flex justify-between items-center relative overflow-hidden">
+                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-emerald-500 to-rose-500"></div>
+                 <div>
+                    <h3 className="text-3xl font-black uppercase italic leading-none tracking-tighter">
+                      {isNewUser ? 'Cadastrar Terminal' : 'Perfil Operacional'}
+                    </h3>
+                    <p className="text-white/40 text-[9px] font-black uppercase tracking-widest mt-3">Sincronização Cloud Tagway</p>
+                 </div>
+                 <button onClick={() => { setSelectedUser(null); setIsNewUser(false); }} className="text-white/20 hover:text-white transition-all bg-white/5 p-4 rounded-2xl">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"/></svg>
+                 </button>
+              </header>
+              
+              <div className="p-12 grid grid-cols-1 lg:grid-cols-2 gap-10">
+                 <div className="space-y-6">
+                    {isNewUser && (
+                      <AdminInput 
+                        label="UUID do Usuário (Painel Supabase)" 
+                        value={selectedUser.user_id} 
+                        onChange={v => setSelectedUser({...selectedUser, user_id: v})} 
+                        placeholder="Ex: 550e8400-e29b-41d4-a716..."
+                      />
+                    )}
+                    <AdminInput label="Nome Completo" value={selectedUser.nome_completo} onChange={v => setSelectedUser({...selectedUser, nome_completo: v})} />
+                    <AdminInput label="E-mail" value={selectedUser.email} onChange={v => setSelectedUser({...selectedUser, email: v})} type="email" />
+                    
+                    <div className="pt-4 border-t border-slate-100">
+                      <AdminInput 
+                        label="Senha de Acesso Master" 
+                        value={selectedUser.senha_acesso || ''} 
+                        onChange={v => setSelectedUser({...selectedUser, senha_acesso: v})} 
+                        placeholder="Defina a senha para este terminal"
+                      />
+                      <div className="mt-4 p-5 bg-rose-50 rounded-2xl border border-rose-100 flex gap-4 items-start">
+                         <div className="p-2 bg-rose-100 rounded-lg text-rose-600 shrink-0">
+                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                         </div>
+                         <div>
+                            <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest leading-relaxed">
+                               ⚠️ NOTA DE SEGURANÇA: Esta senha será exibida no perfil do operador para o primeiro acesso. O operador tem autonomia para alterá-la posteriormente no módulo de Ajustes.
+                            </p>
+                         </div>
+                      </div>
+                    </div>
+                 </div>
+
+                 <div className="space-y-6">
+                    <AdminInput label="Cargo Operacional" value={selectedUser.role || ''} onChange={v => setSelectedUser({...selectedUser, role: v})} />
+                    <AdminInput label="Empresa Vinculada" value={selectedUser.empresa_nome} onChange={v => setSelectedUser({...selectedUser, empresa_nome: v})} />
+                    
+                    <div className="space-y-3">
+                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Estado do Terminal</label>
+                       <div className="grid grid-cols-3 gap-3">
+                          <StatusButton label="Ativo" active={selectedUser.status === 'ativo'} onClick={() => setSelectedUser({...selectedUser, status: 'ativo'})} color="bg-emerald-600" />
+                          <StatusButton label="Manut." active={selectedUser.status === 'manutencao'} onClick={() => setSelectedUser({...selectedUser, status: 'manutencao'})} color="bg-amber-600" />
+                          <StatusButton label="Block" active={selectedUser.status === 'bloqueado'} onClick={() => setSelectedUser({...selectedUser, status: 'bloqueado'})} color="bg-rose-600" />
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="lg:col-span-2 pt-10 border-t border-slate-100 flex gap-4">
+                    <button 
+                       onClick={handleSave}
+                       disabled={isSyncing}
+                       className="flex-1 bg-black text-white py-6 rounded-3xl font-black uppercase text-[12px] tracking-[0.2em] shadow-2xl hover:bg-emerald-600 transition-all flex items-center justify-center gap-4 active:scale-95 disabled:opacity-50"
+                    >
+                       {isSyncing ? 'Sincronizando Rede Cloud...' : isNewUser ? 'Cadastrar Operador na Nuvem' : 'Sincronizar Atualizações Master'}
+                    </button>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
     </div>
   );
 };
 
-interface AdminInputProps { label: string; value: string; onChange: (v: string) => void; type?: string; }
-const AdminInput: React.FC<AdminInputProps> = ({ label, value, onChange, type = 'text' }) => (
-  <div className="space-y-1.5">
-    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
-    <input type={type} value={value || ''} onChange={(e) => onChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-black transition-all" />
+const StatPill = ({ label, value, color }: any) => (
+  <div className="bg-white/5 px-4 py-3 rounded-2xl border border-white/10 text-center min-w-[80px]">
+    <span className="text-[7px] font-black text-white/30 uppercase block mb-1 tracking-widest">{label}</span>
+    <span className={`text-lg font-black font-mono ${color}`}>{value}</span>
   </div>
 );
 
-interface StatusButtonProps { label: string; active: boolean; onClick: () => void; color: 'emerald' | 'blue' | 'rose'; }
-const StatusButton: React.FC<StatusButtonProps> = ({ label, active, onClick, color }) => {
-  const styles = {
-    emerald: active ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/20' : 'bg-white text-slate-400 border-slate-100 hover:border-emerald-200',
-    blue: active ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20' : 'bg-white text-slate-400 border-slate-100 hover:border-blue-200',
-    rose: active ? 'bg-rose-600 text-white border-rose-600 shadow-lg shadow-rose-500/20' : 'bg-white text-slate-400 border-slate-100 hover:border-rose-200',
-  };
+const StatusBadge = ({ status }: { status: string }) => {
+  const styles: any = { ativo: 'bg-emerald-100 text-emerald-600', bloqueado: 'bg-rose-100 text-rose-600', manutencao: 'bg-amber-100 text-amber-600' };
+  const labels: any = { ativo: 'Ativo', bloqueado: 'Block', manutencao: 'Manut.' };
   return (
-    <button type="button" onClick={(e) => { e.stopPropagation(); onClick(); }} className={`py-3 rounded-xl border-2 font-black uppercase text-[9px] tracking-widest transition-all ${styles[color]}`}>
-      {label}
-    </button>
+    <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${styles[status]}`}>
+      {labels[status]}
+    </span>
   );
 };
+
+const StatusButton = ({ label, active, onClick, color }: any) => (
+  <button onClick={onClick} className={`py-4 rounded-2xl text-[9px] font-black uppercase tracking-widest border-2 transition-all active:scale-95 ${active ? `${color} text-white border-transparent shadow-xl` : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-slate-100'}`}>
+    {label}
+  </button>
+);
+
+const AdminInput = ({ label, value, onChange, placeholder, type = 'text' }: any) => (
+  <div className="space-y-2">
+    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
+    <input 
+      type={type} 
+      value={value || ''}
+      onChange={e => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold outline-none focus:border-black transition-all"
+    />
+  </div>
+);
 
 export default AdminView;
