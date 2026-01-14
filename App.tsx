@@ -57,27 +57,35 @@ export const TagwayHorizontalLogo = ({ className = "w-auto h-8", light = false }
   </svg>
 );
 
-const DesktopMenuButton = ({ active, onClick, label, icon, isAi, isDev }: any) => (
+const CompactLogo = () => (
+  <svg className="w-8 h-8" viewBox="0 0 1080.48 979.51" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path fill="#8200AD" d="M720.75 939.52c-63.17,0-115.94-34.63-128.66-80.82l0-144.42 107.39 0 42.44 73.51c-3.8,6.11-6,13.32-6,21.05 0,22.04 17.87,39.91 39.91,39.91 22.04,0 39.91-17.87 39.91-39.91 0-22.04-17.87-39.91-39.91-39.91-2.14,0-4.24,0.17-6.29,0.49l-50.95-88.25-126.5 0 0-83.93-33.11 0 0 265.73c6.35,65.19 76.35,116.54 161.77,116.54 73.21,0 135.1-37.73 155.29-89.55 63.33,3.57 124.42-50.92 140.89-129.09 7.75-36.79 4.35-72.76-7.62-102.87 45.14-41.1 73.6-110.69 71-188.52-3.39-101.69-58.74-185.36-131.04-208.38 6.12-15.29 9.49-31.99 9.49-49.47 0-73.56-59.64-133.2-133.2-133.2-7.51,0-14.87,0.62-22.04,1.81-16.06-46.41-66.05-80.25-125.22-80.25-52.95,0-98.55,27.1-119.06,66.06l0 324.33 33.11 0 0-71.05 83.87 0 58.22-105.5 0.68-1.23c1.42-0.22 2.82-0.51 4.19-0.88 5.69-2.59 11.12-5.53 16.27-8.78 8.19-7.31 13.35-17.95 13.35-29.79 0-22.04 17.87-39.91 39.91-39.91 22.04,0 39.91 17.87 39.91 39.91 0,11.9 5.2,22.58 13.46,29.89l-45.9 83.17-64.33 0 0-204.91c19.64-23.45 51.04-38.64 86.42-38.64 51.6,0 94.73 32.31 105.27,75.44 10.39-3.2 21.42-4.92 32.86-4.92 61.59,0 111.51,49.93 111.51,111.51 0,20.5-5.54,39.71-15.19,56.22 71.05,22.01 125.14,97.54 128.5,189.11 2.84,77.55-31.46,146.13-84.1,181.6 13.07,20.74 20.67,45.51 20.67,72.11 0,73.07-57.31,132.3-128,132.3-0.07,0-0.13,0-0.2,0-11.4,47.5-64.97,83.46-129.34,83.46z"/>
+    <path fill="#FF6600" d="M473.09 562.37l0-114.56 40.22 0 0-19.44-99.88 0 0 19.44 40.41 0 0 114.56 19.25 0zm134.2 0.57l14.3 0 44.41-134.38-20.21 0c-9.91,30.31-21.54,64.24-32.02,96.07l-21.73-62.14-15.44 0-21.92 62.33-31.83-96.26-20.01 0 44.41 134.38 14.3 0c6.86-20.21 15.06-42.89 22.68-64.62l23.06 64.62z"/>
+  </svg>
+);
+
+const DesktopMenuButton = ({ active, onClick, label, icon, isAi, isDev, collapsed }: any) => (
   <button
     onClick={onClick}
+    title={collapsed ? label : undefined}
     className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all ${
       active ? 'bg-white/10 text-white shadow-lg' : 'text-white/40 hover:bg-white/5 hover:text-white'
-    } ${isDev ? 'opacity-50' : ''}`}
+    } ${isDev ? 'opacity-50' : ''} ${collapsed ? 'justify-center' : ''}`}
   >
     <div className={`shrink-0 ${isAi ? 'text-indigo-400' : ''}`}>
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d={icon} />
       </svg>
     </div>
-    <span className="text-[11px] font-black uppercase tracking-widest truncate">{label}</span>
-    {isDev && <span className="ml-auto text-[7px] bg-white/10 px-1 py-0.5 rounded">DEV</span>}
+    {!collapsed && <span className="text-[11px] font-black uppercase tracking-widest truncate">{label}</span>}
+    {!collapsed && isDev && <span className="ml-auto text-[7px] bg-white/10 px-1 py-0.5 rounded">DEV</span>}
   </button>
 );
 
 const MobileDockItem = ({ active, onClick, icon, label, isAi, isDev }: any) => (
   <button
     onClick={onClick}
-    className={`flex flex-col items-center justify-center gap-1 min-w-[64px] transition-all ${
+    className={`flex flex-col items-center justify-center gap-1 min-w-[76px] shrink-0 transition-all ${
       active ? (isAi ? 'text-indigo-600' : 'text-slate-900') : 'text-slate-300'
     } ${isDev ? 'opacity-50' : ''}`}
   >
@@ -86,7 +94,7 @@ const MobileDockItem = ({ active, onClick, icon, label, isAi, isDev }: any) => (
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d={icon} />
       </svg>
     </div>
-    <span className="text-[8px] font-black uppercase tracking-widest">{label}</span>
+    <span className="text-[8px] font-black uppercase tracking-widest whitespace-nowrap">{label}</span>
   </button>
 );
 
@@ -94,7 +102,7 @@ const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
   const [inputs, setInputs] = useState<SimulationInputs>(defaultInputs);
   const [activeTab, setActiveTab] = useState<Tab>('calculadora');
-  const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [faturamento, setFaturamento] = useState<number>(100000);
@@ -103,7 +111,9 @@ const App: React.FC = () => {
   const [isAutoSync, setIsAutoSync] = useState(false);
   const [isSavingSim, setIsSavingSim] = useState(false);
 
-  const isMaster = useMemo(() => session?.user?.email === MASTER_EMAIL, [session]);
+  const isMaster = useMemo(() => {
+    return session?.user?.email?.toLowerCase() === MASTER_EMAIL.toLowerCase();
+  }, [session]);
 
   useEffect(() => {
     const init = async () => {
@@ -198,34 +208,48 @@ const App: React.FC = () => {
   return (
     <div className="flex h-screen w-full bg-[#000000] overflow-hidden text-slate-900">
       {/* Desktop Aside */}
-      <aside className="hidden lg:flex w-[280px] h-full flex-col border-r border-white/5 p-6 overflow-y-auto custom-scrollbar">
-        <div className="mb-10"><TagwayHorizontalLogo className="h-7 w-auto" /></div>
+      <aside className={`hidden lg:flex flex-col border-r border-white/5 p-6 transition-all duration-300 ease-in-out relative ${isSidebarCollapsed ? 'w-[100px]' : 'w-[280px]'} h-full overflow-y-auto custom-scrollbar`}>
+        <div className="mb-10 flex items-center justify-between">
+          {!isSidebarCollapsed ? <TagwayHorizontalLogo className="h-7 w-auto" /> : <CompactLogo />}
+          <button 
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="p-2 text-white/20 hover:text-white transition-colors"
+            title={isSidebarCollapsed ? "Expandir Menu" : "Recolher Menu"}
+          >
+            <svg className={`w-4 h-4 transition-transform duration-300 ${isSidebarCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+            </svg>
+          </button>
+        </div>
+        
         <nav className="flex-1 space-y-1">
-          <DesktopMenuButton active={activeTab === 'calculadora'} onClick={() => setActiveTab('calculadora')} label="Calculadora" icon="M3 12h18M3 6h18M3 18h18" />
-          <DesktopMenuButton active={activeTab === 'meus-produtos'} onClick={() => setActiveTab('meus-produtos')} label="Meus Itens" icon="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-          <DesktopMenuButton active={activeTab === 'resumo-fiscal'} onClick={() => setActiveTab('resumo-fiscal')} label="Análise Fisco" icon="M9 17v-2m3 2v-4m3 2v-6m-8-2h8a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z" />
-          <DesktopMenuButton active={activeTab === 'catalogo'} onClick={() => setActiveTab('catalogo')} label="NCM 2025" icon="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          <DesktopMenuButton active={activeTab === 'overhead'} onClick={() => setActiveTab('overhead')} label="Overhead" icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" />
-          <DesktopMenuButton active={activeTab === 'jarvis'} onClick={() => setActiveTab('jarvis')} label="Jarvis AI" icon="M13 10V3L4 14h7v7l9-11h-7z" isAi />
+          <DesktopMenuButton active={activeTab === 'calculadora'} onClick={() => setActiveTab('calculadora')} label="Calculadora" icon="M3 12h18M3 6h18M3 18h18" collapsed={isSidebarCollapsed} />
+          <DesktopMenuButton active={activeTab === 'meus-produtos'} onClick={() => setActiveTab('meus-produtos')} label="Meus Itens" icon="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" collapsed={isSidebarCollapsed} />
+          <DesktopMenuButton active={activeTab === 'resumo-fiscal'} onClick={() => setActiveTab('resumo-fiscal')} label="Análise Fisco" icon="M9 17v-2m3 2v-4m3 2v-6m-8-2h8a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z" collapsed={isSidebarCollapsed} />
+          <DesktopMenuButton active={activeTab === 'catalogo'} onClick={() => setActiveTab('catalogo')} label="NCM 2025" icon="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" collapsed={isSidebarCollapsed} />
+          <DesktopMenuButton active={activeTab === 'overhead'} onClick={() => setActiveTab('overhead')} label="Overhead" icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" collapsed={isSidebarCollapsed} />
+          <DesktopMenuButton active={activeTab === 'jarvis'} onClick={() => setActiveTab('jarvis')} label="Jarvis AI" icon="M13 10V3L4 14h7v7l9-11h-7z" isAi collapsed={isSidebarCollapsed} />
           
-          <div className="pt-4 pb-2 text-[9px] font-black text-white/20 uppercase tracking-widest pl-4">Ecossistema (Dev)</div>
-          <DesktopMenuButton active={activeTab === 'logistica'} onClick={() => setActiveTab('logistica')} label="Logística" icon="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" isDev />
-          <DesktopMenuButton active={activeTab === 'estoque'} onClick={() => setActiveTab('estoque')} label="Estoque" icon="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14v4m0 0l8 4m-8-4l-8 4m8 5v3" isDev />
-          <DesktopMenuButton active={activeTab === 'metas'} onClick={() => setActiveTab('metas')} label="Metas" icon="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" isDev />
-          <DesktopMenuButton active={activeTab === 'dre'} onClick={() => setActiveTab('dre')} label="DRE Real" icon="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" isDev />
-          <DesktopMenuButton active={activeTab === 'caixa'} onClick={() => setActiveTab('caixa')} label="Fluxo Caixa" icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" isDev />
+          {!isSidebarCollapsed && <div className="pt-4 pb-2 text-[9px] font-black text-white/20 uppercase tracking-widest pl-4">Ecossistema (Dev)</div>}
+          <DesktopMenuButton active={activeTab === 'logistica'} onClick={() => setActiveTab('logistica')} label="Logística" icon="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" isDev collapsed={isSidebarCollapsed} />
+          <DesktopMenuButton active={activeTab === 'estoque'} onClick={() => setActiveTab('estoque')} label="Estoque" icon="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14v4m0 0l8 4m-8-4l-8 4m8 5v3" isDev collapsed={isSidebarCollapsed} />
+          <DesktopMenuButton active={activeTab === 'metas'} onClick={() => setActiveTab('metas')} label="Metas" icon="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" isDev collapsed={isSidebarCollapsed} />
+          <DesktopMenuButton active={activeTab === 'dre'} onClick={() => setActiveTab('dre')} label="DRE Real" icon="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" isDev collapsed={isSidebarCollapsed} />
+          <DesktopMenuButton active={activeTab === 'caixa'} onClick={() => setActiveTab('caixa')} label="Fluxo Caixa" icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" isDev collapsed={isSidebarCollapsed} />
 
           <div className="pt-6">
-            <DesktopMenuButton active={activeTab === 'configuracao'} onClick={() => setActiveTab('configuracao')} label="Configuração" icon="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            {isMaster && <DesktopMenuButton active={activeTab === 'master'} onClick={() => setActiveTab('master')} label="Master" icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944" />}
+            <DesktopMenuButton active={activeTab === 'configuracao'} onClick={() => setActiveTab('configuracao')} label="Configuração" icon="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" collapsed={isSidebarCollapsed} />
+            {isMaster && <DesktopMenuButton active={activeTab === 'master'} onClick={() => setActiveTab('master')} label="Master" icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944" collapsed={isSidebarCollapsed} />}
           </div>
         </nav>
-        <button onClick={handleLogout} className="mt-auto p-4 text-rose-500 font-black uppercase text-[10px] tracking-widest hover:bg-rose-500/10 rounded-xl transition-all border border-rose-500/20">Sair</button>
+        <button onClick={handleLogout} className={`mt-auto p-4 text-rose-500 font-black uppercase text-[10px] tracking-widest hover:bg-rose-500/10 rounded-xl transition-all border border-rose-500/20 ${isSidebarCollapsed ? 'text-center' : ''}`}>
+          {isSidebarCollapsed ? 'X' : 'Sair'}
+        </button>
       </aside>
 
       {/* Main Content Area */}
       <main className="flex-1 bg-[#f8fafc] lg:rounded-l-[3rem] shadow-2xl overflow-hidden flex flex-col">
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-12 pb-32 lg:pb-12">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-12 pb-32 lg:pb-12">
           {activeTab === 'calculadora' && (
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 max-w-[1600px] mx-auto animate-slide-up">
               <div className="w-full lg:w-80 space-y-6 shrink-0">
@@ -253,7 +277,6 @@ const App: React.FC = () => {
           {activeTab === 'configuracao' && <ConfiguracaoView userId={session?.user?.id} />}
           {activeTab === 'master' && <AdminView />}
           
-          {/* Módulos em Desenvolvimento */}
           {['logistica', 'estoque', 'metas', 'dre', 'caixa'].includes(activeTab) && (
             <ComingSoonView 
               title={activeTab.toUpperCase()} 
@@ -270,17 +293,17 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* Mobile Bottom Dock */}
-      <nav className="lg:hidden mobile-dock fixed bottom-6 left-6 right-6 h-[72px] rounded-[2rem] flex items-center gap-2 overflow-x-auto no-scrollbar px-6 z-[100] shadow-2xl bg-white border border-slate-100">
+      {/* Mobile Bottom Dock - Fixed overflow and scrollability */}
+      <nav className="lg:hidden mobile-dock fixed bottom-6 left-4 right-4 h-[76px] rounded-[2rem] flex items-center gap-2 overflow-x-auto no-scrollbar px-6 z-[100] shadow-2xl bg-white border border-slate-100 flex-nowrap">
         <MobileDockItem active={activeTab === 'calculadora'} onClick={() => setActiveTab('calculadora')} label="Calc" icon="M3 12h18M3 6h18M3 18h18" />
         <MobileDockItem active={activeTab === 'meus-produtos'} onClick={() => setActiveTab('meus-produtos')} label="Meus" icon="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
         <MobileDockItem active={activeTab === 'resumo-fiscal'} onClick={() => setActiveTab('resumo-fiscal')} label="Fisco" icon="M9 17v-2m3 2v-4m3 2v-6m-8-2h8a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z" />
+        <MobileDockItem active={activeTab === 'overhead'} onClick={() => setActiveTab('overhead')} label="Custos" icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" />
         <MobileDockItem active={activeTab === 'jarvis'} onClick={() => setActiveTab('jarvis')} label="Jarvis" icon="M13 10V3L4 14h7v7l9-11h-7z" isAi />
-        <MobileDockItem active={activeTab === 'logistica'} onClick={() => setActiveTab('logistica')} label="Log" icon="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" isDev />
-        <MobileDockItem active={activeTab === 'estoque'} onClick={() => setActiveTab('estoque')} label="Est" icon="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14v4m0 0l8 4m-8-4l-8 4m8 5v3" isDev />
-        <MobileDockItem active={activeTab === 'metas'} onClick={() => setActiveTab('metas')} label="Meta" icon="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" isDev />
-        <MobileDockItem active={activeTab === 'dre'} onClick={() => setActiveTab('dre')} label="DRE" icon="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" isDev />
-        <MobileDockItem active={activeTab === 'configuracao'} onClick={() => setActiveTab('configuracao')} label="Ajuste" icon="M4 6h16M4 12h16m-7 6h7" />
+        <MobileDockItem active={activeTab === 'configuracao'} onClick={() => setActiveTab('configuracao')} label="Perfil" icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        {isMaster && (
+          <MobileDockItem active={activeTab === 'master'} onClick={() => setActiveTab('master')} label="Master" icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944" />
+        )}
       </nav>
     </div>
   );
