@@ -99,20 +99,20 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs, isAutoSync, setIsA
           <div className="grid grid-cols-1 gap-3 animate-slide-up">
             <InputGroup label="Comissão (%)" value={inputs.comissaoVenda} onChange={(v: string) => handleChange('comissaoVenda', v)} />
             
-            <div className={`rounded-xl p-4 shadow-inner relative group overflow-hidden border-2 transition-all ${isAutoSync ? 'bg-blue-50/50 border-dashed border-blue-100' : 'bg-white border-slate-200 border-solid shadow-sm'}`}>
+            <div className={`rounded-xl p-4 shadow-inner relative group overflow-hidden border-2 transition-all ${isAutoSync ? 'bg-blue-50/50 border-blue-200 border-solid' : 'bg-white border-slate-200 border-solid shadow-sm'}`}>
               <div className="flex justify-between items-center mb-2">
-                <label className={`block text-[8px] font-black uppercase tracking-widest ${isAutoSync ? 'text-blue-500' : 'text-slate-400'}`}>Overhead / Fixo (%)</label>
+                <label className={`block text-[8px] font-black uppercase tracking-widest ${isAutoSync ? 'text-blue-600' : 'text-slate-400'}`}>Overhead / Fixo (%)</label>
                 
-                <div className="flex bg-slate-200/50 p-0.5 rounded-lg">
+                <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 shadow-sm">
                   <button 
                     onClick={() => setIsAutoSync(false)}
-                    className={`px-2 py-1 rounded-md text-[7px] font-black uppercase transition-all ${!isAutoSync ? 'bg-white text-black shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                    className={`px-3 py-1 rounded-md text-[8px] font-black uppercase transition-all ${!isAutoSync ? 'bg-white text-black shadow-sm ring-1 ring-black/5' : 'text-slate-400 hover:text-slate-600'}`}
                   >
                     M
                   </button>
                   <button 
                     onClick={() => setIsAutoSync(true)}
-                    className={`px-2 py-1 rounded-md text-[7px] font-black uppercase transition-all ${isAutoSync ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                    className={`px-3 py-1 rounded-md text-[8px] font-black uppercase transition-all ${isAutoSync ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                   >
                     A
                   </button>
@@ -122,13 +122,20 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs, isAutoSync, setIsA
               <div className="flex items-center gap-2">
                 <input 
                   type="number" 
+                  step="0.01"
                   readOnly={isAutoSync}
                   value={inputs.custosFixos} 
                   onChange={(e) => handleChange('custosFixos', e.target.value)}
-                  className={`w-full text-lg font-black font-mono bg-transparent outline-none transition-all ${isAutoSync ? 'text-blue-600 cursor-default' : 'text-slate-900 cursor-text'}`} 
+                  className={`w-full text-xl font-black font-mono bg-transparent outline-none transition-all ${isAutoSync ? 'text-blue-700 cursor-not-allowed' : 'text-slate-900 cursor-text'}`} 
                 />
-                <span className={`text-[10px] font-black ${isAutoSync ? 'text-blue-300' : 'text-slate-300'}`}>%</span>
+                <span className={`text-[10px] font-black ${isAutoSync ? 'text-blue-400' : 'text-slate-300'}`}>%</span>
               </div>
+              {isAutoSync && (
+                <div className="mt-1 flex items-center gap-1.5 animate-pulse">
+                   <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                   <span className="text-[7px] font-black text-blue-500 uppercase tracking-widest">Sincronizado com Financeiro</span>
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -118,15 +118,17 @@ const OverheadView: React.FC<OverheadViewProps> = ({
   const percToVal = (perc: number) => (faturamento * perc) / 100;
 
   // Corrigida ordenação para numérica natural (1, 2, ..., 10)
+  // FIX: Explicitly type sort parameters as strings to resolve 'localeCompare' on unknown error
   const fixedCategories = useMemo(() => 
     Array.from(new Set(fixedCosts.map(f => f.categoria)))
-      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true })), 
+      .sort((a: string, b: string) => a.localeCompare(b, undefined, { numeric: true })), 
     [fixedCosts]
   );
 
+  // FIX: Explicitly type sort parameters as strings to resolve 'localeCompare' on unknown error
   const variableCategories = useMemo(() => 
     Array.from(new Set(variableCosts.map(v => v.categoria)))
-      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true })), 
+      .sort((a: string, b: string) => a.localeCompare(b, undefined, { numeric: true })), 
     [variableCosts]
   );
 

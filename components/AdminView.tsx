@@ -15,6 +15,8 @@ interface UserProfile {
   senha_acesso?: string;
 }
 
+const MASTER_EMAIL = 'tagwaytw@gmail.com';
+
 const AdminView: React.FC = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,10 +25,21 @@ const AdminView: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isNewUser, setIsNewUser] = useState(false);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
+    getCurrentUser();
   }, []);
+
+  const getCurrentUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setCurrentUserEmail(user?.email || null);
+  };
+
+  const isMaster = useMemo(() => {
+    return currentUserEmail?.toLowerCase() === MASTER_EMAIL.toLowerCase();
+  }, [currentUserEmail]);
 
   const stats = useMemo(() => {
     const total = users.length;
@@ -43,6 +56,7 @@ const AdminView: React.FC = () => {
       const { data, error } = await supabase
         .from('user_configs')
         .select('*')
+        .not('nome_completo', 'is', null)
         .order('nome_completo', { ascending: true });
       
       if (error) throw error;
@@ -55,6 +69,10 @@ const AdminView: React.FC = () => {
   };
 
   const handleOpenAdd = () => {
+    if (!isMaster) {
+      alert("ACESSO NEGADO: Apenas o Administrador Master pode criar terminais.");
+      return;
+    }
     setIsNewUser(true);
     setSelectedUser({
       user_id: '',
@@ -71,8 +89,9 @@ const AdminView: React.FC = () => {
 
   const handleSave = async () => {
     if (!selectedUser) return;
-    if (!selectedUser.user_id || !selectedUser.email) {
-      alert("ID do Usuário e E-mail são obrigatórios.");
+    
+    if (!selectedUser.user_id?.trim() || !selectedUser.email?.trim() || !selectedUser.nome_completo?.trim()) {
+      alert("ERRO CRÍTICO: ID do Usuário, Nome Completo e E-mail são obrigatórios.");
       return;
     }
 
@@ -103,14 +122,32 @@ const AdminView: React.FC = () => {
       
       if (error) throw error;
       
-      alert(`✅ Sincronização Master Concluída: ${selectedUser.nome_completo || 'Operador'} registrado.`);
+      alert(`✅ Sincronização Concluída: ${selectedUser.nome_completo} atualizado.`);
       setSelectedUser(null);
       setIsNewUser(false);
       fetchUsers();
     } catch (err: any) {
-      alert("Falha na Sincronização Master: " + (err.message || "Erro de dados"));
+      alert("Falha na Sincronização: " + (err.message || "Erro de dados"));
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  const handleDelete = async (userId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isMaster) {
+      alert("ERRO DE PRIVILÉGIO: Somente o Administrador Master tem permissão para remover terminais da rede.");
+      return;
+    }
+    if (!confirm('⚠️ AVISO MASTER: Deseja excluir permanentemente este terminal da rede? Esta ação será bloqueada pelo banco se você não for o Master.')) return;
+    
+    try {
+      const { error } = await supabase.from('user_configs').delete().eq('user_id', userId);
+      if (error) throw error;
+      setUsers(prev => prev.filter(u => u.user_id !== userId));
+      alert('Operador removido com sucesso.');
+    } catch (err: any) {
+      alert('Erro ao excluir: ' + (err.message.includes('policy') ? 'Permissão negada pela RLS.' : err.message));
     }
   };
 
@@ -170,7 +207,7 @@ const AdminView: React.FC = () => {
 
       <div className="bg-white border-2 border-slate-100 rounded-[3rem] overflow-hidden shadow-2xl">
         <div className="overflow-x-auto no-scrollbar">
-          <table className="w-full text-left">
+          <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-900 text-white uppercase text-[9px] font-black tracking-widest italic">
                 <th className="px-10 py-6">Operador</th>
@@ -212,9 +249,17 @@ const AdminView: React.FC = () => {
                      <StatusBadge status={user.status} />
                   </td>
                   <td className="px-10 py-7 text-right">
-                     <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-900">Configurar</span>
-                        <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7"/></svg>
+                     <div className="flex items-center justify-end gap-4">
+                        {isMaster && (
+                          <button 
+                            onClick={(e) => handleDelete(user.user_id, e)}
+                            className="p-3 text-slate-200 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                            title="Remover Operador"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                          </button>
+                        )}
+                        <svg className="w-4 h-4 text-slate-200 group-hover:text-black transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7"/></svg>
                      </div>
                   </td>
                 </tr>
@@ -250,8 +295,8 @@ const AdminView: React.FC = () => {
                         placeholder="Ex: 550e8400-e29b-41d4-a716..."
                       />
                     )}
-                    <AdminInput label="Nome Completo" value={selectedUser.nome_completo} onChange={(v: string) => setSelectedUser({...selectedUser, nome_completo: v})} />
-                    <AdminInput label="E-mail" value={selectedUser.email} onChange={(v: string) => setSelectedUser({...selectedUser, email: v})} type="email" />
+                    <AdminInput label="Nome Completo *" value={selectedUser.nome_completo} onChange={(v: string) => setSelectedUser({...selectedUser, nome_completo: v})} />
+                    <AdminInput label="E-mail *" value={selectedUser.email} onChange={(v: string) => setSelectedUser({...selectedUser, email: v})} type="email" />
                     
                     <div className="pt-4 border-t border-slate-100">
                       <AdminInput 
@@ -275,7 +320,7 @@ const AdminView: React.FC = () => {
 
                  <div className="space-y-6">
                     <AdminInput label="Cargo Operacional" value={selectedUser.role || ''} onChange={(v: string) => setSelectedUser({...selectedUser, role: v})} />
-                    <AdminInput label="Empresa Vinculada" value={selectedUser.empresa_nome} onChange={(v: string) => setSelectedUser({...selectedUser, empresa_nome: v})} />
+                    <AdminInput label="Empresa Vinculada *" value={selectedUser.empresa_nome} onChange={(v: string) => setSelectedUser({...selectedUser, empresa_nome: v})} />
                     
                     <div className="space-y-3">
                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Estado do Terminal</label>
