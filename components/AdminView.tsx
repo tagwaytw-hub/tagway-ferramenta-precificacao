@@ -55,7 +55,6 @@ const AdminView: React.FC = () => {
   };
 
   const handleOpenAdd = () => {
-    // Limite removido para permitir expansão ilimitada de operadores
     setIsNewUser(true);
     setSelectedUser({
       user_id: '',
@@ -247,18 +246,18 @@ const AdminView: React.FC = () => {
                       <AdminInput 
                         label="UUID do Usuário (Painel Supabase)" 
                         value={selectedUser.user_id} 
-                        onChange={v => setSelectedUser({...selectedUser, user_id: v})} 
+                        onChange={(v: string) => setSelectedUser({...selectedUser, user_id: v})} 
                         placeholder="Ex: 550e8400-e29b-41d4-a716..."
                       />
                     )}
-                    <AdminInput label="Nome Completo" value={selectedUser.nome_completo} onChange={v => setSelectedUser({...selectedUser, nome_completo: v})} />
-                    <AdminInput label="E-mail" value={selectedUser.email} onChange={v => setSelectedUser({...selectedUser, email: v})} type="email" />
+                    <AdminInput label="Nome Completo" value={selectedUser.nome_completo} onChange={(v: string) => setSelectedUser({...selectedUser, nome_completo: v})} />
+                    <AdminInput label="E-mail" value={selectedUser.email} onChange={(v: string) => setSelectedUser({...selectedUser, email: v})} type="email" />
                     
                     <div className="pt-4 border-t border-slate-100">
                       <AdminInput 
                         label="Senha de Acesso Master" 
                         value={selectedUser.senha_acesso || ''} 
-                        onChange={v => setSelectedUser({...selectedUser, senha_acesso: v})} 
+                        onChange={(v: string) => setSelectedUser({...selectedUser, senha_acesso: v})} 
                         placeholder="Defina a senha para este terminal"
                       />
                       <div className="mt-4 p-5 bg-rose-50 rounded-2xl border border-rose-100 flex gap-4 items-start">
@@ -275,8 +274,8 @@ const AdminView: React.FC = () => {
                  </div>
 
                  <div className="space-y-6">
-                    <AdminInput label="Cargo Operacional" value={selectedUser.role || ''} onChange={v => setSelectedUser({...selectedUser, role: v})} />
-                    <AdminInput label="Empresa Vinculada" value={selectedUser.empresa_nome} onChange={v => setSelectedUser({...selectedUser, empresa_nome: v})} />
+                    <AdminInput label="Cargo Operacional" value={selectedUser.role || ''} onChange={(v: string) => setSelectedUser({...selectedUser, role: v})} />
+                    <AdminInput label="Empresa Vinculada" value={selectedUser.empresa_nome} onChange={(v: string) => setSelectedUser({...selectedUser, empresa_nome: v})} />
                     
                     <div className="space-y-3">
                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Estado do Terminal</label>
@@ -305,7 +304,7 @@ const AdminView: React.FC = () => {
   );
 };
 
-const StatPill = ({ label, value, color }: any) => (
+const StatPill = ({ label, value, color }: { label: string; value: number; color: string }) => (
   <div className="bg-white/5 px-4 py-3 rounded-2xl border border-white/10 text-center min-w-[80px]">
     <span className="text-[7px] font-black text-white/30 uppercase block mb-1 tracking-widest">{label}</span>
     <span className={`text-lg font-black font-mono ${color}`}>{value}</span>
@@ -322,19 +321,27 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
-const StatusButton = ({ label, active, onClick, color }: any) => (
+const StatusButton = ({ label, active, onClick, color }: { label: string; active: boolean; onClick: () => void; color: string }) => (
   <button onClick={onClick} className={`py-4 rounded-2xl text-[9px] font-black uppercase tracking-widest border-2 transition-all active:scale-95 ${active ? `${color} text-white border-transparent shadow-xl` : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-slate-100'}`}>
     {label}
   </button>
 );
 
-const AdminInput = ({ label, value, onChange, placeholder, type = 'text' }: any) => (
+interface AdminInputProps {
+  label: string;
+  value: string | undefined;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  type?: string;
+}
+
+const AdminInput: React.FC<AdminInputProps> = ({ label, value, onChange, placeholder, type = 'text' }) => (
   <div className="space-y-2">
     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
     <input 
       type={type} 
       value={value || ''}
-      onChange={e => onChange(e.target.value)}
+      onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
       placeholder={placeholder}
       className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold outline-none focus:border-black transition-all"
     />
