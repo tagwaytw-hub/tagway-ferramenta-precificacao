@@ -68,7 +68,7 @@ const MyProductsView: React.FC<{ onSelect: (sim: SavedSimulation) => void }> = (
     <div className="max-w-6xl mx-auto space-y-6 animate-slide-up">
       <div className="border-b border-slate-200 pb-8 flex justify-between items-end">
         <div>
-          <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic">Meus Itens</h2>
+          <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic">Meus Produtos</h2>
           <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mt-2">Simulações Arquivadas em Nuvem</p>
         </div>
         <button onClick={fetchSimulations} className="p-3 text-slate-400 hover:text-black transition-all">

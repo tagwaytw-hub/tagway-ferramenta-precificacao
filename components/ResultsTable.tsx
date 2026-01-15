@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { SimulationResults, SimulationInputs } from '../types';
 import { formatCurrency } from '../utils/calculations';
+import { supabase } from '../lib/supabase';
 
 interface ResultsTableProps {
   results: SimulationResults;
@@ -12,6 +13,7 @@ interface ResultsTableProps {
 
 const ResultsTable: React.FC<ResultsTableProps> = ({ results, priceMatrix, inputs, onReset }) => {
   const [expandedSections, setExpandedSections] = useState<string[]>(['credits', 'purchase']);
+  const [isSaving, setIsSaving] = useState(false);
 
   const totalWeight = results.custoFinal + results.impostosTotais + results.margemAbsoluta;
   const pCusto = (results.custoFinal / totalWeight) * 100;
@@ -22,6 +24,28 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ results, priceMatrix, input
     setExpandedSections(prev => 
       prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
     );
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const { error } = await supabase.from('saved_simulations').insert({
+        user_id: user.id,
+        nome_produto: inputs.nomeProduto || 'Simulação Sem Nome',
+        inputs: inputs,
+        results: results
+      });
+
+      if (error) throw error;
+      alert('✅ Simulação arquivada em "Meus Produtos"!');
+    } catch (err: any) {
+      alert('Erro ao salvar: ' + err.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handlePrint = () => window.print();
@@ -71,6 +95,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ results, priceMatrix, input
         </div>
         <div className="flex items-center gap-2">
           <ActionButton onClick={onReset} label="Novo" icon="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" color="slate" />
+          <ActionButton onClick={handleSave} disabled={isSaving} label={isSaving ? "Salvando..." : "Salvar"} icon="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" color="emerald" />
           <ActionButton onClick={handleShare} label="WhatsApp" icon="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" color="indigo" />
           <ActionButton onClick={handlePrint} label="PDF" icon="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" color="black" />
         </div>
@@ -226,16 +251,18 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ results, priceMatrix, input
   );
 };
 
-const ActionButton = ({ onClick, label, icon, color }: any) => {
+const ActionButton = ({ onClick, label, icon, color, disabled }: any) => {
   const styles: any = {
     slate: 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200',
     indigo: 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-100',
+    emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-600 hover:text-white',
     black: 'bg-black text-white border-black hover:bg-slate-800 shadow-lg shadow-black/10'
   };
   return (
     <button 
       onClick={onClick}
-      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border font-black uppercase text-[9px] tracking-widest transition-all btn-touch ${styles[color]}`}
+      disabled={disabled}
+      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border font-black uppercase text-[9px] tracking-widest transition-all btn-touch disabled:opacity-50 ${styles[color]}`}
     >
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d={icon}/></svg>
       {label}
