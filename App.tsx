@@ -196,12 +196,13 @@ const App: React.FC = () => {
   if (!isInitialized) return null;
   if (!session) return <Login onLoginSuccess={setSession} />;
 
+  // NOVOS NOMES DE MÓDULOS ATUALIZADOS AQUI
   const menuItems = [
-    { id: 'calculadora', label: 'Calc', icon: "M3 12h18M3 6h18M3 18h18" },
-    { id: 'meus-produtos', label: 'Itens', icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" },
-    { id: 'resumo-fiscal', label: 'Análise', icon: "M9 17v-2m3 2v-4m3 2v-6m-8-2h8a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z" },
-    { id: 'overhead', label: 'Ganhos', icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" },
-    { id: 'jarvis', label: 'Jarvis', icon: "M13 10V3L4 14h7v7l9-11h-7z", isAi: true },
+    { id: 'calculadora', label: 'Calculadora', icon: "M3 12h18M3 6h18M3 18h18" },
+    { id: 'meus-produtos', label: 'Meus Produtos', icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" },
+    { id: 'resumo-fiscal', label: 'Análise Fiscal', icon: "M9 17v-2m3 2v-4m3 2v-6m-8-2h8a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z" },
+    { id: 'overhead', label: 'Overhead', icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" },
+    { id: 'jarvis', label: 'Jarvis AI', icon: "M13 10V3L4 14h7v7l9-11h-7z", isAi: true },
   ];
 
   const devItems = [
