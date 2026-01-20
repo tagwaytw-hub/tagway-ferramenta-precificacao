@@ -7,6 +7,13 @@ const MASTER_EMAIL = 'tagwaytw@gmail.com';
 
 type AdminTab = 'operadores' | 'auditoria' | 'broadcast' | 'sistema';
 
+interface AdminInputProps {
+  label: string;
+  value: string | undefined;
+  onChange: (v: string) => void;
+  type?: string;
+}
+
 const AdminView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AdminTab>('operadores');
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -101,7 +108,6 @@ const AdminView: React.FC = () => {
     if (!confirm(`Deseja ${enable ? 'Habilitar' : 'Ocultar'} o módulo 2027 para TODOS os usuários?`)) return;
     setIsSyncing(true);
     try {
-      // Atualização em lote de todas as flags de 2027
       for(const user of users) {
         const newFlags = { ...(user.feature_flags || {}), calculadora_2027_enabled: enable };
         await supabase.from('user_configs').update({ feature_flags: newFlags }).eq('user_id', user.user_id);
@@ -272,9 +278,9 @@ const AdminView: React.FC = () => {
                  </div>
 
                  <div className="space-y-6">
-                    <AdminInput label="Nome do Operador" value={selectedUser.nome_completo} onChange={(v) => setSelectedUser({...selectedUser, nome_completo: v})} />
-                    <AdminInput label="Unidade / Empresa" value={selectedUser.empresa_nome} onChange={(v) => setSelectedUser({...selectedUser, empresa_nome: v})} />
-                    <AdminInput label="Senha de Login" value={selectedUser.senha_acesso} onChange={(v) => setSelectedUser({...selectedUser, senha_acesso: v})} />
+                    <AdminInput label="Nome do Operador" value={selectedUser.nome_completo} onChange={(v: string) => setSelectedUser({...selectedUser, nome_completo: v})} />
+                    <AdminInput label="Unidade / Empresa" value={selectedUser.empresa_nome} onChange={(v: string) => setSelectedUser({...selectedUser, empresa_nome: v})} />
+                    <AdminInput label="Senha de Login" value={selectedUser.senha_acesso} onChange={(v: string) => setSelectedUser({...selectedUser, senha_acesso: v})} />
                     
                     <button 
                       onClick={handleSaveUser}
@@ -326,7 +332,7 @@ const StatusButton = ({ label, active, onClick, color }: any) => (
   </button>
 );
 
-const AdminInput = ({ label, value, onChange, type = 'text' }: any) => (
+const AdminInput = ({ label, value, onChange, type = 'text' }: AdminInputProps) => (
   <div className="space-y-2">
     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
     <input 

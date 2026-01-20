@@ -8,7 +8,6 @@ interface OverheadViewProps {
   faturamento: number;
   setFaturamento: (val: number) => void;
   fixedCosts: CostItem[];
-  // Use React.Dispatch<React.SetStateAction<...>> to allow functional state updates (prev => ...)
   setFixedCosts: React.Dispatch<React.SetStateAction<CostItem[]>>;
   variableCosts: VariableCostItem[];
   setVariableCosts: React.Dispatch<React.SetStateAction<VariableCostItem[]>>;
@@ -51,16 +50,14 @@ const OverheadView: React.FC<OverheadViewProps> = ({
   const [expanded, setExpanded] = useState<string[]>(['1. PESSOAL / RH', '11. IMPOSTOS SOBRE VENDAS']);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Inicialização Rígida: Carrega a lista inteira se o estado estiver vazio
   useEffect(() => {
     if (fixedCosts.length === 0 && variableCosts.length === 0) {
-      setFaturamento(100000); // 100k Revenue Simulation
+      setFaturamento(100000); 
 
       const allFixed: CostItem[] = [];
       INITIAL_FIXED_LIST.forEach(group => {
         group.items.forEach(desc => {
           let val = 0;
-          // Simulation values to hit 15% fixed (15k)
           if (desc === 'Salários administrativos') val = 8000;
           if (desc === 'Pró-labore dos sócios') val = 4500;
           if (desc === 'Aluguel do imóvel') val = 2000;
@@ -74,7 +71,6 @@ const OverheadView: React.FC<OverheadViewProps> = ({
       INITIAL_VARIABLE_LIST.forEach(group => {
         group.items.forEach(desc => {
           let perc = 0;
-          // Simulation values to hit 8% variable
           if (desc === 'Simples Nacional (% faturamento)') perc = 4.5;
           if (desc === 'Taxa de Cartão Crédito') perc = 2.0;
           if (desc === 'Frete sobre vendas') perc = 1.5;
@@ -117,15 +113,12 @@ const OverheadView: React.FC<OverheadViewProps> = ({
   const valToPerc = (val: number) => faturamento > 0 ? (val / faturamento) * 100 : 0;
   const percToVal = (perc: number) => (faturamento * perc) / 100;
 
-  // Corrigida ordenação para numérica natural (1, 2, ..., 10)
-  // FIX: Explicitly type sort parameters as strings to resolve 'localeCompare' on unknown error
   const fixedCategories = useMemo(() => 
     Array.from(new Set(fixedCosts.map(f => f.categoria)))
       .sort((a: string, b: string) => a.localeCompare(b, undefined, { numeric: true })), 
     [fixedCosts]
   );
 
-  // FIX: Explicitly type sort parameters as strings to resolve 'localeCompare' on unknown error
   const variableCategories = useMemo(() => 
     Array.from(new Set(variableCosts.map(v => v.categoria)))
       .sort((a: string, b: string) => a.localeCompare(b, undefined, { numeric: true })), 
@@ -175,7 +168,6 @@ const OverheadView: React.FC<OverheadViewProps> = ({
       </header>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
-        {/* COLUNA: DESPESAS FIXAS */}
         <div className="space-y-6">
           <div className="flex items-center justify-between px-6">
              <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-[0.4em]">Despesas Fixas</h3>
@@ -206,7 +198,7 @@ const OverheadView: React.FC<OverheadViewProps> = ({
                             step="0.01"
                             placeholder="0,00"
                             className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-lg font-black font-mono outline-none focus:border-black" 
-                            value={item.valor === 0 && !expanded.includes(item.id) ? '' : item.valor} 
+                            value={item.valor === 0 ? '' : item.valor} 
                             onChange={(e) => {
                                const v = e.target.value === '' ? 0 : parseFloat(e.target.value);
                                updateFixed(item.id, { valor: v });
@@ -239,7 +231,6 @@ const OverheadView: React.FC<OverheadViewProps> = ({
           </div>
         </div>
 
-        {/* COLUNA: DESPESAS VARIÁVEIS */}
         <div className="space-y-6">
           <div className="flex items-center justify-between px-6">
              <h3 className="text-[12px] font-black text-blue-600 uppercase tracking-[0.4em]">Despesas Variáveis</h3>
