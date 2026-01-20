@@ -9,10 +9,9 @@ import ResumoFiscalView from './components/ResumoFiscalView';
 import ConfiguracaoView from './components/ConfiguracaoView';
 import AdminView from './components/AdminView';
 import Login from './components/Login';
-import ComingSoonView from './components/ComingSoonView';
 import AIView from './components/AIView';
 import MyProductsView from './components/MyProductsView';
-import Calculadora2027View from './components/Calculadora2027View'; // Novo Componente
+import Calculadora2027View from './components/Calculadora2027View';
 import { SimulationInputs, CostItem, VariableCostItem, UserProfile } from './types';
 import { calculateCosts, generatePriceMatrix } from './utils/calculations';
 import { supabase } from './lib/supabase';
@@ -115,6 +114,24 @@ const App: React.FC = () => {
   const [variableCosts, setVariableCosts] = useState<VariableCostItem[]>([]);
   const [isAutoSync, setIsAutoSync] = useState(false);
 
+  // Re-calculate overhead globally (CAP TOTAL = Fixos % + Variáveis %)
+  const totalFixed = useMemo(() => fixedCosts.reduce((acc, curr) => acc + curr.valor, 0), [fixedCosts]);
+  const totalVarWeight = useMemo(() => variableCosts.reduce((acc, curr) => acc + curr.percentual, 0), [variableCosts]);
+  
+  const fixedPercTotal = useMemo(() => faturamento > 0 ? (totalFixed / faturamento) * 100 : 0, [totalFixed, faturamento]);
+  const capTotalOverhead = useMemo(() => fixedPercTotal + totalVarWeight, [fixedPercTotal, totalVarWeight]);
+
+  // Sync inputs with calculated cap total if autoSync is enabled
+  useEffect(() => {
+    if (isAutoSync) {
+      const newVal = Math.round(capTotalOverhead * 100) / 100;
+      setInputs(prev => {
+        if (prev.custosFixos === newVal) return prev;
+        return { ...prev, custosFixos: newVal };
+      });
+    }
+  }, [isAutoSync, capTotalOverhead]);
+
   const isMaster = useMemo(() => {
     return session?.user?.email?.toLowerCase() === MASTER_EMAIL.toLowerCase();
   }, [session]);
@@ -147,6 +164,20 @@ const App: React.FC = () => {
       setSession(currentSession);
       if (currentSession) {
         await fetchProfile(currentSession.user.id);
+        
+        // Load overhead configs if exist
+        const { data: overheadData } = await supabase
+          .from('overhead_configs')
+          .select('*')
+          .eq('user_id', currentSession.user.id)
+          .maybeSingle();
+        
+        if (overheadData) {
+          setFaturamento(overheadData.faturamento);
+          setFixedCosts(overheadData.fixed_costs || []);
+          setVariableCosts(overheadData.variable_costs || []);
+          setIsAutoSync(!!overheadData.is_auto_sync);
+        }
       }
       setIsInitialized(true);
     };
@@ -185,7 +216,7 @@ const App: React.FC = () => {
     { id: 'calculadora', label: 'Calculadora', icon: "M3 12h18M3 6h18M3 18h18" },
     { id: 'calculadora-2027', label: 'Simulador 2027', icon: "M13 10V3L4 14h7v7l9-11h-7z", isNew: true, disabled: !isModuleEnabled('calculadora-2027') },
     { id: 'meus-produtos', label: 'Meus Produtos', icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" },
-    { id: 'resumo-fiscal', label: 'Análise Fiscal', icon: "M9 17v-2m3 2v-4m3 2v-6m-8-2h8a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z" },
+    { id: 'resumo-fiscal', label: 'Análise Fiscal', icon: "M9 17v-2m3 2v-4m3 2v-6m-8-2h8a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
     { id: 'overhead', label: 'Overhead', icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" },
     { id: 'jarvis', label: 'Jarvis AI', icon: "M13 10V3L4 14h7v7l9-11h-7z", isAi: true, disabled: !isModuleEnabled('jarvis') },
   ];
