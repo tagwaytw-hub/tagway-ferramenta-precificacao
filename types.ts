@@ -27,6 +27,36 @@ export interface SimulationInputs {
   simulationMode: 'buyToSell' | 'sellToBuy';
   precoVendaDesejado: number;
   totalDeducoesVendaPerc?: number;
+  // Campos específicos para 2027
+  ibsPerc?: number;
+  cbsPerc?: number;
+  isCenario2027?: boolean;
+}
+
+export interface UserProfile {
+  user_id: string;
+  nome_completo: string;
+  email: string;
+  empresa_nome: string;
+  status: 'ativo' | 'bloqueado' | 'manutencao';
+  telefone?: string;
+  senha_acesso?: string;
+  feature_flags?: {
+    jarvis_enabled: boolean;
+    dre_enabled: boolean;
+    estoque_enabled: boolean;
+    logistica_enabled: boolean;
+    calculadora_2027_enabled: boolean; // Nova Flag
+  };
+}
+
+export interface AuditLog {
+  id: string;
+  user_id: string;
+  action: string;
+  details: string;
+  created_at: string;
+  user_name?: string;
 }
 
 export interface CostItem {
@@ -62,6 +92,9 @@ export interface SimulationResults {
   icmsVendaEfetivo: number;
   margemAbsoluta: number;
   impostosTotais: number;
+  // Resultados específicos 2027
+  valorIBS?: number;
+  valorCBS?: number;
 }
 
 export interface NCMEntry {

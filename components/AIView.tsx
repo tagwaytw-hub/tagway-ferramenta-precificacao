@@ -10,16 +10,30 @@ interface AIViewProps {
 }
 
 const AIView: React.FC<AIViewProps> = ({ results, inputs }) => {
-  const [messages, setMessages] = useState<{ role: 'user' | 'ai', text: string }[]>([
-    { role: 'ai', text: `Olá! Sou o Tagway AI. Analisei sua simulação para o produto "${inputs.nomeProduto || 'não nomeado'}". Como posso ajudar a otimizar sua lucratividade hoje?` }
-  ]);
+  const initialMessage = { 
+    role: 'ai' as const, 
+    text: `Olá! Sou o Tagway AI. Analisei sua simulação para o produto "${inputs.nomeProduto || 'não nomeado'}". Como posso ajudar a otimizar sua lucratividade hoje?` 
+  };
+
+  const [messages, setMessages] = useState<{ role: 'user' | 'ai', text: string }[]>([initialMessage]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages]);
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  }, [messages, isLoading]);
+
+  const clearChat = () => {
+    if (confirm('Deseja limpar todo o histórico desta conversa?')) {
+      setMessages([initialMessage]);
+    }
+  };
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -71,6 +85,15 @@ const AIView: React.FC<AIViewProps> = ({ results, inputs }) => {
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Processamento Neural Ativo</p>
           </div>
         </div>
+
+        <button 
+          onClick={clearChat}
+          className="p-3 text-slate-300 hover:text-rose-500 transition-colors flex items-center gap-2"
+          title="Limpar Histórico"
+        >
+          <span className="text-[9px] font-black uppercase tracking-widest hidden md:block">Limpar Chat</span>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </button>
       </header>
 
       <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar" ref={scrollRef}>
@@ -104,12 +127,12 @@ const AIView: React.FC<AIViewProps> = ({ results, inputs }) => {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder="Pergunte sobre lucros, impostos ou MVA..."
-            className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-8 py-5 pr-20 text-sm font-medium outline-none"
+            className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-8 py-5 pr-20 text-sm font-medium outline-none focus:border-black transition-all"
           />
           <button 
             onClick={handleSend}
             disabled={isLoading}
-            className="absolute right-3 top-3 bottom-3 bg-black text-white px-6 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-indigo-600 transition-all"
+            className="absolute right-3 top-3 bottom-3 bg-black text-white px-6 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-indigo-600 transition-all active:scale-95 disabled:opacity-50"
           >
             Enviar
           </button>
