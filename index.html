@@ -18,37 +18,39 @@
         font-family: 'Inter', sans-serif;
         background-color: #000000;
         -webkit-tap-highlight-color: transparent;
+        overscroll-behavior-y: none;
       }
       
-      /* Desktop Customizations */
       @media (min-width: 1024px) {
         .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
       }
 
-      /* Mobile Dock - Sleek Modern White Style */
       .mobile-dock {
-        background: rgba(255, 255, 255, 0.95);
+        background: rgba(255, 255, 255, 0.98);
         backdrop-filter: blur(20px);
         border-top: 1px solid rgba(0, 0, 0, 0.05);
-        padding-bottom: env(safe-area-inset-bottom);
+        padding-bottom: max(1.2rem, env(safe-area-inset-bottom));
       }
 
       @keyframes slideUp {
-        from { transform: translateY(20px); opacity: 0; }
+        from { transform: translateY(30px); opacity: 0; }
         to { transform: translateY(0); opacity: 1; }
       }
-      .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      .animate-slide-up { 
+        animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+        will-change: transform, opacity;
+      }
       
-      .btn-touch:active { transform: scale(0.96); opacity: 0.8; }
+      .btn-touch:active { transform: scale(0.97); }
       
-      /* Input overrides for mobile clean style */
       @media (max-width: 1023px) {
-        input, select {
-          -webkit-appearance: none;
-          font-size: 16px !important; /* Prevent iOS zoom */
+        input, select, textarea {
+          font-size: 16px !important; /* Previne o zoom forçado do iOS */
+          background-color: #f8fafc;
         }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
       }
     </style>
     <script type="importmap">

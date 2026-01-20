@@ -89,16 +89,16 @@ const MobileDockItem = ({ active, onClick, icon, label, isAi, colorClass, disabl
   <button
     onClick={onClick}
     disabled={disabled}
-    className={`flex flex-col items-center justify-center gap-1.5 min-w-[72px] transition-all px-2 py-1 ${
+    className={`flex flex-col items-center justify-center gap-1 min-w-[64px] transition-all px-1 py-1 flex-1 ${
       active ? (colorClass || 'text-slate-900') : 'text-slate-400'
     } ${disabled ? 'opacity-20' : ''}`}
   >
-    <div className={`p-2.5 rounded-2xl transition-all ${active ? (isAi ? 'bg-indigo-50' : 'bg-slate-100') : ''}`}>
+    <div className={`p-2 rounded-xl transition-all ${active ? (isAi ? 'bg-indigo-50' : 'bg-slate-100') : ''}`}>
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d={icon} />
       </svg>
     </div>
-    <span className="text-[7px] font-black uppercase tracking-[0.1em] whitespace-nowrap">{label}</span>
+    <span className="text-[6px] font-black uppercase tracking-widest whitespace-nowrap opacity-80">{label}</span>
   </button>
 );
 
@@ -114,14 +114,12 @@ const App: React.FC = () => {
   const [variableCosts, setVariableCosts] = useState<VariableCostItem[]>([]);
   const [isAutoSync, setIsAutoSync] = useState(false);
 
-  // Re-calculate overhead globally (CAP TOTAL = Fixos % + Variáveis %)
   const totalFixed = useMemo(() => fixedCosts.reduce((acc, curr) => acc + curr.valor, 0), [fixedCosts]);
   const totalVarWeight = useMemo(() => variableCosts.reduce((acc, curr) => acc + curr.percentual, 0), [variableCosts]);
   
   const fixedPercTotal = useMemo(() => faturamento > 0 ? (totalFixed / faturamento) * 100 : 0, [totalFixed, faturamento]);
   const capTotalOverhead = useMemo(() => fixedPercTotal + totalVarWeight, [fixedPercTotal, totalVarWeight]);
 
-  // Sync inputs with calculated cap total if autoSync is enabled
   useEffect(() => {
     if (isAutoSync) {
       const newVal = Math.round(capTotalOverhead * 100) / 100;
@@ -146,16 +144,13 @@ const App: React.FC = () => {
       
       if (data) {
         setUserProfile(data as UserProfile);
-        
         if (data.status === 'bloqueado') {
           alert('🚫 Terminal Bloqueado pelo Administrador.');
           supabase.auth.signOut();
           setSession(null);
         }
       }
-    } catch (e) {
-      console.warn("Erro ao buscar perfil.");
-    }
+    } catch (e) { console.warn("Erro ao buscar perfil."); }
   }, []);
 
   useEffect(() => {
@@ -164,8 +159,6 @@ const App: React.FC = () => {
       setSession(currentSession);
       if (currentSession) {
         await fetchProfile(currentSession.user.id);
-        
-        // Load overhead configs if exist
         const { data: overheadData } = await supabase
           .from('overhead_configs')
           .select('*')
@@ -192,7 +185,6 @@ const App: React.FC = () => {
     if (!userProfile?.feature_flags) {
        return ['calculadora', 'meus-produtos', 'resumo-fiscal', 'overhead', 'configuracao'].includes(module);
     }
-    
     switch(module) {
       case 'jarvis': return !!userProfile.feature_flags.jarvis_enabled;
       case 'dre': return !!userProfile.feature_flags.dre_enabled;
@@ -213,18 +205,17 @@ const App: React.FC = () => {
   if (!session) return <Login onLoginSuccess={setSession} />;
 
   const menuItems = [
-    { id: 'calculadora', label: 'Calculadora', icon: "M3 12h18M3 6h18M3 18h18" },
-    { id: 'calculadora-2027', label: 'Simulador 2027', icon: "M13 10V3L4 14h7v7l9-11h-7z", isNew: true, disabled: !isModuleEnabled('calculadora-2027') },
-    { id: 'meus-produtos', label: 'Meus Produtos', icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" },
-    { id: 'resumo-fiscal', label: 'Análise Fiscal', icon: "M9 17v-2m3 2v-4m3 2v-6m-8-2h8a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
-    { id: 'overhead', label: 'Overhead', icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" },
-    { id: 'jarvis', label: 'Jarvis AI', icon: "M13 10V3L4 14h7v7l9-11h-7z", isAi: true, disabled: !isModuleEnabled('jarvis') },
+    { id: 'calculadora', label: 'Cálculo', icon: "M3 12h18M3 6h18M3 18h18" },
+    { id: 'calculadora-2027', label: '2027', icon: "M13 10V3L4 14h7v7l9-11h-7z", isNew: true, disabled: !isModuleEnabled('calculadora-2027') },
+    { id: 'meus-produtos', label: 'Arquivo', icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" },
+    { id: 'overhead', label: 'Estrutura', icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" },
+    { id: 'jarvis', label: 'Jarvis', icon: "M13 10V3L4 14h7v7l9-11h-7z", isAi: true, disabled: !isModuleEnabled('jarvis') },
   ];
 
+  // Added 'disabled' property to avoid 'Property disabled does not exist' error when mapping over these items
   const devItems = [
-    { id: 'logistica', label: 'Logística', icon: "M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z", disabled: !isModuleEnabled('logistica') },
-    { id: 'estoque', label: 'Estoque', icon: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4", disabled: !isModuleEnabled('estoque') },
-    { id: 'dre', label: 'DRE', icon: "M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z", disabled: !isModuleEnabled('dre') }
+    { id: 'resumo-fiscal', label: 'Fiscal', icon: "M9 17v-2m3 2v-4m3 2v-6m-8-2h8a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", disabled: false },
+    { id: 'configuracao', label: 'Perfil', icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z", disabled: false },
   ];
 
   return (
@@ -248,14 +239,13 @@ const App: React.FC = () => {
             ))}
           </div>
           <div className="pt-6 border-t border-white/5 mt-4">
-            <DesktopMenuButton active={activeTab === 'configuracao'} onClick={() => setActiveTab('configuracao')} label="Ajustes" icon="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" collapsed={isSidebarCollapsed} />
             {isMaster && <DesktopMenuButton active={activeTab === 'master'} onClick={() => setActiveTab('master')} label="Master" icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944" collapsed={isSidebarCollapsed} />}
           </div>
         </nav>
       </aside>
 
-      <main className="flex-1 bg-[#f8fafc] lg:rounded-l-[3rem] shadow-2xl overflow-hidden flex flex-col relative">
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-12 pb-32 lg:pb-12">
+      <main className="flex-1 bg-[#f8fafc] lg:rounded-l-[3rem] shadow-2xl overflow-hidden flex flex-col relative rounded-t-[2.5rem] lg:rounded-t-none">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-12 pb-24 lg:pb-12">
           {activeTab === 'calculadora' && (
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 max-w-[1600px] mx-auto animate-slide-up">
               <div className="w-full lg:w-80 space-y-6 shrink-0">
@@ -267,35 +257,25 @@ const App: React.FC = () => {
               </div>
             </div>
           )}
-          
           {activeTab === 'calculadora-2027' && isModuleEnabled('calculadora-2027') && <Calculadora2027View />}
           {activeTab === 'meus-produtos' && <MyProductsView onSelect={(sim) => { setInputs(sim.inputs); setActiveTab('calculadora'); }} />}
           {activeTab === 'resumo-fiscal' && <ResumoFiscalView results={results} inputs={inputs} />}
-          {activeTab === 'catalogo' && <ProductsView onSelectNcm={(n) => { setInputs(p => ({...p, ...n, nomeProduto: n.descricao})); setActiveTab('calculadora'); }} />}
           {activeTab === 'overhead' && <OverheadView faturamento={faturamento} setFaturamento={setFaturamento} fixedCosts={fixedCosts} setFixedCosts={setFixedCosts} variableCosts={variableCosts} setVariableCosts={setVariableCosts} userId={session?.user?.id} isAutoSync={isAutoSync} setIsAutoSync={setIsAutoSync} />}
           {activeTab === 'jarvis' && isModuleEnabled('jarvis') && <AIView results={results} inputs={inputs} />}
           {activeTab === 'configuracao' && session && (
-            <ConfiguracaoView 
-              userId={session.user.id} 
-              onLogout={handleLogout} 
-              onProfileUpdate={() => fetchProfile(session.user.id)} 
-            />
+            <ConfiguracaoView userId={session.user.id} onLogout={handleLogout} onProfileUpdate={() => fetchProfile(session.user.id)} />
           )}
           {activeTab === 'master' && isMaster && <AdminView />}
         </div>
 
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] mobile-dock shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
-           <div className="flex items-center gap-1 overflow-x-auto no-scrollbar px-4 py-3">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] mobile-dock">
+           <div className="flex items-center gap-1 justify-around px-2 py-3">
               {menuItems.map(item => (
                 <MobileDockItem key={item.id} disabled={item.disabled} active={activeTab === item.id} onClick={() => setActiveTab(item.id as Tab)} label={item.label} icon={item.icon} isAi={item.isAi} colorClass={item.isAi ? 'text-indigo-600' : ''} />
               ))}
-              <div className="w-px h-8 bg-slate-100 shrink-0 mx-2"></div>
               {devItems.map(item => (
-                <MobileDockItem key={item.id} disabled={item.disabled} active={activeTab === item.id} onClick={() => setActiveTab(item.id as Tab)} label={item.label} icon={item.icon} />
+                <MobileDockItem key={item.id} active={activeTab === item.id} onClick={() => setActiveTab(item.id as Tab)} label={item.label} icon={item.icon} />
               ))}
-              {isMaster && (
-                <MobileDockItem active={activeTab === 'master'} onClick={() => setActiveTab('master')} label="Master" icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944" colorClass="text-amber-600" />
-              )}
            </div>
         </div>
       </main>

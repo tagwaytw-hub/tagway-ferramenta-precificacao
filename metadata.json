@@ -1,5 +1,10 @@
 {
   "name": "TAGWAY TECHNOLOGY",
   "description": "Simulador avançado de precificação com substituição tributária e análise fiscal determinística.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "short_name": "Tagway",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000"
 }
