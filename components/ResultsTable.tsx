@@ -20,6 +20,50 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ results, priceMatrix, input
   const pLucro = (results.margemAbsoluta / totalWeight) * 100;
   const pEquilibrio = (results.precoEquilibrio / results.precoVendaAlvo) * 100;
 
+  // Cálculos detalhados para o resumo
+  const totalCreditos = results.creditoIcmsEntrada + results.creditoPisCofinsValor;
+  const valorCustoFixo = results.precoVendaAlvo * (inputs.custosFixos / 100);
+
+  const generateReportText = () => {
+    const timestamp = new Date().toLocaleString('pt-BR');
+    return `
+===========================================
+        TAGWAY FISCAL - RELATÓRIO
+===========================================
+GERADO EM: ${timestamp}
+PRODUTO: ${inputs.nomeProduto || 'NOME NÃO INFORMADO'}
+ROTA: ${inputs.ufOrigem} -> ${inputs.ufDestino}
+REGIME: ${inputs.mode.toUpperCase()}
+===========================================
+
+1. VALORES DE AQUISIÇÃO (ENTRADA)
+-------------------------------------------
+VALOR DO PRODUTO:     ${formatCurrency(inputs.valorCompra).padStart(15)}
+FRETE COMPRA:         ${formatCurrency(inputs.freteValor).padStart(15)}
+(+) IPI:              ${formatCurrency(results.valorIpi).padStart(15)}
+(-) CRÉDITO IMPOSTOS: ${formatCurrency(totalCreditos).padStart(15)}
+
+2. ESTRUTURA OPERACIONAL
+-------------------------------------------
+CUSTO FIXO:           ${formatCurrency(valorCustoFixo).padStart(15)} (${inputs.custosFixos}%)
+
+3. DETALHAMENTO FISCAL (VENDA)
+-------------------------------------------
+DÉBITO DE IMPOSTOS:   ${formatCurrency(results.impostosTotais).padStart(15)}
+(ICMS + PIS + COFINS + ST)
+
+4. RESULTADO DO PRODUTO
+-------------------------------------------
+MARGEM DE LUCRO (%):  ${inputs.resultadoDesejado.toFixed(2).padStart(14)}%
+LUCRO LÍQUIDO (VALOR): ${formatCurrency(results.margemAbsoluta).padStart(14)}
+VALOR DE VENDA FINAL: ${formatCurrency(results.precoVendaAlvo).padStart(14)}
+
+===========================================
+      TAGWAY TECHNOLOGY - BI SYSTEM
+===========================================
+`.trim();
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -41,16 +85,22 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ results, priceMatrix, input
   };
 
   const handleShare = async () => {
-    const shareMessage = `*📊 TAGWAY FISCAL: ${inputs.nomeProduto || 'Produto'}*\n` +
-      `*💰 VENDA:* ${formatCurrency(results.precoVendaAlvo)}\n` +
-      `*📉 CUSTO:* ${formatCurrency(results.custoFinal)}\n` +
-      `*🛡️ MARGEM:* ${inputs.resultadoDesejado}%\n` +
-      `_Rota: ${inputs.ufOrigem} ➔ ${inputs.ufDestino}_`;
+    const shareMessage = generateReportText();
     if (navigator.share) {
       try { await navigator.share({ title: 'Simulação Tagway', text: shareMessage }); } catch (e) {}
     } else {
       window.open(`https://wa.me/?text=${encodeURIComponent(shareMessage)}`, '_blank');
     }
+  };
+
+  const handleExportTxt = () => {
+    const element = document.createElement("a");
+    const file = new Blob([generateReportText()], {type: 'text/plain'});
+    element.href = URL.createObjectURL(file);
+    element.download = `Relatorio_${inputs.nomeProduto.replace(/\s/g, '_') || 'Simulacao'}.txt`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
   };
 
   return (
@@ -63,13 +113,19 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ results, priceMatrix, input
         <div className="flex items-center gap-1 lg:gap-2">
           <ActionButton onClick={onReset} label="Limpar" icon="M4 4v5h.582" color="slate" compact />
           <ActionButton onClick={handleSave} disabled={isSaving} label={isSaving ? "..." : "Arquivar"} icon="M8 7H5" color="emerald" compact />
-          <ActionButton onClick={handleShare} label="WhatsApp" icon="M8.684 13.342" color="indigo" compact />
+          
+          {/* Opção .TXT visível apenas no Desktop */}
+          <div className="hidden lg:block">
+            <ActionButton onClick={handleExportTxt} label=".TXT" icon="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" color="slate" compact />
+          </div>
+          
+          <ActionButton onClick={handleShare} label="Enviar" icon="M8.684 13.342" color="indigo" compact />
         </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
         <KPIBox label="Custo Final" value={results.custoFinal} sub="Líquido por Item" />
-        <KPIBox label="Créditos" value={results.creditoIcmsEntrada + results.creditoPisCofinsValor} sub="Recuperável" color="text-blue-600" />
+        <KPIBox label="Créditos" value={totalCreditos} sub="Recuperável" color="text-blue-600" />
         <KPIBox label="Impostos Saída" value={results.impostosTotais} sub="Carga Nominal" color="text-rose-500" />
         <KPIBox label="Venda Sugerida" value={results.precoVendaAlvo} sub={`${inputs.resultadoDesejado}% Net`} color="text-indigo-600" />
       </div>
@@ -155,12 +211,13 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ results, priceMatrix, input
 
 const ActionButton = ({ onClick, label, icon, color, disabled, compact }: any) => {
   const styles: any = {
-    slate: 'bg-slate-100 text-slate-600 border-slate-200',
-    indigo: 'bg-indigo-50 text-indigo-600 border-indigo-100',
-    emerald: 'bg-emerald-500 text-white border-emerald-500'
+    slate: 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200',
+    indigo: 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-100',
+    emerald: 'bg-emerald-500 text-white border-emerald-500 hover:bg-emerald-600'
   };
   return (
     <button onClick={onClick} disabled={disabled} className={`flex items-center gap-1 lg:gap-2 ${compact ? 'px-3 py-2' : 'px-5 py-2.5'} rounded-lg lg:rounded-xl border font-black uppercase text-[8px] lg:text-[9px] tracking-widest btn-touch transition-all disabled:opacity-50 ${styles[color]}`}>
+      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d={icon}/></svg>
       {label}
     </button>
   );

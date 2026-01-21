@@ -12,6 +12,7 @@ import Login from './components/Login';
 import AIView from './components/AIView';
 import MyProductsView from './components/MyProductsView';
 import Calculadora2027View from './components/Calculadora2027View';
+import ComingSoonView from './components/ComingSoonView';
 import { SimulationInputs, CostItem, VariableCostItem, UserProfile } from './types';
 import { calculateCosts, generatePriceMatrix } from './utils/calculations';
 import { supabase } from './lib/supabase';
@@ -212,10 +213,17 @@ const App: React.FC = () => {
     { id: 'jarvis', label: 'Jarvis', icon: "M13 10V3L4 14h7v7l9-11h-7z", isAi: true, disabled: !isModuleEnabled('jarvis') },
   ];
 
-  // Added 'disabled' property to avoid 'Property disabled does not exist' error when mapping over these items
   const devItems = [
     { id: 'resumo-fiscal', label: 'Fiscal', icon: "M9 17v-2m3 2v-4m3 2v-6m-8-2h8a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", disabled: false },
     { id: 'configuracao', label: 'Perfil', icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z", disabled: false },
+  ];
+
+  const roadmapItems = [
+    { id: 'logistica', label: 'Logística', icon: "M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1m-7 0a1 1 0 011-1h3m5 0h3", disabled: false },
+    { id: 'estoque', label: 'Estoque', icon: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4", disabled: false },
+    { id: 'metas', label: 'Metas', icon: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6", disabled: false },
+    { id: 'dre', label: 'DRE', icon: "M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z", disabled: false },
+    { id: 'caixa', label: 'Caixa', icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z", disabled: false },
   ];
 
   return (
@@ -228,16 +236,25 @@ const App: React.FC = () => {
           </button>
         </div>
         
-        <nav className="flex-1 space-y-1">
+        <nav className="flex-1 space-y-1 pb-10">
           {menuItems.map(item => (
             <DesktopMenuButton key={item.id} isNew={item.isNew} disabled={item.disabled} active={activeTab === item.id} onClick={() => setActiveTab(item.id as Tab)} label={item.label} icon={item.icon} isAi={item.isAi} collapsed={isSidebarCollapsed} />
           ))}
+          
           <div className="pt-6 space-y-1">
             <p className={`text-[8px] font-black uppercase tracking-[0.3em] text-white/20 mb-3 ml-4 ${isSidebarCollapsed ? 'hidden' : ''}`}>Módulos Operacionais</p>
             {devItems.map(item => (
               <DesktopMenuButton key={item.id} disabled={item.disabled} active={activeTab === item.id} onClick={() => setActiveTab(item.id as Tab)} label={item.label} icon={item.icon} collapsed={isSidebarCollapsed} />
             ))}
           </div>
+
+          <div className="pt-6 space-y-1">
+            <p className={`text-[8px] font-black uppercase tracking-[0.3em] text-white/20 mb-3 ml-4 ${isSidebarCollapsed ? 'hidden' : ''}`}>Roadmap Estratégico</p>
+            {roadmapItems.map(item => (
+              <DesktopMenuButton key={item.id} disabled={item.disabled} active={activeTab === item.id} onClick={() => setActiveTab(item.id as Tab)} label={item.label} icon={item.icon} collapsed={isSidebarCollapsed} />
+            ))}
+          </div>
+
           <div className="pt-6 border-t border-white/5 mt-4">
             {isMaster && <DesktopMenuButton active={activeTab === 'master'} onClick={() => setActiveTab('master')} label="Master" icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944" collapsed={isSidebarCollapsed} />}
           </div>
@@ -262,14 +279,22 @@ const App: React.FC = () => {
           {activeTab === 'resumo-fiscal' && <ResumoFiscalView results={results} inputs={inputs} />}
           {activeTab === 'overhead' && <OverheadView faturamento={faturamento} setFaturamento={setFaturamento} fixedCosts={fixedCosts} setFixedCosts={setFixedCosts} variableCosts={variableCosts} setVariableCosts={setVariableCosts} userId={session?.user?.id} isAutoSync={isAutoSync} setIsAutoSync={setIsAutoSync} />}
           {activeTab === 'jarvis' && isModuleEnabled('jarvis') && <AIView results={results} inputs={inputs} />}
+          
+          {/* Módulos Roadmap */}
+          {activeTab === 'logistica' && <ComingSoonView title="Módulo Logística" desc="Gestão inteligente de fretes, rotas e custos de distribuição nacional." icon="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1m-7 0a1 1 0 011-1h3m5 0h3" />}
+          {activeTab === 'estoque' && <ComingSoonView title="Gestão de Estoque" desc="Controle de inventário, curva ABC e otimização de giro de capital." icon="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />}
+          {activeTab === 'metas' && <ComingSoonView title="KPIs & Metas" desc="Definição de objetivos de vendas e acompanhamento de performance em tempo real." icon="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />}
+          {activeTab === 'dre' && <ComingSoonView title="DRE Gerencial" desc="Demonstrativo de Resultados do Exercício automatizado com base em suas vendas." icon="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />}
+          {activeTab === 'caixa' && <ComingSoonView title="Fluxo de Caixa" desc="Gestão de entradas, saídas e projeções financeiras para sua operação." icon="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />}
+
           {activeTab === 'configuracao' && session && (
             <ConfiguracaoView userId={session.user.id} onLogout={handleLogout} onProfileUpdate={() => fetchProfile(session.user.id)} />
           )}
           {activeTab === 'master' && isMaster && <AdminView />}
         </div>
 
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] mobile-dock">
-           <div className="flex items-center gap-1 justify-around px-2 py-3">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] mobile-dock overflow-x-auto no-scrollbar">
+           <div className="flex items-center gap-1 justify-around px-2 py-3 min-w-max">
               {menuItems.map(item => (
                 <MobileDockItem key={item.id} disabled={item.disabled} active={activeTab === item.id} onClick={() => setActiveTab(item.id as Tab)} label={item.label} icon={item.icon} isAi={item.isAi} colorClass={item.isAi ? 'text-indigo-600' : ''} />
               ))}
