@@ -19,6 +19,7 @@ import { supabase } from './lib/supabase';
 
 const MASTER_EMAIL = 'tagwaytw@gmail.com';
 
+// Fix: Removed duplicate definition of defaultInputs from the end of file to prevent redeclaration error.
 const defaultInputs: SimulationInputs = {
   nomeProduto: '',
   valorCompra: 0,
@@ -44,7 +45,8 @@ const defaultInputs: SimulationInputs = {
   mode: 'tributado',
   percReducaoBase: 0,
   simulationMode: 'buyToSell',
-  precoVendaDesejado: 0
+  precoVendaDesejado: 0,
+  isMvaAuto: true
 };
 
 type Tab = 'calculadora' | 'calculadora-2027' | 'catalogo' | 'meus-produtos' | 'overhead' | 'resumo-fiscal' | 'configuracao' | 'master' | 'jarvis' | 'logistica' | 'estoque' | 'metas' | 'dre' | 'caixa';
@@ -267,7 +269,9 @@ const App: React.FC = () => {
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 max-w-[1600px] mx-auto animate-slide-up">
               <div className="w-full lg:w-80 space-y-6 shrink-0">
                 <FiscalHeader inputs={inputs} setInputs={setInputs} />
-                <Sidebar inputs={inputs} setInputs={setInputs} isAutoSync={isAutoSync} setIsAutoSync={setIsAutoSync} />
+                <div className="hidden lg:block">
+                  <Sidebar inputs={inputs} setInputs={setInputs} isAutoSync={isAutoSync} setIsAutoSync={setIsAutoSync} />
+                </div>
               </div>
               <div className="flex-1">
                 <ResultsTable results={results} priceMatrix={priceMatrix} inputs={inputs} onReset={() => setInputs(defaultInputs)} />

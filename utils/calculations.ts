@@ -24,7 +24,9 @@ export const calculateCosts = (inputs: SimulationInputs): SimulationResults => {
     custosFixos,
     resultadoDesejado,
     mode,
-    excluirIcmsPis
+    excluirIcmsPis,
+    simulationMode,
+    precoVendaDesejado
   } = inputs;
 
   const valorIpi = round2(valorCompra * (ipiPerc / 100));
@@ -72,24 +74,38 @@ export const calculateCosts = (inputs: SimulationInputs): SimulationResults => {
      pisCofinsVendaEfetivo = round2(pisCofinsVenda * (1 - icmsVendaEfetivo / 100));
   }
 
-  const totalDeducoesPerc = round2(
+  const totalDeducoesSemMargemPerc = round2(
     pisCofinsVendaEfetivo + 
     comissaoVenda + 
     icmsVendaEfetivo + 
     outrosCustosVariaveis + 
-    custosFixos + 
-    resultadoDesejado
+    custosFixos
   );
+
+  let precoVendaAlvo = 0;
+  let margemCalculadaAbs = 0;
+  let margemCalculadaPerc = resultadoDesejado;
+
+  if (simulationMode === 'sellToBuy') {
+    // MODO REVERSO: Preço é fixo, calculamos a margem
+    precoVendaAlvo = precoVendaDesejado;
+    const deducoesValores = round2(precoVendaAlvo * (totalDeducoesSemMargemPerc / 100));
+    margemCalculadaAbs = round2(precoVendaAlvo - custoFinal - deducoesValores);
+    margemCalculadaPerc = precoVendaAlvo > 0 ? round2((margemCalculadaAbs / precoVendaAlvo) * 100) : 0;
+  } else {
+    // MODO NORMAL: Margem é fixa, calculamos o preço
+    const totalDeducoesComMargemPerc = totalDeducoesSemMargemPerc + resultadoDesejado;
+    const divisor = (100 - totalDeducoesComMargemPerc) / 100;
+    precoVendaAlvo = divisor > 0 ? round2(custoFinal / divisor) : 0;
+    margemCalculadaAbs = round2(precoVendaAlvo * (resultadoDesejado / 100));
+    margemCalculadaPerc = resultadoDesejado;
+  }
   
-  const divisor = (100 - totalDeducoesPerc) / 100;
-  const precoVendaAlvo = divisor > 0 ? round2(custoFinal / divisor) : 0;
-  
-  const margemAbsoluta = round2(precoVendaAlvo * (resultadoDesejado / 100));
   const valorIcmsVenda = round2(precoVendaAlvo * (icmsVendaEfetivo / 100));
   const valorPisCofinsVenda = round2(precoVendaAlvo * (pisCofinsVendaEfetivo / 100));
   
-  const precoEquilibrio = (100 - (totalDeducoesPerc - resultadoDesejado)) > 0 
-    ? round2(custoFinal / ((100 - (totalDeducoesPerc - resultadoDesejado)) / 100)) 
+  const precoEquilibrio = (100 - totalDeducoesSemMargemPerc) > 0 
+    ? round2(custoFinal / ((100 - totalDeducoesSemMargemPerc) / 100)) 
     : 0;
 
   return {
@@ -106,16 +122,16 @@ export const calculateCosts = (inputs: SimulationInputs): SimulationResults => {
     custoFinal,
     precoEquilibrio,
     precoVendaAlvo,
-    totalDeducoesVendaPerc: totalDeducoesPerc,
+    totalDeducoesVendaPerc: simulationMode === 'sellToBuy' ? round2(totalDeducoesSemMargemPerc + margemCalculadaPerc) : round2(totalDeducoesSemMargemPerc + resultadoDesejado),
     icmsVendaEfetivo,
-    margemAbsoluta,
+    margemAbsoluta: margemCalculadaAbs,
     impostosTotais: round2(stAPagar + valorIcmsVenda + valorPisCofinsVenda)
   };
 };
 
 export const generatePriceMatrix = (custoFinal: number, inputs: SimulationInputs): any => {
   const results = calculateCosts(inputs);
-  const baseDeducoes = results.totalDeducoesVendaPerc - inputs.resultadoDesejado;
+  const baseDeducoes = results.totalDeducoesVendaPerc - (inputs.simulationMode === 'sellToBuy' ? (results.margemAbsoluta / results.precoVendaAlvo * 100) : inputs.resultadoDesejado);
   
   const categorias = [
     { label: 'Commodity', margin: 8 },

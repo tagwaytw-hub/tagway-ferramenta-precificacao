@@ -33,13 +33,15 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
       const interstateRate = getInterstateRate(newOrigem, newDestino);
       const isInternal = newOrigem === newDestino;
 
-      // Se for interna, a alíquota de crédito (compra) é a alíquota interna do estado
       const internalRate = destUf?.icms || 18;
       const effectivePurchaseRate = isInternal ? internalRate : interstateRate;
 
-      // Calcula MVA Ajustada (em operações internas o ajuste resulta na MVA original)
-      const rawAdjMva = calculateAdjustedMva(prev.mvaOriginal, effectivePurchaseRate, internalRate);
-      const adjMva = Math.floor(rawAdjMva * 100) / 100;
+      // Só atualiza MVA se o modo automático estiver ligado
+      let newMva = prev.mva;
+      if (prev.isMvaAuto) {
+        const rawAdjMva = calculateAdjustedMva(prev.mvaOriginal, effectivePurchaseRate, internalRate);
+        newMva = Math.floor(rawAdjMva * 100) / 100;
+      }
 
       return {
         ...prev,
@@ -49,7 +51,7 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
         icmsCreditoMercadoria: effectivePurchaseRate,
         icmsCreditoFrete: effectivePurchaseRate,
         icmsVenda: internalRate,
-        mva: adjMva
+        mva: newMva
       };
     });
   };
@@ -68,11 +70,23 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
       ...prev,
       ncmCodigo: ncm.codigo,
       mvaOriginal: ncm.mvaOriginal,
-      mva: adjMva,
-      nomeProduto: ncm.descricao
+      mva: prev.isMvaAuto ? adjMva : prev.mva,
+      nomeProduto: ncm.descricao // Preenche inicialmente, mas permanece editável
     }));
     setShowNcmSearch(false);
     setSearchTerm('');
+  };
+
+  const toggleMvaMode = (auto: boolean) => {
+    setInputs(prev => {
+      let currentMva = prev.mva;
+      if (auto) {
+        // Se voltar para auto, recalcula
+        const rawAdjMva = calculateAdjustedMva(prev.mvaOriginal, prev.icmsCreditoMercadoria, prev.icmsInternoDestino);
+        currentMva = Math.floor(rawAdjMva * 100) / 100;
+      }
+      return { ...prev, isMvaAuto: auto, mva: currentMva };
+    });
   };
 
   const filteredNcm = NCM_DATABASE.filter(n => 
@@ -86,7 +100,7 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
   return (
     <div className="bg-black rounded-[1.2rem] lg:rounded-[1.5rem] p-4 lg:p-6 text-white space-y-4 lg:space-y-6 shadow-2xl relative overflow-visible ring-1 ring-white/10">
       
-      {/* Produto */}
+      {/* Produto - Editável Livremente */}
       <div className="space-y-1.5">
         <label className="text-[8px] lg:text-[9px] font-black text-white/40 uppercase tracking-[0.2em] ml-1">Produto / Referência</label>
         <input 
@@ -157,17 +171,40 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
         )}
       </div>
 
-      {/* Quick Summary Grid */}
+      {/* MVA Control Grid */}
       <div className="grid grid-cols-2 gap-3 lg:gap-4 pt-1">
          <div className="bg-white/5 p-2 lg:p-3 rounded-xl border border-white/5 text-center">
             <p className="text-[7px] lg:text-[8px] font-black text-white/30 uppercase mb-1">{purchaseLabel}</p>
             <p className="text-xs lg:text-sm font-black text-white font-mono">{purchaseRate.toFixed(1)}%</p>
          </div>
-         <div className={`bg-white/5 p-2 lg:p-3 rounded-xl border border-white/5 text-center transition-opacity ${inputs.mode === 'tributado' ? 'opacity-20' : 'opacity-100'}`}>
-            <p className="text-[7px] lg:text-[8px] font-black text-white/30 uppercase mb-1">MVA Ajustada</p>
-            <p className="text-xs lg:text-sm font-black text-amber-400 font-mono">
-              {inputs.mode === 'tributado' ? '0.00' : inputs.mva.toFixed(2)}%
-            </p>
+
+         {/* Controle Inteligente de MVA */}
+         <div className={`bg-white/5 p-2 lg:p-3 rounded-xl border border-white/5 relative group transition-all ${inputs.mode === 'tributado' ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}>
+            <div className="flex justify-between items-center mb-1">
+              <p className="text-[7px] lg:text-[8px] font-black text-white/30 uppercase tracking-tighter">MVA Ajustada</p>
+              <div className="flex items-center gap-1">
+                <button 
+                  onClick={() => toggleMvaMode(true)}
+                  className={`text-[6px] font-black px-1 rounded uppercase transition-all ${inputs.isMvaAuto ? 'bg-indigo-500 text-white' : 'bg-white/10 text-white/40'}`}
+                >AUTO</button>
+                <button 
+                  onClick={() => toggleMvaMode(false)}
+                  className={`text-[6px] font-black px-1 rounded uppercase transition-all ${!inputs.isMvaAuto ? 'bg-amber-500 text-white' : 'bg-white/10 text-white/40'}`}
+                >MANUAL</button>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-1 justify-center">
+              <input 
+                type="number" 
+                step="0.01"
+                disabled={inputs.isMvaAuto}
+                value={inputs.mva === 0 && !inputs.isMvaAuto ? '' : inputs.mva}
+                onChange={(e) => setInputs(prev => ({...prev, mva: parseFloat(e.target.value) || 0}))}
+                className={`w-full bg-transparent text-xs lg:text-sm font-black font-mono text-center outline-none ${inputs.isMvaAuto ? 'text-white' : 'text-amber-400'}`}
+              />
+              <span className="text-[10px] font-black text-white/20">%</span>
+            </div>
          </div>
       </div>
     </div>

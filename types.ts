@@ -27,6 +27,7 @@ export interface SimulationInputs {
   simulationMode: 'buyToSell' | 'sellToBuy';
   precoVendaDesejado: number;
   totalDeducoesVendaPerc?: number;
+  isMvaAuto: boolean; // Flag para controle manual/auto
   // Campos específicos para 2027
   ibsPerc?: number;
   cbsPerc?: number;
@@ -46,7 +47,7 @@ export interface UserProfile {
     dre_enabled: boolean;
     estoque_enabled: boolean;
     logistica_enabled: boolean;
-    calculadora_2027_enabled: boolean; // Nova Flag
+    calculadora_2027_enabled: boolean;
   };
 }
 
@@ -92,7 +93,6 @@ export interface SimulationResults {
   icmsVendaEfetivo: number;
   margemAbsoluta: number;
   impostosTotais: number;
-  // Resultados específicos 2027
   valorIBS?: number;
   valorCBS?: number;
 }

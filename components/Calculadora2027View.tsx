@@ -5,6 +5,7 @@ import { calculateCosts2027 } from '../utils/calculations2027';
 import ResultsTable from './ResultsTable';
 import Sidebar from './Sidebar';
 
+// Fix: Added missing 'isMvaAuto' property which is required by the SimulationInputs interface.
 const defaultInputs2027: SimulationInputs = {
   nomeProduto: '',
   valorCompra: 0,
@@ -31,7 +32,8 @@ const defaultInputs2027: SimulationInputs = {
   percReducaoBase: 0,
   simulationMode: 'buyToSell',
   precoVendaDesejado: 0,
-  isCenario2027: true
+  isCenario2027: true,
+  isMvaAuto: true
 };
 
 const Calculadora2027View: React.FC = () => {
