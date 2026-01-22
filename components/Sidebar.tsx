@@ -7,9 +7,10 @@ interface SidebarProps {
   setInputs: React.Dispatch<React.SetStateAction<SimulationInputs>>;
   isAutoSync: boolean;
   setIsAutoSync: (val: boolean) => void;
+  isMobile?: boolean;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs, isAutoSync, setIsAutoSync }) => {
+const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs, isAutoSync, setIsAutoSync, isMobile = false }) => {
   const [collapsed, setCollapsed] = useState<string[]>([]);
 
   const toggleCollapse = (id: string) => {
@@ -36,6 +37,62 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs, isAutoSync, setIsA
 
   const isReverse = inputs.simulationMode === 'sellToBuy';
 
+  const FinalValuesSection = (
+    <section className={`${isReverse ? 'bg-indigo-900' : 'bg-slate-900'} rounded-[2rem] p-8 text-white shadow-2xl shadow-black/20 ring-1 ring-white/10 space-y-4 relative overflow-hidden transition-all duration-500 mb-6`}>
+      <div className={`absolute top-0 right-0 w-24 h-24 ${isReverse ? 'bg-indigo-400/20' : 'bg-emerald-500/10'} blur-2xl rounded-full -mr-10 -mt-10`}></div>
+      
+      <div className="flex justify-between items-center relative z-10">
+        <label className="text-[9px] font-black uppercase tracking-widest text-white/40">
+          {isReverse ? 'Preço de Venda Fixo' : 'Margem de Lucro Alvo'}
+        </label>
+        <div className={`w-2 h-2 rounded-full ${isReverse ? 'bg-indigo-400' : 'bg-emerald-500'} animate-pulse`}></div>
+      </div>
+
+      <div className="flex items-center gap-4 relative z-10">
+        {isReverse && <span className="text-2xl font-black text-indigo-300 italic">R$</span>}
+        <input 
+          type="number" 
+          step="0.01"
+          autoFocus={isMobile}
+          value={isReverse ? inputs.precoVendaDesejado : inputs.resultadoDesejado} 
+          onChange={(e) => handleChange(isReverse ? 'precoVendaDesejado' : 'resultadoDesejado', e.target.value)}
+          className={`w-full bg-transparent ${isReverse ? 'text-4xl' : 'text-6xl'} font-black font-mono outline-none border-none p-0 tracking-tighter ${isReverse ? 'text-indigo-100' : 'text-emerald-400'}`} 
+          placeholder="0.00"
+        />
+        {!isReverse && <span className="text-3xl font-black text-emerald-600/50">%</span>}
+        
+        <div className="flex flex-col gap-2 shrink-0">
+           <button 
+             onClick={() => {
+               const field = isReverse ? 'precoVendaDesejado' : 'resultadoDesejado';
+               const step = isReverse ? 10 : 1;
+               handleChange(field, (isReverse ? inputs.precoVendaDesejado : inputs.resultadoDesejado) + step);
+             }} 
+             className="p-2.5 bg-white/5 rounded-xl hover:bg-white/10 transition-all border border-white/5"
+           >
+             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 15l7-7 7 7"/></svg>
+           </button>
+           <button 
+             onClick={() => {
+               const field = isReverse ? 'precoVendaDesejado' : 'resultadoDesejado';
+               const step = isReverse ? 10 : 1;
+               handleChange(field, Math.max(0, (isReverse ? inputs.precoVendaDesejado : inputs.resultadoDesejado) - step));
+             }} 
+             className="p-2.5 bg-white/5 rounded-xl hover:bg-white/10 transition-all border border-white/5"
+           >
+             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"/></svg>
+           </button>
+        </div>
+      </div>
+      
+      {isReverse && (
+        <p className="text-[8px] font-black text-indigo-300/50 uppercase tracking-widest mt-2 animate-pulse">
+          O sistema deduzirá impostos deste valor
+        </p>
+      )}
+    </section>
+  );
+
   return (
     <div className="space-y-6">
       {/* Simulation Mode Toggle */}
@@ -53,6 +110,9 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs, isAutoSync, setIsA
           Reverso
         </button>
       </section>
+
+      {/* Reorder: Priority Input at TOP for Mobile Pop-up */}
+      {isMobile && FinalValuesSection}
 
       {/* Regime Selector */}
       <section className="space-y-3">
@@ -167,59 +227,8 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs, isAutoSync, setIsA
         )}
       </section>
 
-      {/* Final Values Section (Dynamic based on Mode) */}
-      <section className={`${isReverse ? 'bg-indigo-900' : 'bg-slate-900'} rounded-[2rem] p-8 text-white shadow-2xl shadow-black/20 ring-1 ring-white/10 space-y-4 relative overflow-hidden transition-all duration-500`}>
-        <div className={`absolute top-0 right-0 w-24 h-24 ${isReverse ? 'bg-indigo-400/20' : 'bg-emerald-500/10'} blur-2xl rounded-full -mr-10 -mt-10`}></div>
-        
-        <div className="flex justify-between items-center relative z-10">
-          <label className="text-[9px] font-black uppercase tracking-widest text-white/40">
-            {isReverse ? 'Preço de Venda Fixo' : 'Margem de Lucro Alvo'}
-          </label>
-          <div className={`w-2 h-2 rounded-full ${isReverse ? 'bg-indigo-400' : 'bg-emerald-500'} animate-pulse`}></div>
-        </div>
-
-        <div className="flex items-center gap-4 relative z-10">
-          {isReverse && <span className="text-2xl font-black text-indigo-300 italic">R$</span>}
-          <input 
-            type="number" 
-            step="0.01"
-            value={isReverse ? inputs.precoVendaDesejado : inputs.resultadoDesejado} 
-            onChange={(e) => handleChange(isReverse ? 'precoVendaDesejado' : 'resultadoDesejado', e.target.value)}
-            className={`w-full bg-transparent ${isReverse ? 'text-4xl' : 'text-6xl'} font-black font-mono outline-none border-none p-0 tracking-tighter ${isReverse ? 'text-indigo-100' : 'text-emerald-400'}`} 
-            placeholder="0.00"
-          />
-          {!isReverse && <span className="text-3xl font-black text-emerald-600/50">%</span>}
-          
-          <div className="flex flex-col gap-2 shrink-0">
-             <button 
-               onClick={() => {
-                 const field = isReverse ? 'precoVendaDesejado' : 'resultadoDesejado';
-                 const step = isReverse ? 10 : 1;
-                 handleChange(field, (isReverse ? inputs.precoVendaDesejado : inputs.resultadoDesejado) + step);
-               }} 
-               className="p-2.5 bg-white/5 rounded-xl hover:bg-white/10 transition-all border border-white/5"
-             >
-               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 15l7-7 7 7"/></svg>
-             </button>
-             <button 
-               onClick={() => {
-                 const field = isReverse ? 'precoVendaDesejado' : 'resultadoDesejado';
-                 const step = isReverse ? 10 : 1;
-                 handleChange(field, Math.max(0, (isReverse ? inputs.precoVendaDesejado : inputs.resultadoDesejado) - step));
-               }} 
-               className="p-2.5 bg-white/5 rounded-xl hover:bg-white/10 transition-all border border-white/5"
-             >
-               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"/></svg>
-             </button>
-          </div>
-        </div>
-        
-        {isReverse && (
-          <p className="text-[8px] font-black text-indigo-300/50 uppercase tracking-widest mt-2 animate-pulse">
-            O sistema deduzirá impostos deste valor
-          </p>
-        )}
-      </section>
+      {/* Desktop rendering: Final Values Section at BOTTOM */}
+      {!isMobile && FinalValuesSection}
     </div>
   );
 };

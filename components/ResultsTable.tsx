@@ -185,7 +185,7 @@ VALOR FINAL:           ${formatCurrency(results.precoVendaAlvo).padStart(30)}
         />
       </div>
 
-      <section className={`${isReverse ? 'bg-indigo-950' : 'bg-slate-900'} rounded-[2rem] lg:rounded-[2.5rem] p-6 lg:p-12 text-white shadow-2xl relative overflow-hidden transition-colors duration-500`}>
+      <section className={`${isReverse ? (results.margemAbsoluta > 0 ? 'bg-indigo-950' : 'bg-rose-950') : 'bg-slate-900'} rounded-[2rem] lg:rounded-[2.5rem] p-6 lg:p-12 text-white shadow-2xl relative overflow-hidden transition-colors duration-500`}>
         <div className="absolute top-0 right-0 w-64 lg:w-96 h-64 lg:h-96 bg-white/5 blur-[80px] lg:blur-[120px] rounded-full -mr-20 -mt-20"></div>
         <div className="relative z-10 flex flex-col lg:flex-row gap-8 lg:gap-12 items-center text-center lg:text-left">
           <div className="flex-1 space-y-6 lg:space-y-10 w-full">
@@ -229,7 +229,7 @@ VALOR FINAL:           ${formatCurrency(results.precoVendaAlvo).padStart(30)}
             </div>
           </div>
           
-          <div className={`w-full lg:w-72 rounded-[2rem] p-6 lg:p-10 border border-white/10 space-y-4 lg:space-y-8 text-center shrink-0 ${isReverse ? 'bg-indigo-900/40 backdrop-blur-md' : 'bg-white/5 backdrop-blur-md'}`}>
+          <div className={`w-full lg:w-72 rounded-[2rem] p-6 lg:p-10 border border-white/10 space-y-4 lg:space-y-8 text-center shrink-0 ${isReverse ? (results.margemAbsoluta > 0 ? 'bg-indigo-900/40' : 'bg-rose-900/40') : 'bg-white/5'} backdrop-blur-md`}>
              <div>
                <span className="text-[8px] lg:text-[9px] font-black uppercase tracking-widest text-white/40 block mb-1">Lucro Unitário</span>
                <p className={`text-2xl lg:text-4xl font-black font-mono tracking-tighter ${results.margemAbsoluta > 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
@@ -240,7 +240,7 @@ VALOR FINAL:           ${formatCurrency(results.precoVendaAlvo).padStart(30)}
              <div className="space-y-1">
                <span className="text-[7px] lg:text-[8px] font-black uppercase tracking-widest text-white/20 block">Deduções Variáveis</span>
                <p className="text-lg lg:text-xl font-black text-white/60 font-mono">
-                 {(results.totalDeducoesVendaPerc - (isReverse ? pLucro : inputs.resultadoDesejado)).toFixed(2)}%
+                 {(results.totalDeducoesVendaPerc - (isReverse ? (pLucro > 0 ? pLucro : 0) : inputs.resultadoDesejado)).toFixed(2)}%
                </p>
              </div>
           </div>
@@ -289,7 +289,7 @@ const ActionButton = ({ onClick, label, icon, color, disabled, compact }: any) =
 };
 
 const KPIBox = ({ label, value, sub, color }: any) => (
-  <div className="bg-white p-4 lg:p-6 rounded-[1.5rem] lg:rounded-[2rem] border border-slate-100 shadow-sm">
+  <div className="bg-white p-4 lg:p-6 rounded-[1.5rem] lg:rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-center">
     <span className="text-[8px] lg:text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block truncate">{label}</span>
     <p className={`text-base lg:text-2xl font-black font-mono tracking-tighter truncate ${color || 'text-slate-900'}`}>{formatCurrency(value)}</p>
     <p className="text-[7px] lg:text-[8px] font-bold text-slate-300 uppercase mt-1 truncate">{sub}</p>

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import ResultsTable from './components/ResultsTable';
 import FiscalHeader from './components/FiscalHeader';
@@ -19,7 +19,6 @@ import { supabase } from './lib/supabase';
 
 const MASTER_EMAIL = 'tagwaytw@gmail.com';
 
-// Fix: Removed duplicate definition of defaultInputs from the end of file to prevent redeclaration error.
 const defaultInputs: SimulationInputs = {
   nomeProduto: '',
   valorCompra: 0,
@@ -116,6 +115,8 @@ const App: React.FC = () => {
   const [fixedCosts, setFixedCosts] = useState<CostItem[]>([]);
   const [variableCosts, setVariableCosts] = useState<VariableCostItem[]>([]);
   const [isAutoSync, setIsAutoSync] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const mobileSidebarContentRef = useRef<HTMLDivElement>(null);
 
   const totalFixed = useMemo(() => fixedCosts.reduce((acc, curr) => acc + curr.valor, 0), [fixedCosts]);
   const totalVarWeight = useMemo(() => variableCosts.reduce((acc, curr) => acc + curr.percentual, 0), [variableCosts]);
@@ -132,6 +133,16 @@ const App: React.FC = () => {
       });
     }
   }, [isAutoSync, capTotalOverhead]);
+
+  // Reset scroll position when mobile sidebar opens
+  useEffect(() => {
+    if (isMobileSidebarOpen && mobileSidebarContentRef.current) {
+      mobileSidebarContentRef.current.scrollTop = 0;
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+  }, [isMobileSidebarOpen]);
 
   const isMaster = useMemo(() => {
     return session?.user?.email?.toLowerCase() === MASTER_EMAIL.toLowerCase();
@@ -210,7 +221,7 @@ const App: React.FC = () => {
   const menuItems = [
     { id: 'calculadora', label: 'Cálculo', icon: "M3 12h18M3 6h18M3 18h18" },
     { id: 'calculadora-2027', label: '2027', icon: "M13 10V3L4 14h7v7l9-11h-7z", isNew: true, disabled: !isModuleEnabled('calculadora-2027') },
-    { id: 'meus-produtos', label: 'Arquivo', icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" },
+    { id: 'meus-produtos', label: 'Arquivo', icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" },
     { id: 'overhead', label: 'Estrutura', icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" },
     { id: 'jarvis', label: 'Jarvis', icon: "M13 10V3L4 14h7v7l9-11h-7z", isAi: true, disabled: !isModuleEnabled('jarvis') },
   ];
@@ -264,11 +275,23 @@ const App: React.FC = () => {
       </aside>
 
       <main className="flex-1 bg-[#f8fafc] lg:rounded-l-[3rem] shadow-2xl overflow-hidden flex flex-col relative rounded-t-[2.5rem] lg:rounded-t-none">
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-12 pb-24 lg:pb-12">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-12 pb-32 lg:pb-12">
           {activeTab === 'calculadora' && (
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 max-w-[1600px] mx-auto animate-slide-up">
               <div className="w-full lg:w-80 space-y-6 shrink-0">
                 <FiscalHeader inputs={inputs} setInputs={setInputs} />
+                
+                {/* Mobile Params Trigger - NEW POSITION */}
+                <button 
+                  onClick={() => setIsMobileSidebarOpen(true)}
+                  className="lg:hidden w-full bg-[#FF6600] text-white py-4 rounded-2xl shadow-xl flex items-center justify-center gap-3 btn-touch border border-white/10 mt-2 mb-4 group"
+                >
+                  <div className="p-1 bg-white/20 rounded-lg group-hover:bg-white/30 transition-all">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                  </div>
+                  <span className="text-[11px] font-black uppercase tracking-[0.2em]">Editar Parâmetros</span>
+                </button>
+
                 <div className="hidden lg:block">
                   <Sidebar inputs={inputs} setInputs={setInputs} isAutoSync={isAutoSync} setIsAutoSync={setIsAutoSync} />
                 </div>
@@ -276,6 +299,42 @@ const App: React.FC = () => {
               <div className="flex-1">
                 <ResultsTable results={results} priceMatrix={priceMatrix} inputs={inputs} onReset={() => setInputs(defaultInputs)} />
               </div>
+
+              {/* Mobile Sidebar Pop-up - REFINED VERSION */}
+              {isMobileSidebarOpen && (
+                <div className="lg:hidden fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-all duration-300">
+                  <div 
+                    ref={mobileSidebarContentRef}
+                    className="bg-white rounded-[3rem] w-full max-h-[90vh] overflow-y-auto p-6 animate-slide-up shadow-[0_20px_100px_rgba(0,0,0,0.8)] border border-white/20"
+                  >
+                    <div className="flex justify-between items-center mb-8 pb-4 border-b border-slate-100">
+                      <div className="flex flex-col">
+                        <h4 className="text-[14px] font-black text-slate-900 uppercase tracking-widest leading-none">Simulação Detalhada</h4>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Ajuste de Preço e Carga Fiscal</span>
+                      </div>
+                      <button onClick={() => setIsMobileSidebarOpen(false)} className="p-3 bg-slate-100 rounded-2xl hover:bg-slate-200 transition-all">
+                        <svg className="w-6 h-6 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"/></svg>
+                      </button>
+                    </div>
+                    
+                    {/* Pass isMobile true to Sidebar so it can reorder content */}
+                    <Sidebar 
+                      inputs={inputs} 
+                      setInputs={setInputs} 
+                      isAutoSync={isAutoSync} 
+                      setIsAutoSync={setIsAutoSync} 
+                      isMobile={true} 
+                    />
+                    
+                    <button 
+                      onClick={() => setIsMobileSidebarOpen(false)}
+                      className="w-full bg-[#FF6600] text-white py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] mt-10 shadow-2xl active:scale-[0.98] transition-all"
+                    >
+                      Confirmar Ajustes
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           {activeTab === 'calculadora-2027' && isModuleEnabled('calculadora-2027') && <Calculadora2027View />}
