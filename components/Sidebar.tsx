@@ -93,23 +93,41 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, setInputs, isAutoSync, setIsA
     </section>
   );
 
+  const isScenario2027 = inputs.isCenario2027;
+
   return (
     <div className="space-y-6">
       {/* Simulation Mode Toggle */}
-      <section className="bg-white border border-slate-200 rounded-[2rem] p-1.5 flex shadow-sm">
-        <button 
-          onClick={() => handleChange('simulationMode', 'buyToSell')}
-          className={`flex-1 py-3 rounded-[1.5rem] text-[9px] font-black uppercase tracking-widest transition-all ${!isReverse ? 'bg-black text-white shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}
-        >
-          Normal
-        </button>
-        <button 
-          onClick={() => handleChange('simulationMode', 'sellToBuy')}
-          className={`flex-1 py-3 rounded-[1.5rem] text-[9px] font-black uppercase tracking-widest transition-all ${isReverse ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}
-        >
-          Reverso
-        </button>
-      </section>
+      {!isScenario2027 && (
+        <section className="bg-white border border-slate-200 rounded-[2rem] p-1.5 flex shadow-sm">
+          <button 
+            onClick={() => handleChange('simulationMode', 'buyToSell')}
+            className={`flex-1 py-3 rounded-[1.5rem] text-[9px] font-black uppercase tracking-widest transition-all ${!isReverse ? 'bg-black text-white shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}
+          >
+            Normal
+          </button>
+          <button 
+            onClick={() => handleChange('simulationMode', 'sellToBuy')}
+            className={`flex-1 py-3 rounded-[1.5rem] text-[9px] font-black uppercase tracking-widest transition-all ${isReverse ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}
+          >
+            Reverso
+          </button>
+        </section>
+      )}
+
+      {/* 2027 Specific Toggle Header */}
+      {isScenario2027 && (
+        <div className="bg-indigo-900 rounded-[2rem] p-6 text-white mb-4">
+           <div className="flex items-center gap-2 mb-4">
+             <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></div>
+             <span className="text-[8px] font-black uppercase tracking-widest text-indigo-300">Modo IVA DUAL</span>
+           </div>
+           <div className="space-y-4">
+             <InputGroup label="Alíquota IBS (%)" value={inputs.ibsPerc || 17.7} onChange={(v: string) => handleChange('ibsPerc', v)} dark />
+             <InputGroup label="Alíquota CBS (%)" value={inputs.cbsPerc || 8.8} onChange={(v: string) => handleChange('cbsPerc', v)} dark />
+           </div>
+        </div>
+      )}
 
       {/* Reorder: Priority Input at TOP for Mobile Pop-up */}
       {isMobile && FinalValuesSection}
@@ -247,10 +265,10 @@ const SidebarHeader = ({ label, isCollapsed, onToggle }: any) => (
   </button>
 );
 
-const InputGroup = ({ label, value, onChange, impact }: { label: string, value: number, onChange: (v: string) => void, impact?: any }) => (
-  <div className="bg-white border border-slate-100 rounded-[1.5rem] p-5 shadow-sm focus-within:ring-4 focus-within:ring-slate-100 focus-within:border-slate-900 transition-all group relative">
+const InputGroup = ({ label, value, onChange, impact, dark }: { label: string, value: number, onChange: (v: string) => void, impact?: any, dark?: boolean }) => (
+  <div className={`${dark ? 'bg-white/10 border-white/10' : 'bg-white border-slate-100'} border rounded-[1.5rem] p-5 shadow-sm focus-within:ring-4 ${dark ? 'focus-within:ring-white/5 focus-within:border-white/40' : 'focus-within:ring-slate-100 focus-within:border-slate-900'} transition-all group relative`}>
     <div className="flex justify-between items-start mb-1">
-      <label className="block text-[8px] font-black text-slate-400 uppercase tracking-widest group-focus-within:text-slate-900 transition-colors">{label}</label>
+      <label className={`block text-[8px] font-black ${dark ? 'text-white/40 group-focus-within:text-white' : 'text-slate-400 group-focus-within:text-slate-900'} uppercase tracking-widest transition-colors`}>{label}</label>
       {impact && (
         <span className={`text-[6px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter ${impact.color}`}>
           {impact.label}
@@ -263,7 +281,7 @@ const InputGroup = ({ label, value, onChange, impact }: { label: string, value: 
       value={value === 0 ? '' : value} 
       placeholder="0.00"
       onChange={(e) => onChange(e.target.value)}
-      className="w-full text-xl font-black text-slate-900 font-mono outline-none placeholder:text-slate-100" 
+      className={`w-full text-xl font-black ${dark ? 'text-white' : 'text-slate-900'} font-mono outline-none placeholder:${dark ? 'text-white/10' : 'text-slate-100'} bg-transparent`} 
     />
   </div>
 );

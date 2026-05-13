@@ -12,10 +12,15 @@ import Login from './components/Login';
 import AIView from './components/AIView';
 import MyProductsView from './components/MyProductsView';
 import Calculadora2027View from './components/Calculadora2027View';
+import CalculationFlow from './components/CalculationFlow';
 import ComingSoonView from './components/ComingSoonView';
+import MetasView from './components/MetasView';
+import DREView from './components/DREView';
 import { SimulationInputs, CostItem, VariableCostItem, UserProfile } from './types';
 import { calculateCosts, generatePriceMatrix } from './utils/calculations';
 import { supabase } from './lib/supabase';
+import { UF_LIST } from './utils/ncmData';
+import { verifyMvaDatabase, DBHealthReport } from './utils/dbVerification';
 
 const MASTER_EMAIL = 'tagwaytw@gmail.com';
 
@@ -108,6 +113,13 @@ const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
   const [inputs, setInputs] = useState<SimulationInputs>(defaultInputs);
   const [activeTab, setActiveTab] = useState<Tab>('calculadora');
+  const [dbReport, setDbReport] = useState<DBHealthReport | null>(null);
+
+  useEffect(() => {
+    // Advanced verification of MVA database
+    const report = verifyMvaDatabase();
+    setDbReport(report);
+  }, []);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -261,15 +273,25 @@ const App: React.FC = () => {
             ))}
           </div>
 
-          <div className="pt-6 space-y-1">
-            <p className={`text-[8px] font-black uppercase tracking-[0.3em] text-white/20 mb-3 ml-4 ${isSidebarCollapsed ? 'hidden' : ''}`}>Roadmap Estratégico</p>
-            {roadmapItems.map(item => (
-              <DesktopMenuButton key={item.id} disabled={item.disabled} active={activeTab === item.id} onClick={() => setActiveTab(item.id as Tab)} label={item.label} icon={item.icon} collapsed={isSidebarCollapsed} />
-            ))}
-          </div>
-
           <div className="pt-6 border-t border-white/5 mt-4">
-            {isMaster && <DesktopMenuButton active={activeTab === 'master'} onClick={() => setActiveTab('master')} label="Master" icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944" collapsed={isSidebarCollapsed} />}
+            {isMaster && (
+              <div className="space-y-2">
+                <DesktopMenuButton active={activeTab === 'master'} onClick={() => setActiveTab('master')} label="Master" icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944" collapsed={isSidebarCollapsed} />
+                
+                {dbReport && !isSidebarCollapsed && (
+                  <div className={`mt-4 mx-4 p-3 rounded-xl border ${dbReport.status === 'healthy' ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-rose-500/10 border-rose-500/20'} animate-pulse`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className={`w-1.5 h-1.5 rounded-full ${dbReport.status === 'healthy' ? 'bg-emerald-400' : 'bg-rose-400'}`}></div>
+                      <span className="text-[8px] font-black uppercase tracking-widest text-white/60">Status do Banco NCM</span>
+                    </div>
+                    <p className={`text-[10px] font-black ${dbReport.status === 'healthy' ? 'text-emerald-400' : 'text-rose-400'} uppercase`}>
+                      {dbReport.status === 'healthy' ? 'VERIFICADO & OK' : 'ALERTA DE DUPLICADOS'}
+                    </p>
+                    <span className="text-[7px] text-white/30 font-bold uppercase">{dbReport.totalEntries} entradas auditadas</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </nav>
       </aside>
@@ -298,6 +320,7 @@ const App: React.FC = () => {
               </div>
               <div className="flex-1">
                 <ResultsTable results={results} priceMatrix={priceMatrix} inputs={inputs} onReset={() => setInputs(defaultInputs)} />
+                <CalculationFlow results={results} inputs={inputs} />
               </div>
 
               {/* Mobile Sidebar Pop-up - REFINED VERSION */}
@@ -346,8 +369,15 @@ const App: React.FC = () => {
           {/* Módulos Roadmap */}
           {activeTab === 'logistica' && <ComingSoonView title="Módulo Logística" desc="Gestão inteligente de fretes, rotas e custos de distribuição nacional." icon="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1m-7 0a1 1 0 011-1h3m5 0h3" />}
           {activeTab === 'estoque' && <ComingSoonView title="Gestão de Estoque" desc="Controle de inventário, curva ABC e otimização de giro de capital." icon="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />}
-          {activeTab === 'metas' && <ComingSoonView title="KPIs & Metas" desc="Definição de objetivos de vendas e acompanhamento de performance em tempo real." icon="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />}
-          {activeTab === 'dre' && <ComingSoonView title="DRE Gerencial" desc="Demonstrativo de Resultados do Exercício automatizado com base em suas vendas." icon="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />}
+          {activeTab === 'metas' && session && <MetasView userId={session.user.id} />}
+          {activeTab === 'dre' && (
+            <DREView 
+              faturamento={faturamento} 
+              fixedCosts={fixedCosts} 
+              variableCosts={variableCosts} 
+              margemContribuicaoSimulada={inputs.resultadoDesejado}
+            />
+          )}
           {activeTab === 'caixa' && <ComingSoonView title="Fluxo de Caixa" desc="Gestão de entradas, saídas e projeções financeiras para sua operação." icon="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />}
 
           {activeTab === 'configuracao' && session && (
@@ -357,7 +387,7 @@ const App: React.FC = () => {
         </div>
 
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] mobile-dock overflow-x-auto no-scrollbar">
-           <div className="flex items-center gap-1 justify-around px-2 py-3 min-w-max">
+           <div className="flex items-center gap-1 justify-around px-2 py-3 min-w-max w-full">
               {menuItems.map(item => (
                 <MobileDockItem key={item.id} disabled={item.disabled} active={activeTab === item.id} onClick={() => setActiveTab(item.id as Tab)} label={item.label} icon={item.icon} isAi={item.isAi} colorClass={item.isAi ? 'text-indigo-600' : ''} />
               ))}

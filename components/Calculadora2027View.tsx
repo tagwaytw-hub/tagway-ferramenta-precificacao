@@ -4,6 +4,7 @@ import { SimulationInputs } from '../types';
 import { calculateCosts2027 } from '../utils/calculations2027';
 import ResultsTable from './ResultsTable';
 import Sidebar from './Sidebar';
+import CalculationFlow from './CalculationFlow';
 
 // Fix: Added missing 'isMvaAuto' property which is required by the SimulationInputs interface.
 const defaultInputs2027: SimulationInputs = {
@@ -64,6 +65,7 @@ const Calculadora2027View: React.FC = () => {
         </div>
         <div className="flex-1">
           <ResultsTable results={results} priceMatrix={[]} inputs={inputs} />
+          <CalculationFlow results={results} inputs={inputs} />
         </div>
       </div>
     </div>

@@ -103,3 +103,29 @@ export interface NCMEntry {
   mvaOriginal: number;
   cest?: string;
 }
+
+export interface MetaMensal {
+  id: string;
+  user_id: string;
+  mes: number; // 1-12
+  ano: number;
+  faturamento_alvo: number;
+  margem_alvo_perc: number;
+  lucro_alvo: number;
+  created_at?: string;
+}
+
+export interface DREData {
+  receitaBruta: number;
+  impostos: number;
+  receitaLiquida: number;
+  cpv: number;
+  margemContribuicao: number;
+  margemContribuicaoPerc: number;
+  custosFixos: number;
+  ebitda: number;
+  ebitdaPerc: number;
+  lucroLiquido: number;
+  lucroLiquidoPerc: number;
+  pontoEquilibrio: number;
+}

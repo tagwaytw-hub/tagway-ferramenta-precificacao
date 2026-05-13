@@ -5,7 +5,7 @@ const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 /**
  * Calculadora 2027: Baseada no modelo IVA Dual (IBS + CBS)
- * Substitui ICMS, ISS, IPI, PIS e COFINS gradualmente.
+ * Conforme PEC 45/2019 e Leis Complementares da Reforma Tributária.
  */
 export const calculateCosts2027 = (inputs: SimulationInputs): SimulationResults => {
   const {
@@ -15,20 +15,30 @@ export const calculateCosts2027 = (inputs: SimulationInputs): SimulationResults 
     outrosCustosVariaveis,
     custosFixos,
     resultadoDesejado,
+    ibsPerc = 17.7,
+    cbsPerc = 8.8,
   } = inputs;
 
-  // Alíquotas padrão estimadas para 2027 (Transição)
-  const cbsRate = 8.8; // Exemplo de transição Federal
-  const ibsRate = 17.7; // Exemplo de transição Estadual/Municipal
-  const totalIvaRate = cbsRate + ibsRate;
+  const totalIvaRate = ibsPerc + cbsPerc;
 
-  // Na compra, assumimos crédito pleno do IVA Dual pago na entrada
-  const creditoIvaEntrada = round2((valorCompra + freteValor) * (totalIvaRate / 100));
+  // 1. BASE DE CÁLCULO E IMPOSTO NA ENTRADA (COMPRA)
+  // No novo modelo, o IBS/CBS pago na entrada gera crédito IMEDIATO e PLENO.
+  const baseCalculoEntrada = valorCompra + freteValor;
+  const impostoPagoEntrada = round2(baseCalculoEntrada * (totalIvaRate / 100));
   
-  const custoFinal = round2((valorCompra + freteValor) - (creditoIvaEntrada * 0.9)); // Fator de ajuste de crédito
+  // 2. CUSTO FINAL DE AQUISIÇÃO (LÍQUIDO)
+  // O custo real é o valor da mercadoria menos o imposto recuperado.
+  const custoFinal = round2(baseCalculoEntrada - impostoPagoEntrada);
 
-  // Deduções na venda
-  const totalDeducoesPerc = round2(
+  // 3. FORMAÇÃO DO PREÇO DE VENDA (MARK-UP DIVISOR)
+  // Consideramos que o preço de venda bruto deve cobrir:
+  // - Custo de Aquisição (Líquido)
+  // - Impostos sobre a Venda (IBS + CBS)
+  // - Despesas Variáveis (Comissão, etc)
+  // - Despesas Fixas (Rateio Overhead)
+  // - Lucro Alvo (Resultado Desejado)
+  
+  const totalDeducoesVendaPerc = round2(
     totalIvaRate + 
     comissaoVenda + 
     outrosCustosVariaveis + 
@@ -36,31 +46,39 @@ export const calculateCosts2027 = (inputs: SimulationInputs): SimulationResults 
     resultadoDesejado
   );
   
-  const divisor = (100 - totalDeducoesPerc) / 100;
+  const divisor = (100 - totalDeducoesVendaPerc) / 100;
   const precoVendaAlvo = divisor > 0 ? round2(custoFinal / divisor) : 0;
   
+  // 4. CÁLCULO DOS IMPOSTOS SOBRE A VENDA (DÉBITO)
+  const valorIBS = round2(precoVendaAlvo * (ibsPerc / 100));
+  const valorCBS = round2(precoVendaAlvo * (cbsPerc / 100));
+  const impostosTotais = round2(valorIBS + valorCBS);
+
+  // 5. APURAÇÃO DE MARGEM E EQUILÍBRIO
   const margemAbsoluta = round2(precoVendaAlvo * (resultadoDesejado / 100));
-  const impostosTotais = round2(precoVendaAlvo * (totalIvaRate / 100));
+  
+  // Preço de equilíbrio: cobre todos os custos/impostos com lucro zero.
+  const precoEquilibrio = round2(custoFinal / ((100 - (totalDeducoesVendaPerc - resultadoDesejado)) / 100));
 
   return {
-    valorTotalNota: valorCompra + freteValor,
+    valorTotalNota: baseCalculoEntrada,
     valorIpi: 0,
     baseCalculoSt: 0,
     icmsStBruto: 0,
     creditoIcmsMercadoria: 0,
     creditoIcmsFrete: 0,
-    creditoIcmsEntrada: 0,
+    creditoIcmsEntrada: impostoPagoEntrada,
     stAPagar: 0,
-    basePisCofins: 0,
-    creditoPisCofinsValor: 0,
+    basePisCofins: baseCalculoEntrada,
+    creditoPisCofinsValor: 0, // No novo modelo tratamos tudo como IVA Único
     custoFinal,
-    precoEquilibrio: round2(custoFinal / ((100 - (totalDeducoesPerc - resultadoDesejado)) / 100)),
+    precoEquilibrio,
     precoVendaAlvo,
-    totalDeducoesVendaPerc: totalDeducoesPerc,
+    totalDeducoesVendaPerc,
     icmsVendaEfetivo: totalIvaRate,
     margemAbsoluta,
     impostosTotais,
-    valorIBS: round2(precoVendaAlvo * (ibsRate / 100)),
-    valorCBS: round2(precoVendaAlvo * (cbsRate / 100))
+    valorIBS,
+    valorCBS
   };
 };
