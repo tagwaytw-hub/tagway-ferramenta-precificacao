@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { motion } from 'motion/react';
 import Sidebar from './components/Sidebar';
 import ResultsTable from './components/ResultsTable';
 import FiscalHeader from './components/FiscalHeader';
@@ -13,11 +14,13 @@ import AIView from './components/AIView';
 import MyProductsView from './components/MyProductsView';
 import Calculadora2027View from './components/Calculadora2027View';
 import CalculationFlow from './components/CalculationFlow';
+import TaxBreakdownModal from './components/TaxBreakdownModal';
+import OnboardingWizard from './components/OnboardingWizard';
 import ComingSoonView from './components/ComingSoonView';
 import MetasView from './components/MetasView';
 import DREView from './components/DREView';
-import { SimulationInputs, CostItem, VariableCostItem, UserProfile } from './types';
-import { calculateCosts, generatePriceMatrix } from './utils/calculations';
+import { SimulationInputs, SimulationResults, CostItem, VariableCostItem, UserProfile } from './types';
+import { calculateCosts, generatePriceMatrix, formatCurrency } from './utils/calculations';
 import { supabase } from './lib/supabase';
 import { UF_LIST } from './utils/ncmData';
 import { verifyMvaDatabase, DBHealthReport } from './utils/dbVerification';
@@ -114,8 +117,18 @@ const App: React.FC = () => {
   const [inputs, setInputs] = useState<SimulationInputs>(defaultInputs);
   const [activeTab, setActiveTab] = useState<Tab>('calculadora');
   const [dbReport, setDbReport] = useState<DBHealthReport | null>(null);
+  const [isMemoryModalOpen, setIsMemoryModalOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [pinnedScenario, setPinnedScenario] = useState<{ inputs: SimulationInputs; results: SimulationResults } | null>(null);
 
   useEffect(() => {
+    // Show wizard on first load if its fresh
+    const hasSeenOnboarding = localStorage.getItem('tagway_onboarding_seen');
+    if (!hasSeenOnboarding) {
+      setIsOnboardingOpen(true);
+      localStorage.setItem('tagway_onboarding_seen', 'true');
+    }
+
     // Advanced verification of MVA database
     const report = verifyMvaDatabase();
     setDbReport(report);
@@ -318,10 +331,92 @@ const App: React.FC = () => {
                   <Sidebar inputs={inputs} setInputs={setInputs} isAutoSync={isAutoSync} setIsAutoSync={setIsAutoSync} />
                 </div>
               </div>
-              <div className="flex-1">
-                <ResultsTable results={results} priceMatrix={priceMatrix} inputs={inputs} onReset={() => setInputs(defaultInputs)} />
-                <CalculationFlow results={results} inputs={inputs} />
-              </div>
+                <div className="flex-1">
+                  {pinnedScenario && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mb-6 p-6 bg-indigo-900 rounded-[2rem] text-white flex flex-col md:flex-row justify-between items-center gap-6"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
+                          <svg className="w-6 h-6 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-indigo-300">Modo Comparativo Ativo</p>
+                          <h4 className="text-sm font-black uppercase">Cenário Fixo: {formatCurrency(pinnedScenario.results.precoVendaAlvo)}</h4>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Diferença Atual</p>
+                          <p className={`text-xl font-black font-mono ${results.precoVendaAlvo > pinnedScenario.results.precoVendaAlvo ? 'text-rose-400' : 'text-emerald-400'}`}>
+                            {results.precoVendaAlvo > pinnedScenario.results.precoVendaAlvo ? '+' : ''}
+                            {formatCurrency(results.precoVendaAlvo - pinnedScenario.results.precoVendaAlvo)}
+                          </p>
+                        </div>
+                        <button 
+                          onClick={() => setPinnedScenario(null)}
+                          className="px-6 py-2 bg-white text-indigo-900 rounded-full text-[10px] font-black uppercase hover:bg-indigo-50 transition-colors"
+                        >
+                          Limpar
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  <div className="flex justify-between items-center mb-6 px-4">
+                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">Resultado da Simulação</h3>
+                    <div className="flex gap-3">
+                      <button 
+                        onClick={() => setIsOnboardingOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase hover:bg-indigo-100 transition-colors border border-indigo-100"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Setup Rápido
+                      </button>
+                      <button 
+                        onClick={() => setPinnedScenario({ inputs, results })}
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-full text-[10px] font-black uppercase hover:bg-slate-200 transition-colors"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                        </svg>
+                        Comparar
+                      </button>
+                      <button 
+                        onClick={() => setIsMemoryModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-full text-[10px] font-black uppercase hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        Memória de Cálculo
+                      </button>
+                    </div>
+                  </div>
+
+                  <ResultsTable results={results} priceMatrix={priceMatrix} inputs={inputs} onReset={() => setInputs(defaultInputs)} />
+                  <CalculationFlow results={results} inputs={inputs} />
+                </div>
+                
+                <TaxBreakdownModal 
+                  isOpen={isMemoryModalOpen} 
+                  onClose={() => setIsMemoryModalOpen(false)} 
+                  results={results} 
+                  inputs={inputs} 
+                />
+
+                <OnboardingWizard
+                  isOpen={isOnboardingOpen}
+                  onClose={() => setIsOnboardingOpen(false)}
+                  onApply={(updates) => setInputs(prev => ({ ...prev, ...updates }))}
+                />
 
               {/* Mobile Sidebar Pop-up - REFINED VERSION */}
               {isMobileSidebarOpen && (
