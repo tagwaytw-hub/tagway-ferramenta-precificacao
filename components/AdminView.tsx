@@ -221,6 +221,11 @@ const AdminView: React.FC = () => {
                         <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${u.status === 'ativo' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
                           {u.status}
                         </span>
+                        {u.feature_flags?.is_maintenance && (
+                          <span className="ml-2 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest bg-amber-100 text-amber-600">
+                             Manutenção
+                          </span>
+                        )}
                       </td>
                       <td className="px-8 py-6 text-right">
                          <svg className="w-4 h-4 text-slate-200 group-hover:text-black transition-colors ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7"/></svg>
@@ -275,9 +280,36 @@ const AdminView: React.FC = () => {
                  <div className="space-y-6">
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Acesso Operacional</label>
                     <div className="grid grid-cols-3 gap-2">
-                       <StatusButton active={selectedUser.status === 'ativo'} label="Ativo" onClick={() => setSelectedUser({...selectedUser, status: 'ativo', feature_flags: { ...(selectedUser.feature_flags || {}), block_reason: '' } as any})} color="bg-emerald-600" />
-                       <StatusButton active={selectedUser.status === 'bloqueado'} label="Block" onClick={() => setSelectedUser({...selectedUser, status: 'bloqueado'})} color="bg-rose-600" />
-                       <StatusButton active={selectedUser.status === 'manutencao'} label="Maint." onClick={() => setSelectedUser({...selectedUser, status: 'manutencao', feature_flags: { ...(selectedUser.feature_flags || {}), block_reason: '' } as any})} color="bg-amber-600" />
+                       <StatusButton 
+                         active={selectedUser.status === 'ativo' && !selectedUser.feature_flags?.is_maintenance} 
+                         label="Ativo" 
+                         onClick={() => setSelectedUser({
+                           ...selectedUser, 
+                           status: 'ativo', 
+                           feature_flags: { ...(selectedUser.feature_flags || {}), block_reason: '', is_maintenance: false } as any
+                         })} 
+                         color="bg-emerald-600" 
+                       />
+                       <StatusButton 
+                         active={selectedUser.status === 'bloqueado'} 
+                         label="Block" 
+                         onClick={() => setSelectedUser({
+                           ...selectedUser, 
+                           status: 'bloqueado',
+                           feature_flags: { ...(selectedUser.feature_flags || {}), is_maintenance: false } as any
+                         })} 
+                         color="bg-rose-600" 
+                       />
+                       <StatusButton 
+                         active={!!selectedUser.feature_flags?.is_maintenance} 
+                         label="Maint." 
+                         onClick={() => setSelectedUser({
+                           ...selectedUser, 
+                           status: 'ativo', 
+                           feature_flags: { ...(selectedUser.feature_flags || {}), block_reason: '', is_maintenance: true } as any
+                         })} 
+                         color="bg-amber-600" 
+                       />
                     </div>
 
                     {selectedUser.status === 'bloqueado' && (

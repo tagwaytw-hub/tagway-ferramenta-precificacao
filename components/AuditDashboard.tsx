@@ -15,9 +15,9 @@ const AuditDashboard: React.FC<AuditDashboardProps> = ({ users, logs }) => {
 
   const stats = useMemo(() => {
     const total = users.length;
-    const ativos = users.filter(u => u.status === 'ativo').length;
+    const ativos = users.filter(u => u.status === 'ativo' && !u.feature_flags?.is_maintenance).length;
     const bloqueados = users.filter(u => u.status === 'bloqueado').length;
-    const manutencao = users.filter(u => u.status === 'manutencao').length;
+    const manutencao = users.filter(u => u.feature_flags?.is_maintenance).length;
 
     // Adoption Distribution
     const features = [

@@ -39,11 +39,12 @@ export interface UserProfile {
   nome_completo: string;
   email: string;
   empresa_nome: string;
-  status: 'ativo' | 'bloqueado' | 'manutencao';
+  status: 'ativo' | 'bloqueado';
   telefone?: string;
   senha_acesso?: string;
   feature_flags?: {
     block_reason?: string;
+    is_maintenance?: boolean;
     jarvis_enabled: boolean;
     dre_enabled: boolean;
     estoque_enabled: boolean;
