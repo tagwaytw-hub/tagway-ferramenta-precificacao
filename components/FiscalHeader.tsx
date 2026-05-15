@@ -1,15 +1,16 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { SimulationInputs } from '../types';
+import { SimulationInputs, NCMOverride } from '../types';
 import { NCM_DATABASE, UF_LIST } from '../utils/ncmData';
 import { calculateAdjustedMva, getInterstateRate } from '../utils/calculations';
 
 interface FiscalHeaderProps {
   inputs: SimulationInputs;
   setInputs: React.Dispatch<React.SetStateAction<SimulationInputs>>;
+  ncmOverrides?: NCMOverride[];
 }
 
-const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
+const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs, ncmOverrides = [] }) => {
   const [showNcmSearch, setShowNcmSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const searchRef = useRef<HTMLDivElement>(null);
@@ -36,11 +37,18 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
       const internalRate = destUf?.icms || 18;
       const effectivePurchaseRate = isInternal ? internalRate : interstateRate;
 
+      // Check HUB
+      const override = ncmOverrides.find(o => o.ncmCodigo === prev.ncmCodigo && o.uf === newDestino);
+
       // Só atualiza MVA se o modo automático estiver ligado
       let newMva = prev.mva;
       if (prev.isMvaAuto) {
-        const rawAdjMva = calculateAdjustedMva(prev.mvaOriginal, effectivePurchaseRate, internalRate);
-        newMva = Math.floor(rawAdjMva * 100) / 100;
+        if (override) {
+          newMva = override.mvaAdjusted;
+        } else {
+          const rawAdjMva = calculateAdjustedMva(prev.mvaOriginal, effectivePurchaseRate, internalRate);
+          newMva = Math.floor(rawAdjMva * 100) / 100;
+        }
       }
 
       return {
@@ -63,15 +71,23 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
     const internalRate = destUf?.icms || 18;
     const effectivePurchaseRate = isInternal ? internalRate : interstateRate;
 
-    const rawAdjMva = calculateAdjustedMva(ncm.mvaOriginal, effectivePurchaseRate, internalRate);
-    const adjMva = Math.floor(rawAdjMva * 100) / 100;
+    // Check HUB for override before applying standard calculation
+    const override = ncmOverrides.find(o => o.ncmCodigo === ncm.codigo && o.uf === inputs.ufDestino);
+    
+    let adjMva;
+    if (override) {
+      adjMva = override.mvaAdjusted;
+    } else {
+      const rawAdjMva = calculateAdjustedMva(ncm.mvaOriginal, effectivePurchaseRate, internalRate);
+      adjMva = Math.floor(rawAdjMva * 100) / 100;
+    }
     
     setInputs(prev => ({
       ...prev,
       ncmCodigo: ncm.codigo,
       mvaOriginal: ncm.mvaOriginal,
       mva: prev.isMvaAuto ? adjMva : prev.mva,
-      nomeProduto: ncm.descricao // Preenche inicialmente, mas permanece editável
+      nomeProduto: ncm.descricao
     }));
     setShowNcmSearch(false);
     setSearchTerm('');
@@ -96,6 +112,7 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
   const isInternal = inputs.ufOrigem === inputs.ufDestino;
   const purchaseLabel = isInternal ? "Operação Interna" : "Inter (Compra)";
   const purchaseRate = inputs.icmsCreditoMercadoria;
+  const activeOverride = ncmOverrides.find(o => o.ncmCodigo === inputs.ncmCodigo && o.uf === inputs.ufDestino);
 
   return (
     <div className="bg-black rounded-[1.2rem] lg:rounded-[1.5rem] p-4 lg:p-6 text-white space-y-4 lg:space-y-6 shadow-2xl relative overflow-visible ring-1 ring-white/10">
@@ -158,15 +175,21 @@ const FiscalHeader: React.FC<FiscalHeaderProps> = ({ inputs, setInputs }) => {
 
         {showNcmSearch && (
           <div className="absolute top-[calc(100%+10px)] left-0 w-full bg-[#111] border border-white/10 rounded-xl shadow-2xl z-[1000] overflow-hidden max-h-60 overflow-y-auto custom-scrollbar">
-            {filteredNcm.map(ncm => (
-              <button 
-                key={ncm.codigo} onClick={() => selectNcm(ncm)}
-                className="w-full text-left p-4 hover:bg-white/5 transition-all flex flex-col border-b border-white/5 btn-touch"
-              >
-                <span className="text-[10px] font-black text-white font-mono">{ncm.codigo}</span>
-                <span className="text-[10px] text-white/40 truncate">{ncm.descricao}</span>
-              </button>
-            ))}
+            {filteredNcm.map(ncm => {
+               const hasOverride = ncmOverrides.some(o => o.ncmCodigo === ncm.codigo && o.uf === inputs.ufDestino);
+               return (
+                <button 
+                  key={ncm.codigo} onClick={() => selectNcm(ncm)}
+                  className="w-full text-left p-4 hover:bg-white/5 transition-all flex flex-col border-b border-white/5 btn-touch"
+                >
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black text-white font-mono">{ncm.codigo}</span>
+                    {hasOverride && <span className="text-[7px] font-black bg-indigo-500 px-1.5 py-0.5 rounded-full uppercase">HUB</span>}
+                  </div>
+                  <span className="text-[10px] text-white/40 truncate">{ncm.descricao}</span>
+                </button>
+               );
+            })}
           </div>
         )}
       </div>

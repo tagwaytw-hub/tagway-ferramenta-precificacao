@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { UserProfile, AuditLog } from '../types';
+import AuditDashboard from './AuditDashboard';
 
 const MASTER_EMAIL = 'tagwaytw@gmail.com';
 
@@ -85,7 +86,10 @@ const AdminView: React.FC = () => {
           dre_enabled: false,
           estoque_enabled: false,
           logistica_enabled: false,
-          calculadora_2027_enabled: false
+          calculadora_2025_enabled: true,
+          calculadora_2027_enabled: false,
+          matriz_estrategica_enabled: true,
+          overhead_enabled: true
         }
       };
 
@@ -220,6 +224,10 @@ const AdminView: React.FC = () => {
           </section>
         )}
 
+        {activeTab === 'auditoria' && (
+          <AuditDashboard users={users} logs={auditLogs} />
+        )}
+
         {activeTab === 'sistema' && (
           <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
              <div className="bg-indigo-900 rounded-[2.5rem] p-10 space-y-6 text-white shadow-xl relative overflow-hidden">
@@ -258,19 +266,46 @@ const AdminView: React.FC = () => {
                  <div className="space-y-6">
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Acesso Operacional</label>
                     <div className="grid grid-cols-3 gap-2">
-                       <StatusButton active={selectedUser.status === 'ativo'} label="Ativo" onClick={() => setSelectedUser({...selectedUser, status: 'ativo'})} color="bg-emerald-600" />
+                       <StatusButton active={selectedUser.status === 'ativo'} label="Ativo" onClick={() => setSelectedUser({...selectedUser, status: 'ativo', block_reason: ''})} color="bg-emerald-600" />
                        <StatusButton active={selectedUser.status === 'bloqueado'} label="Block" onClick={() => setSelectedUser({...selectedUser, status: 'bloqueado'})} color="bg-rose-600" />
-                       <StatusButton active={selectedUser.status === 'manutencao'} label="Maint." onClick={() => setSelectedUser({...selectedUser, status: 'manutencao'})} color="bg-amber-600" />
+                       <StatusButton active={selectedUser.status === 'manutencao'} label="Maint." onClick={() => setSelectedUser({...selectedUser, status: 'manutencao', block_reason: ''})} color="bg-amber-600" />
                     </div>
+
+                    {selectedUser.status === 'bloqueado' && (
+                      <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
+                        <label className="text-[9px] font-black text-rose-500 uppercase tracking-widest block">Motivo do Bloqueio</label>
+                        <textarea 
+                          value={selectedUser.block_reason || ''}
+                          onChange={(e) => setSelectedUser({...selectedUser, block_reason: e.target.value})}
+                          placeholder="Digite aqui o motivo do bloqueio para o terminal..."
+                          className="w-full bg-rose-50 border-2 border-rose-100 rounded-2xl px-6 py-4 text-xs font-bold outline-none focus:border-rose-400 text-rose-900 placeholder:text-rose-200 transition-all resize-none h-24"
+                        />
+                      </div>
+                    )}
                     
                     <div className="space-y-4 pt-6 border-t border-slate-100">
                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Feature Flags (Módulos)</label>
+                       
+                       <FlagToggle label="Cálculos 2025" active={!!selectedUser.feature_flags?.calculadora_2025_enabled} onClick={() => setSelectedUser({
+                         ...selectedUser, feature_flags: { ...selectedUser.feature_flags!, calculadora_2025_enabled: !selectedUser.feature_flags?.calculadora_2025_enabled }
+                       })} />
+
+                       <FlagToggle label="Cálculos 2027" active={!!selectedUser.feature_flags?.calculadora_2027_enabled} onClick={() => setSelectedUser({
+                         ...selectedUser, feature_flags: { ...selectedUser.feature_flags!, calculadora_2027_enabled: !selectedUser.feature_flags?.calculadora_2027_enabled }
+                       })} />
+
+                       <FlagToggle label="Matriz Estratégica" active={!!selectedUser.feature_flags?.matriz_estrategica_enabled} onClick={() => setSelectedUser({
+                         ...selectedUser, feature_flags: { ...selectedUser.feature_flags!, matriz_estrategica_enabled: !selectedUser.feature_flags?.matriz_estrategica_enabled }
+                       })} />
+
+                       <FlagToggle label="Estrutura (Overhead)" active={!!selectedUser.feature_flags?.overhead_enabled} onClick={() => setSelectedUser({
+                         ...selectedUser, feature_flags: { ...selectedUser.feature_flags!, overhead_enabled: !selectedUser.feature_flags?.overhead_enabled }
+                       })} />
+
                        <FlagToggle label="Jarvis AI Expert" active={!!selectedUser.feature_flags?.jarvis_enabled} onClick={() => setSelectedUser({
                          ...selectedUser, feature_flags: { ...selectedUser.feature_flags!, jarvis_enabled: !selectedUser.feature_flags?.jarvis_enabled }
                        })} />
-                       <FlagToggle label="Calculadora 2027 (Alpha)" active={!!selectedUser.feature_flags?.calculadora_2027_enabled} onClick={() => setSelectedUser({
-                         ...selectedUser, feature_flags: { ...selectedUser.feature_flags!, calculadora_2027_enabled: !selectedUser.feature_flags?.calculadora_2027_enabled }
-                       })} />
+                       
                        <FlagToggle label="Módulo DRE / Financeiro" active={!!selectedUser.feature_flags?.dre_enabled} onClick={() => setSelectedUser({
                          ...selectedUser, feature_flags: { ...selectedUser.feature_flags!, dre_enabled: !selectedUser.feature_flags?.dre_enabled }
                        })} />

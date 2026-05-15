@@ -22,9 +22,58 @@ export const NCM_DATABASE: NCMEntry[] = [
   { codigo: '3910', descricao: 'Silicones em formas primárias (Selantes)', mvaOriginal: 55 },
 
   // --- TINTAS E VERNIZES ---
-  { codigo: '3208', descricao: 'Tintas e Vernizes (Base Solvente)', mvaOriginal: 50 },
-  { codigo: '3209', descricao: 'Tintas e Vernizes (Base Água)', mvaOriginal: 50 },
-  { codigo: '3210', descricao: 'Outras tintas e vernizes / Pigmentos', mvaOriginal: 50 },
+  { codigo: '3208', descricao: 'Tintas e Vernizes (Base Solvente)', mvaOriginal: 35 },
+  { codigo: '3209', descricao: 'Tintas e Vernizes (Base Água)', mvaOriginal: 35 },
+  { codigo: '3210', descricao: 'Outras tintas e vernizes / Pigmentos', mvaOriginal: 35 },
+  { codigo: '3213.1', descricao: 'Tinta Guache', mvaOriginal: 81.34 },
+  
+  // --- PEÇAS AUTOMOTIVAS ---
+  { codigo: '8708', descricao: 'Peças e acessórios para veículos', mvaOriginal: 71.78 },
+  
+  // --- BEBIDAS ---
+  { codigo: '2201.1', descricao: 'Água mineral/naturais', mvaOriginal: 114 },
+  { codigo: '2202', descricao: 'Águas adicionadas de açúcar/aromatizantes', mvaOriginal: 114 },
+  { codigo: '2202.10', descricao: 'Refrigerantes', mvaOriginal: 114 },
+  { codigo: '2203', descricao: 'Cervejas e Chopp', mvaOriginal: 140 },
+  { codigo: '2106.90.1', descricao: 'Xarope para refrigerante', mvaOriginal: 114 },
+
+  // --- CIGARROS E FUMO ---
+  { codigo: '2402', descricao: 'Charutos e cigarrilhas', mvaOriginal: 50 },
+  { codigo: '2403.1', descricao: 'Tabaco para fumar', mvaOriginal: 50 },
+
+  // --- MEDICAMENTOS E HIGIENE ---
+  { codigo: '3003', descricao: 'Medicamentos (Geral)', mvaOriginal: 38.24 },
+  { codigo: '3004', descricao: 'Medicamentos (Referência)', mvaOriginal: 38.24 },
+  { codigo: '3002', descricao: 'Vacinas / Antissoros', mvaOriginal: 38.24 },
+  { codigo: '3005.10.1', descricao: 'Curativos adesivos', mvaOriginal: 38.24 },
+  { codigo: '3006.6', descricao: 'Preparações contraceptivas', mvaOriginal: 38.24 },
+
+  // --- PNEUMÁTICOS ---
+  { codigo: '4011', descricao: 'Pneus novos (Carros/Caminhões)', mvaOriginal: 42 },
+  { codigo: '4011.5', descricao: 'Pneus novos (Bicicletas)', mvaOriginal: 64.67 },
+  { codigo: '4013', descricao: 'Câmaras de ar de borracha', mvaOriginal: 45 },
+
+  // --- ALIMENTÍCIOS ---
+  { codigo: '1101.00.1', descricao: 'Farinha de trigo', mvaOriginal: 77.37 },
+  { codigo: '1901.2', descricao: 'Misturas para pães (<80% trigo)', mvaOriginal: 102 },
+  { codigo: '1902.3', descricao: 'Massas instantâneas', mvaOriginal: 20 },
+  { codigo: '1905.2', descricao: 'Pães industrializados / Panetones', mvaOriginal: 20 },
+  { codigo: '1905.4', descricao: 'Torradas e pão torrado', mvaOriginal: 30 },
+  { codigo: '0210.2', descricao: 'Carne bovina salgada/seca', mvaOriginal: 25 },
+
+  // --- PAPELARIA ---
+  { codigo: '3916.2', descricao: 'Espiral para encadernação', mvaOriginal: 82.24 },
+  { codigo: '4202.1', descricao: 'Maletas e pastas escolares', mvaOriginal: 60.91 },
+  { codigo: '4802.56', descricao: 'Papel A4 / Cutsize', mvaOriginal: 36.32 },
+  { codigo: '4820.2', descricao: 'Cadernos', mvaOriginal: 65.93 },
+  { codigo: '9608.1', descricao: 'Canetas esferográficas', mvaOriginal: 64.21 },
+
+  // --- ELETRÔNICOS ---
+  { codigo: '8517.13', descricao: 'Smartphones', mvaOriginal: 9 },
+  { codigo: '8523.52', descricao: 'Cartões inteligentes (Simcards)', mvaOriginal: 9 },
+
+  // --- SORVETES ---
+  { codigo: '2105', descricao: 'Sorvetes de qualquer espécie', mvaOriginal: 70 },
   
   // --- PLÁSTICOS E TUBULAÇÕES ---
   { codigo: '3916', descricao: 'Revestimentos de PVC / Forro / Sancas', mvaOriginal: 55 },

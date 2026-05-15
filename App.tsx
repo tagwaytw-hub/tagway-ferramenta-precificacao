@@ -6,7 +6,7 @@ import ResultsTable from './components/ResultsTable';
 import FiscalHeader from './components/FiscalHeader';
 import ProductsView from './components/ProductsView';
 import OverheadView from './components/OverheadView';
-import ResumoFiscalView from './components/ResumoFiscalView';
+import MatrizEstrategicaView from './components/MatrizEstrategicaView';
 import ConfiguracaoView from './components/ConfiguracaoView';
 import AdminView from './components/AdminView';
 import Login from './components/Login';
@@ -16,10 +16,11 @@ import Calculadora2027View from './components/Calculadora2027View';
 import CalculationFlow from './components/CalculationFlow';
 import TaxBreakdownModal from './components/TaxBreakdownModal';
 import OnboardingWizard from './components/OnboardingWizard';
+import NcmHubView from './components/NcmHubView';
 import ComingSoonView from './components/ComingSoonView';
 import MetasView from './components/MetasView';
 import DREView from './components/DREView';
-import { SimulationInputs, SimulationResults, CostItem, VariableCostItem, UserProfile } from './types';
+import { SimulationInputs, SimulationResults, CostItem, VariableCostItem, UserProfile, NCMOverride } from './types';
 import { calculateCosts, generatePriceMatrix, formatCurrency } from './utils/calculations';
 import { supabase } from './lib/supabase';
 import { UF_LIST } from './utils/ncmData';
@@ -56,7 +57,7 @@ const defaultInputs: SimulationInputs = {
   isMvaAuto: true
 };
 
-type Tab = 'calculadora' | 'calculadora-2027' | 'catalogo' | 'meus-produtos' | 'overhead' | 'resumo-fiscal' | 'configuracao' | 'master' | 'jarvis' | 'logistica' | 'estoque' | 'metas' | 'dre' | 'caixa';
+type Tab = 'calculadora' | 'calculadora-2027' | 'matriz-estrategica' | 'catalogo' | 'meus-produtos' | 'overhead' | 'configuracao' | 'master' | 'jarvis' | 'logistica' | 'estoque' | 'metas' | 'dre' | 'caixa' | 'ncm-hub';
 
 export const TagwayHorizontalLogo = ({ className = "w-auto h-8", textColor = "#FF6600", cerberusColor = "#8200AD" }: { className?: string, textColor?: string, cerberusColor?: string }) => (
   <svg className={className} viewBox="0 0 14918.7 3266.79" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -120,6 +121,25 @@ const App: React.FC = () => {
   const [isMemoryModalOpen, setIsMemoryModalOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [pinnedScenario, setPinnedScenario] = useState<{ inputs: SimulationInputs; results: SimulationResults } | null>(null);
+  const [ncmOverrides, setNcmOverrides] = useState<NCMOverride[]>(() => {
+    const saved = localStorage.getItem('tagway_ncm_overrides');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('tagway_ncm_overrides', JSON.stringify(ncmOverrides));
+  }, [ncmOverrides]);
+
+  const addNcmOverride = (override: NCMOverride) => {
+    setNcmOverrides(prev => {
+      const filtered = prev.filter(o => o.id !== override.id);
+      return [...filtered, override];
+    });
+  };
+
+  const removeNcmOverride = (id: string) => {
+    setNcmOverrides(prev => prev.filter(o => o.id !== id));
+  };
 
   useEffect(() => {
     // Show wizard on first load if its fresh
@@ -183,11 +203,6 @@ const App: React.FC = () => {
       
       if (data) {
         setUserProfile(data as UserProfile);
-        if (data.status === 'bloqueado') {
-          alert('🚫 Terminal Bloqueado pelo Administrador.');
-          supabase.auth.signOut();
-          setSession(null);
-        }
       }
     } catch (e) { console.warn("Erro ao buscar perfil."); }
   }, []);
@@ -217,19 +232,33 @@ const App: React.FC = () => {
   }, [fetchProfile]);
 
   const results = calculateCosts(inputs);
+
+  // Apply HUB Overrides if NCM and UF Destino match
+  useEffect(() => {
+    if (inputs.ncmCodigo && inputs.ufDestino) {
+      const override = ncmOverrides.find(o => o.ncmCodigo === inputs.ncmCodigo && o.uf === inputs.ufDestino);
+      if (override && inputs.mva !== override.mvaAdjusted && inputs.isMvaAuto) {
+        setInputs(prev => ({ ...prev, mva: override.mvaAdjusted }));
+      }
+    }
+  }, [inputs.ncmCodigo, inputs.ufDestino, ncmOverrides, inputs.isMvaAuto]);
+
   const priceMatrix = generatePriceMatrix(results.custoFinal, inputs);
 
   const isModuleEnabled = (module: string) => {
     if (isMaster) return true;
     if (!userProfile?.feature_flags) {
-       return ['calculadora', 'meus-produtos', 'resumo-fiscal', 'overhead', 'configuracao'].includes(module);
+       return ['calculadora', 'meus-produtos', 'matriz-estrategica', 'overhead', 'configuracao'].includes(module);
     }
     switch(module) {
+      case 'calculadora': return !!userProfile.feature_flags.calculadora_2025_enabled;
+      case 'calculadora-2027': return !!userProfile.feature_flags.calculadora_2027_enabled;
+      case 'matriz-estrategica': return !!userProfile.feature_flags.matriz_estrategica_enabled;
+      case 'overhead': return !!userProfile.feature_flags.overhead_enabled;
       case 'jarvis': return !!userProfile.feature_flags.jarvis_enabled;
       case 'dre': return !!userProfile.feature_flags.dre_enabled;
       case 'logistica': return !!userProfile.feature_flags.logistica_enabled;
       case 'estoque': return !!userProfile.feature_flags.estoque_enabled;
-      case 'calculadora-2027': return !!userProfile.feature_flags.calculadora_2027_enabled;
       default: return true;
     }
   };
@@ -241,28 +270,71 @@ const App: React.FC = () => {
   };
 
   if (!isInitialized) return null;
+
+  // Enforce Block Status
+  if (userProfile?.status === 'bloqueado' && !isMaster) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-700">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-rose-500/10 blur-[120px] rounded-full"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-500/10 blur-[120px] rounded-full"></div>
+        
+        <div className="relative z-10 space-y-8 max-w-lg">
+          <div className="w-24 h-24 bg-rose-500/20 border border-rose-500/20 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-2xl">
+            <svg className="w-10 h-10 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            </svg>
+          </div>
+          
+          <div className="space-y-4">
+            <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter">Acesso Suspenso</h2>
+            <p className="text-white/40 text-[10px] font-black uppercase tracking-widest leading-relaxed">
+              Este terminal foi temporariamente bloqueado pela administração central.
+            </p>
+          </div>
+
+          {userProfile.block_reason && (
+            <div className="bg-white/5 border border-white/10 p-8 rounded-[2rem] text-left">
+              <p className="text-[9px] font-black uppercase text-rose-400 mb-4 tracking-widest">Motivo da Administração:</p>
+              <p className="text-sm font-bold text-white/80 leading-relaxed italic">"{userProfile.block_reason}"</p>
+            </div>
+          )}
+
+          <div className="pt-8">
+            <button 
+              onClick={handleLogout}
+              className="px-10 py-5 bg-white text-slate-900 rounded-full text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl active:scale-95"
+            >
+              Fazer Logoff
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!session) return <Login onLoginSuccess={setSession} />;
 
   const menuItems = [
-    { id: 'calculadora', label: 'Cálculo', icon: "M3 12h18M3 6h18M3 18h18" },
-    { id: 'calculadora-2027', label: '2027', icon: "M13 10V3L4 14h7v7l9-11h-7z", isNew: true, disabled: !isModuleEnabled('calculadora-2027') },
-    { id: 'meus-produtos', label: 'Arquivo', icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" },
+    { id: 'calculadora', label: 'Cálculos 2025', icon: "M3 12h18M3 6h18M3 18h18" },
+    { id: 'calculadora-2027', label: 'Cálculos 2027', icon: "M13 10V3L4 14h7v7l9-11h-7z", isNew: true },
+    { id: 'matriz-estrategica', label: 'Matriz Estratégica', icon: "M9 17v-2m3 2v-4m3 2v-6m-8-2h8a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
     { id: 'overhead', label: 'Estrutura', icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" },
-    { id: 'jarvis', label: 'Jarvis', icon: "M13 10V3L4 14h7v7l9-11h-7z", isAi: true, disabled: !isModuleEnabled('jarvis') },
-  ];
+    { id: 'jarvis', label: 'Jarvis', icon: "M13 10V3L4 14h7v7l9-11h-7z", isAi: true },
+  ].filter(item => isModuleEnabled(item.id));
 
   const devItems = [
-    { id: 'resumo-fiscal', label: 'Fiscal', icon: "M9 17v-2m3 2v-4m3 2v-6m-8-2h8a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", disabled: false },
-    { id: 'configuracao', label: 'Perfil', icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z", disabled: false },
-  ];
+    { id: 'meus-produtos', label: 'Arquivo', icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" },
+    { id: 'ncm-hub', label: 'NCM Hub', icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" },
+    { id: 'configuracao', label: 'Perfil', icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" },
+  ].filter(item => isModuleEnabled(item.id));
 
   const roadmapItems = [
-    { id: 'logistica', label: 'Logística', icon: "M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1m-7 0a1 1 0 011-1h3m5 0h3", disabled: false },
-    { id: 'estoque', label: 'Estoque', icon: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4", disabled: false },
-    { id: 'metas', label: 'Metas', icon: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6", disabled: false },
-    { id: 'dre', label: 'DRE', icon: "M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z", disabled: false },
-    { id: 'caixa', label: 'Caixa', icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z", disabled: false },
-  ];
+    { id: 'logistica', label: 'Logística', icon: "M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1m-7 0a1 1 0 011-1h3m5 0h3" },
+    { id: 'estoque', label: 'Estoque', icon: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" },
+    { id: 'metas', label: 'Metas', icon: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" },
+    { id: 'dre', label: 'DRE', icon: "M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" },
+    { id: 'caixa', label: 'Caixa', icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" },
+  ].filter(item => isModuleEnabled(item.id));
 
   return (
     <div className="flex h-screen w-full bg-[#000000] overflow-hidden text-slate-900">
@@ -276,13 +348,13 @@ const App: React.FC = () => {
         
         <nav className="flex-1 space-y-1 pb-10">
           {menuItems.map(item => (
-            <DesktopMenuButton key={item.id} isNew={item.isNew} disabled={item.disabled} active={activeTab === item.id} onClick={() => setActiveTab(item.id as Tab)} label={item.label} icon={item.icon} isAi={item.isAi} collapsed={isSidebarCollapsed} />
+            <DesktopMenuButton key={item.id} isNew={item.isNew} active={activeTab === item.id} onClick={() => setActiveTab(item.id as Tab)} label={item.label} icon={item.icon} isAi={item.isAi} collapsed={isSidebarCollapsed} />
           ))}
           
           <div className="pt-6 space-y-1">
             <p className={`text-[8px] font-black uppercase tracking-[0.3em] text-white/20 mb-3 ml-4 ${isSidebarCollapsed ? 'hidden' : ''}`}>Módulos Operacionais</p>
             {devItems.map(item => (
-              <DesktopMenuButton key={item.id} disabled={item.disabled} active={activeTab === item.id} onClick={() => setActiveTab(item.id as Tab)} label={item.label} icon={item.icon} collapsed={isSidebarCollapsed} />
+              <DesktopMenuButton key={item.id} active={activeTab === item.id} onClick={() => setActiveTab(item.id as Tab)} label={item.label} icon={item.icon} collapsed={isSidebarCollapsed} />
             ))}
           </div>
 
@@ -310,11 +382,17 @@ const App: React.FC = () => {
       </aside>
 
       <main className="flex-1 bg-[#f8fafc] lg:rounded-l-[3rem] shadow-2xl overflow-hidden flex flex-col relative rounded-t-[2.5rem] lg:rounded-t-none">
+        {userProfile?.status === 'manutencao' && !isMaster && (
+          <div className="bg-amber-400 text-amber-950 px-6 py-2.5 flex items-center justify-center gap-4 animate-in slide-in-from-top duration-500 z-[110] shadow-lg sticky top-0">
+             <svg className="w-5 h-5 animate-pulse shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+             <span className="text-[10px] font-black uppercase tracking-widest text-center leading-tight">O sistema está em manutenção. Podem ocorrer atrasos ou erros temporários na telemetria.</span>
+          </div>
+        )}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-12 pb-32 lg:pb-12">
-          {activeTab === 'calculadora' && (
+          {activeTab === 'calculadora' && isModuleEnabled('calculadora') && (
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 max-w-[1600px] mx-auto animate-slide-up">
               <div className="w-full lg:w-80 space-y-6 shrink-0">
-                <FiscalHeader inputs={inputs} setInputs={setInputs} />
+                <FiscalHeader inputs={inputs} setInputs={setInputs} ncmOverrides={ncmOverrides} />
                 
                 {/* Mobile Params Trigger - NEW POSITION */}
                 <button 
@@ -457,15 +535,16 @@ const App: React.FC = () => {
           )}
           {activeTab === 'calculadora-2027' && isModuleEnabled('calculadora-2027') && <Calculadora2027View />}
           {activeTab === 'meus-produtos' && <MyProductsView onSelect={(sim) => { setInputs(sim.inputs); setActiveTab('calculadora'); }} />}
-          {activeTab === 'resumo-fiscal' && <ResumoFiscalView results={results} inputs={inputs} />}
-          {activeTab === 'overhead' && <OverheadView faturamento={faturamento} setFaturamento={setFaturamento} fixedCosts={fixedCosts} setFixedCosts={setFixedCosts} variableCosts={variableCosts} setVariableCosts={setVariableCosts} userId={session?.user?.id} isAutoSync={isAutoSync} setIsAutoSync={setIsAutoSync} />}
+          {activeTab === 'matriz-estrategica' && isModuleEnabled('matriz-estrategica') && <MatrizEstrategicaView priceMatrix={priceMatrix} />}
+          {activeTab === 'ncm-hub' && <NcmHubView overrides={ncmOverrides} onAddOverride={addNcmOverride} onRemoveOverride={removeNcmOverride} />}
+          {activeTab === 'overhead' && isModuleEnabled('overhead') && <OverheadView faturamento={faturamento} setFaturamento={setFaturamento} fixedCosts={fixedCosts} setFixedCosts={setFixedCosts} variableCosts={variableCosts} setVariableCosts={setVariableCosts} userId={session?.user?.id} isAutoSync={isAutoSync} setIsAutoSync={setIsAutoSync} />}
           {activeTab === 'jarvis' && isModuleEnabled('jarvis') && <AIView results={results} inputs={inputs} />}
           
           {/* Módulos Roadmap */}
-          {activeTab === 'logistica' && <ComingSoonView title="Módulo Logística" desc="Gestão inteligente de fretes, rotas e custos de distribuição nacional." icon="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1m-7 0a1 1 0 011-1h3m5 0h3" />}
-          {activeTab === 'estoque' && <ComingSoonView title="Gestão de Estoque" desc="Controle de inventário, curva ABC e otimização de giro de capital." icon="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />}
-          {activeTab === 'metas' && session && <MetasView userId={session.user.id} />}
-          {activeTab === 'dre' && (
+          {activeTab === 'logistica' && isModuleEnabled('logistica') && <ComingSoonView title="Módulo Logística" desc="Gestão inteligente de fretes, rotas e custos de distribuição nacional." icon="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1m-7 0a1 1 0 011-1h3m5 0h3" />}
+          {activeTab === 'estoque' && isModuleEnabled('estoque') && <ComingSoonView title="Gestão de Estoque" desc="Controle de inventário, curva ABC e otimização de giro de capital." icon="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />}
+          {activeTab === 'metas' && isModuleEnabled('metas') && session && <MetasView userId={session.user.id} />}
+          {activeTab === 'dre' && isModuleEnabled('dre') && (
             <DREView 
               faturamento={faturamento} 
               fixedCosts={fixedCosts} 
@@ -473,7 +552,7 @@ const App: React.FC = () => {
               margemContribuicaoSimulada={inputs.resultadoDesejado}
             />
           )}
-          {activeTab === 'caixa' && <ComingSoonView title="Fluxo de Caixa" desc="Gestão de entradas, saídas e projeções financeiras para sua operação." icon="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />}
+          {activeTab === 'caixa' && isModuleEnabled('caixa') && <ComingSoonView title="Fluxo de Caixa" desc="Gestão de entradas, saídas e projeções financeiras para sua operação." icon="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />}
 
           {activeTab === 'configuracao' && session && (
             <ConfiguracaoView userId={session.user.id} onLogout={handleLogout} onProfileUpdate={() => fetchProfile(session.user.id)} />
@@ -484,7 +563,7 @@ const App: React.FC = () => {
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] mobile-dock overflow-x-auto no-scrollbar">
            <div className="flex items-center gap-1 justify-around px-2 py-3 min-w-max w-full">
               {menuItems.map(item => (
-                <MobileDockItem key={item.id} disabled={item.disabled} active={activeTab === item.id} onClick={() => setActiveTab(item.id as Tab)} label={item.label} icon={item.icon} isAi={item.isAi} colorClass={item.isAi ? 'text-indigo-600' : ''} />
+                <MobileDockItem key={item.id} active={activeTab === item.id} onClick={() => setActiveTab(item.id as Tab)} label={item.label} icon={item.icon} isAi={item.isAi} colorClass={item.isAi ? 'text-indigo-600' : ''} />
               ))}
               {devItems.map(item => (
                 <MobileDockItem key={item.id} active={activeTab === item.id} onClick={() => setActiveTab(item.id as Tab)} label={item.label} icon={item.icon} />

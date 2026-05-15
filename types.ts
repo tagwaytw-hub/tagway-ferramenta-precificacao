@@ -40,6 +40,7 @@ export interface UserProfile {
   email: string;
   empresa_nome: string;
   status: 'ativo' | 'bloqueado' | 'manutencao';
+  block_reason?: string;
   telefone?: string;
   senha_acesso?: string;
   feature_flags?: {
@@ -47,7 +48,10 @@ export interface UserProfile {
     dre_enabled: boolean;
     estoque_enabled: boolean;
     logistica_enabled: boolean;
+    calculadora_2025_enabled: boolean;
     calculadora_2027_enabled: boolean;
+    matriz_estrategica_enabled: boolean;
+    overhead_enabled: boolean;
   };
 }
 
@@ -102,6 +106,15 @@ export interface NCMEntry {
   descricao: string;
   mvaOriginal: number;
   cest?: string;
+}
+
+export interface NCMOverride {
+  id: string;
+  ncmCodigo: string;
+  uf: string;
+  mvaAdjusted: number;
+  observation?: string;
+  updatedAt: string;
 }
 
 export interface MetaMensal {

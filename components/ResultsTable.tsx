@@ -246,30 +246,6 @@ VALOR FINAL:           ${formatCurrency(results.precoVendaAlvo).padStart(30)}
           </div>
         </div>
       </section>
-
-      {!isReverse && (
-        <section className="space-y-4">
-          <div className="flex items-center justify-between ml-2">
-            <h3 className="text-[9px] lg:text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Matriz Estratégica</h3>
-          </div>
-          <div className="flex overflow-x-auto no-scrollbar lg:grid lg:grid-cols-5 gap-4 pb-2">
-            {priceMatrix.map((cat: any, idx: number) => (
-              <div key={idx} className="bg-white rounded-[1.5rem] lg:rounded-[2rem] border border-slate-200 p-4 lg:p-6 min-w-[240px] lg:min-w-0 shrink-0">
-                 <div className="flex justify-between items-center mb-4 lg:mb-6">
-                   <span className="bg-slate-900 text-white text-[7px] lg:text-[8px] font-black px-2 py-1 rounded uppercase">{cat.label}</span>
-                   <span className="text-[9px] lg:text-[10px] font-black text-slate-300">{cat.margin}%</span>
-                 </div>
-                 <div className="space-y-3 lg:space-y-4">
-                   <PriceLevel label="Ideal (I)" value={cat.levels['I']} color="text-emerald-500" />
-                   <PriceLevel label="Desconto (D)" value={cat.levels['D']} color="text-amber-500" />
-                   <PriceLevel label="P6 (+11.1%)" value={cat.levels['P6']} color="text-blue-500" />
-                   <PriceLevel label="P6+ (+17.6%)" value={cat.levels['P6+']} color="text-indigo-600" />
-                 </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 };
