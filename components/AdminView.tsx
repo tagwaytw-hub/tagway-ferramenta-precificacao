@@ -79,18 +79,27 @@ const AdminView: React.FC = () => {
     if (!selectedUser) return;
     setIsSyncing(true);
     try {
+      // Ensure feature_flags exists and includes block_reason
+      const currentFlags = selectedUser.feature_flags || {
+        jarvis_enabled: true,
+        dre_enabled: false,
+        estoque_enabled: false,
+        logistica_enabled: false,
+        calculadora_2025_enabled: true,
+        calculadora_2027_enabled: false,
+        matriz_estrategica_enabled: true,
+        overhead_enabled: true
+      };
+
       const payload = {
-        ...selectedUser,
-        feature_flags: selectedUser.feature_flags || {
-          jarvis_enabled: true,
-          dre_enabled: false,
-          estoque_enabled: false,
-          logistica_enabled: false,
-          calculadora_2025_enabled: true,
-          calculadora_2027_enabled: false,
-          matriz_estrategica_enabled: true,
-          overhead_enabled: true
-        }
+        user_id: selectedUser.user_id,
+        nome_completo: selectedUser.nome_completo,
+        email: selectedUser.email,
+        empresa_nome: selectedUser.empresa_nome,
+        status: selectedUser.status,
+        telefone: selectedUser.telefone,
+        senha_acesso: selectedUser.senha_acesso,
+        feature_flags: currentFlags
       };
 
       const { error } = await supabase
@@ -266,17 +275,20 @@ const AdminView: React.FC = () => {
                  <div className="space-y-6">
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Acesso Operacional</label>
                     <div className="grid grid-cols-3 gap-2">
-                       <StatusButton active={selectedUser.status === 'ativo'} label="Ativo" onClick={() => setSelectedUser({...selectedUser, status: 'ativo', block_reason: ''})} color="bg-emerald-600" />
+                       <StatusButton active={selectedUser.status === 'ativo'} label="Ativo" onClick={() => setSelectedUser({...selectedUser, status: 'ativo', feature_flags: { ...(selectedUser.feature_flags || {}), block_reason: '' } as any})} color="bg-emerald-600" />
                        <StatusButton active={selectedUser.status === 'bloqueado'} label="Block" onClick={() => setSelectedUser({...selectedUser, status: 'bloqueado'})} color="bg-rose-600" />
-                       <StatusButton active={selectedUser.status === 'manutencao'} label="Maint." onClick={() => setSelectedUser({...selectedUser, status: 'manutencao', block_reason: ''})} color="bg-amber-600" />
+                       <StatusButton active={selectedUser.status === 'manutencao'} label="Maint." onClick={() => setSelectedUser({...selectedUser, status: 'manutencao', feature_flags: { ...(selectedUser.feature_flags || {}), block_reason: '' } as any})} color="bg-amber-600" />
                     </div>
 
                     {selectedUser.status === 'bloqueado' && (
                       <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
                         <label className="text-[9px] font-black text-rose-500 uppercase tracking-widest block">Motivo do Bloqueio</label>
                         <textarea 
-                          value={selectedUser.block_reason || ''}
-                          onChange={(e) => setSelectedUser({...selectedUser, block_reason: e.target.value})}
+                          value={selectedUser.feature_flags?.block_reason || ''}
+                          onChange={(e) => setSelectedUser({
+                            ...selectedUser, 
+                            feature_flags: { ...(selectedUser.feature_flags || {}), block_reason: e.target.value } as any
+                          })}
                           placeholder="Digite aqui o motivo do bloqueio para o terminal..."
                           className="w-full bg-rose-50 border-2 border-rose-100 rounded-2xl px-6 py-4 text-xs font-bold outline-none focus:border-rose-400 text-rose-900 placeholder:text-rose-200 transition-all resize-none h-24"
                         />

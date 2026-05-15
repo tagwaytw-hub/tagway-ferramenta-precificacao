@@ -292,10 +292,10 @@ const App: React.FC = () => {
             </p>
           </div>
 
-          {userProfile.block_reason && (
+          {userProfile.feature_flags?.block_reason && (
             <div className="bg-white/5 border border-white/10 p-8 rounded-[2rem] text-left">
               <p className="text-[9px] font-black uppercase text-rose-400 mb-4 tracking-widest">Motivo da Administração:</p>
-              <p className="text-sm font-bold text-white/80 leading-relaxed italic">"{userProfile.block_reason}"</p>
+              <p className="text-sm font-bold text-white/80 leading-relaxed italic">"{userProfile.feature_flags.block_reason}"</p>
             </div>
           )}
 

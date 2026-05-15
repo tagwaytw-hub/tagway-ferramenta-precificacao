@@ -40,10 +40,10 @@ export interface UserProfile {
   email: string;
   empresa_nome: string;
   status: 'ativo' | 'bloqueado' | 'manutencao';
-  block_reason?: string;
   telefone?: string;
   senha_acesso?: string;
   feature_flags?: {
+    block_reason?: string;
     jarvis_enabled: boolean;
     dre_enabled: boolean;
     estoque_enabled: boolean;
